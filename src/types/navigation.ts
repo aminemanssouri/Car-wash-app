@@ -9,6 +9,8 @@ export type RootStackParamList = {
   Help: undefined;
   Addresses: undefined;
   ServiceDetail: { serviceKey: string };
+  Notifications: undefined;
+  ServiceWorkers: { serviceKey: string };
 };
 
 export type TabParamList = {

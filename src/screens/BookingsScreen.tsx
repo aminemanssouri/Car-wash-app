@@ -8,25 +8,27 @@ import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
 import { mockBookings, Booking } from '../data/bookings';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeColors } from '../lib/theme';
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
+  const theme = useThemeColors();
 
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
       case 'pending':
-        return { backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' };
+        return { backgroundColor: theme.isDark ? 'rgba(251, 191, 36, 0.15)' : '#fef3c7', color: theme.isDark ? '#fde68a' : '#92400e', borderColor: theme.isDark ? 'rgba(251, 191, 36, 0.25)' : '#fde68a' };
       case 'confirmed':
-        return { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' };
+        return { backgroundColor: theme.isDark ? 'rgba(59, 130, 246, 0.15)' : '#dbeafe', color: theme.isDark ? '#93c5fd' : '#1e40af', borderColor: theme.isDark ? 'rgba(59,130,246,0.35)' : '#93c5fd' };
       case 'in-progress':
-        return { backgroundColor: '#d1fae5', color: '#065f46', borderColor: '#a7f3d0' };
+        return { backgroundColor: theme.isDark ? 'rgba(16, 185, 129, 0.18)' : '#d1fae5', color: theme.isDark ? '#6ee7b7' : '#065f46', borderColor: theme.isDark ? 'rgba(16,185,129,0.3)' : '#a7f3d0' };
       case 'completed':
-        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
+        return { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6', color: theme.textPrimary, borderColor: theme.isDark ? 'rgba(148,163,184,0.25)' : '#d1d5db' };
       case 'cancelled':
-        return { backgroundColor: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' };
+        return { backgroundColor: theme.isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2', color: theme.isDark ? '#fca5a5' : '#991b1b', borderColor: theme.isDark ? 'rgba(239,68,68,0.35)' : '#fca5a5' };
       default:
-        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
+        return { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6', color: theme.textPrimary, borderColor: theme.isDark ? 'rgba(148,163,184,0.25)' : '#d1d5db' };
     }
   };
 
@@ -105,23 +107,23 @@ export const BookingsScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Button
           variant="ghost"
           size="icon"
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textPrimary} />
         </Button>
-        <Text style={styles.headerTitle}>My Bookings</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>My Bookings</Text>
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <View style={styles.tabsList}>
+      <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+        <View style={[styles.tabsList, { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6' }]}>
           <TabButton label="All" value="all" isActive={activeTab === 'all'} />
           <TabButton label="Upcoming" value="upcoming" isActive={activeTab === 'upcoming'} />
           <TabButton label="Active" value="active" isActive={activeTab === 'active'} />
@@ -133,9 +135,9 @@ export const BookingsScreen: React.FC = () => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {filteredBookings.length === 0 ? (
           <View style={styles.emptyState}>
-            <Calendar size={48} color="#9ca3af" style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>No bookings found</Text>
-            <Text style={styles.emptySubtitle}>
+            <Calendar size={48} color={theme.textSecondary} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No bookings found</Text>
+            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }] }>
               {activeTab === 'all' ? "You haven't made any bookings yet" : `No ${activeTab} bookings at the moment`}
             </Text>
             <Button onPress={() => navigation.navigate('Home' as never)} style={styles.bookButton}>
@@ -152,17 +154,17 @@ export const BookingsScreen: React.FC = () => {
                   <View style={styles.bookingHeader}>
                     <View style={styles.bookingInfo}>
                       <View style={styles.bookingIdRow}>
-                        <Text style={styles.bookingId}>#{booking.id}</Text>
+                        <Text style={[styles.bookingId, { color: theme.textPrimary }]}>#{booking.id}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor, borderColor: statusStyle.borderColor }]}>
                           <Text style={[styles.statusText, { color: statusStyle.color }]}>
                             {getStatusText(booking.status)}
                           </Text>
                         </View>
                       </View>
-                      <Text style={styles.bookingDate}>Booked on {formatDate(booking.bookingDate)}</Text>
+                      <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>Booked on {formatDate(booking.bookingDate)}</Text>
                     </View>
                     <Pressable style={styles.moreButton} onPress={() => Alert.alert('More Options', 'Booking options')}>
-                      <MoreVertical size={16} color="#6b7280" />
+                      <MoreVertical size={16} color={theme.textSecondary} />
                     </Pressable>
                   </View>
 
@@ -174,15 +176,15 @@ export const BookingsScreen: React.FC = () => {
                       fallback={booking.workerName.split(' ').map(n => n[0]).join('')}
                     />
                     <View style={styles.workerDetails}>
-                      <Text style={styles.workerName}>{booking.workerName}</Text>
+                      <Text style={[styles.workerName, { color: theme.textPrimary }]}>{booking.workerName}</Text>
                       <View style={styles.ratingRow}>
-                        <Star size={12} color="#fbbf24" fill="#fbbf24" />
-                        <Text style={styles.rating}>{booking.workerRating}</Text>
+                        <Star size={12} color={theme.isDark ? '#fbbf24' : '#fbbf24'} fill={theme.isDark ? '#fbbf24' : '#fbbf24'} />
+                        <Text style={[styles.rating, { color: theme.textSecondary }]}>{booking.workerRating}</Text>
                       </View>
                     </View>
                     <View style={styles.priceInfo}>
-                      <Text style={styles.price}>{booking.price} MAD</Text>
-                      <Text style={styles.carType}>{booking.carType}</Text>
+                      <Text style={[styles.price, { color: theme.accent }]}>{booking.price} MAD</Text>
+                      <Text style={[styles.carType, { color: theme.textSecondary }]}>{booking.carType}</Text>
                     </View>
                   </View>
 
@@ -191,20 +193,20 @@ export const BookingsScreen: React.FC = () => {
                   {/* Booking Details */}
                   <View style={styles.bookingDetails}>
                     <View style={styles.detailRow}>
-                      <Calendar size={16} color="#6b7280" />
-                      <Text style={styles.detailText}>
+                      <Calendar size={16} color={theme.textSecondary} />
+                      <Text style={[styles.detailText, { color: theme.textPrimary }]}>
                         {formatDate(booking.date)} at {booking.time}
                       </Text>
                     </View>
 
                     <View style={styles.detailRow}>
-                      <MapPin size={16} color="#6b7280" />
-                      <Text style={styles.detailText}>{booking.location}</Text>
+                      <MapPin size={16} color={theme.textSecondary} />
+                      <Text style={[styles.detailText, { color: theme.textPrimary }]}>{booking.location}</Text>
                     </View>
 
                     {booking.notes && (
                       <View style={styles.notesContainer}>
-                        <Text style={styles.notesText}>
+                        <Text style={[styles.notesText, { color: theme.textPrimary }]}>
                           <Text style={styles.notesLabel}>Notes: </Text>
                           {booking.notes}
                         </Text>
@@ -221,8 +223,8 @@ export const BookingsScreen: React.FC = () => {
                         style={styles.actionButton}
                         onPress={() => handleBookingAction('contact', booking.id)}
                       >
-                        <Phone size={16} color="#374151" />
-                        <Text style={styles.actionButtonText}>Call</Text>
+                        <Phone size={16} color={theme.textPrimary} />
+                        <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Call</Text>
                       </Button>
                       <Button
                         variant="outline"
@@ -230,8 +232,8 @@ export const BookingsScreen: React.FC = () => {
                         style={styles.actionButton}
                         onPress={() => handleBookingAction('contact', booking.id)}
                       >
-                        <MessageCircle size={16} color="#374151" />
-                        <Text style={styles.actionButtonText}>Chat</Text>
+                        <MessageCircle size={16} color={theme.textPrimary} />
+                        <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Chat</Text>
                       </Button>
                     </View>
                   )}

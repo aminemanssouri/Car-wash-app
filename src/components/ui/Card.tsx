@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, ViewStyle, StyleSheet } from 'react-native';
+import { View, ViewStyle, StyleSheet, StyleProp } from 'react-native';
+import { useThemeColors } from '../../lib/theme';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Card: React.FC<CardProps> = ({ children, style }) => {
+  const theme = useThemeColors();
   return (
-    <View style={[styles.card, style]}>
+    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }, style]}>
       {children}
     </View>
   );

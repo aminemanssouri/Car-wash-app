@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, Text, PressableProps, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { useThemeColors } from '../../lib/theme';
 
 type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
 type ButtonSize = 'default' | 'sm' | 'lg' | 'icon';
@@ -18,6 +19,7 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
+  const theme = useThemeColors();
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       flexDirection: 'row',
@@ -30,18 +32,18 @@ export function Button({
     // Variant styles
     switch (variant) {
       case 'default':
-        baseStyle.backgroundColor = '#3b82f6';
+        baseStyle.backgroundColor = theme.accent;
         break;
       case 'destructive':
         baseStyle.backgroundColor = '#ef4444';
         break;
       case 'outline':
-        baseStyle.backgroundColor = 'white';
+        baseStyle.backgroundColor = theme.card;
         baseStyle.borderWidth = 1;
-        baseStyle.borderColor = '#d1d5db';
+        baseStyle.borderColor = theme.cardBorder as string;
         break;
       case 'secondary':
-        baseStyle.backgroundColor = '#f3f4f6';
+        baseStyle.backgroundColor = theme.isDark ? '#1f2937' : '#f3f4f6';
         break;
       case 'ghost':
         baseStyle.backgroundColor = 'transparent';
@@ -96,10 +98,10 @@ export function Button({
       case 'outline':
       case 'secondary':
       case 'ghost':
-        baseTextStyle.color = '#111827';
+        baseTextStyle.color = theme.textPrimary;
         break;
       case 'link':
-        baseTextStyle.color = '#3b82f6';
+        baseTextStyle.color = theme.accent;
         baseTextStyle.textDecorationLine = 'underline';
         break;
     }

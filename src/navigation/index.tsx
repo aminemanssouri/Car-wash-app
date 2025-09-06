@@ -1,8 +1,9 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationLightTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, Calendar, User, Settings, Wrench } from 'lucide-react-native';
+import { useThemeColors } from '../lib/theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import BookingsScreen from '../screens/BookingsScreen';
@@ -18,11 +19,14 @@ import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HelpScreen from '../screens/HelpScreen';
 import AddressesScreen from '../screens/AddressesScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import ServiceWorkersScreen from '../screens/ServiceWorkersScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
+  const theme = useThemeColors();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -43,9 +47,13 @@ function TabNavigator() {
 
           return IconComponent ? <IconComponent size={size} color={color} /> : null;
         },
-        tabBarActiveTintColor: '#3b82f6',
-        tabBarInactiveTintColor: '#6b7280',
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textSecondary,
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.card,
+          borderTopColor: theme.cardBorder,
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -58,8 +66,9 @@ function TabNavigator() {
 }
 
 export default function Navigation() {
+  const theme = useThemeColors();
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={theme.isDark ? NavigationDarkTheme : NavigationLightTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ presentation: 'modal' }} />
@@ -71,6 +80,8 @@ export default function Navigation() {
         <Stack.Screen name="Help" component={HelpScreen} />
         <Stack.Screen name="Addresses" component={AddressesScreen} />
         <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="ServiceWorkers" component={ServiceWorkersScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

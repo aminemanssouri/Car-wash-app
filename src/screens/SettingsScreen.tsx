@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import {
   ArrowLeft,
@@ -20,9 +20,12 @@ import { Card } from '../components/ui/Card';
 import { Switch } from '../components/ui/Switch';
 import { Separator } from '../components/ui/Separator';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeColors, useThemeMode } from '../lib/theme';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const theme = useThemeColors();
+  const { mode, setMode } = useThemeMode();
   const [notifications, setNotifications] = useState({
     bookingUpdates: true,
     workerMessages: true,
@@ -30,7 +33,6 @@ export const SettingsScreen: React.FC = () => {
     reminders: true,
   });
   const [language, setLanguage] = useState('en');
-  const [theme, setTheme] = useState('light');
 
   const handleNotificationChange = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -41,8 +43,16 @@ export const SettingsScreen: React.FC = () => {
   };
 
   const handleThemePress = () => {
-    Alert.alert('Theme', 'Theme selection coming soon');
+    // Cycle through modes: system -> light -> dark -> system
+    const next = mode === 'system' ? 'light' : mode === 'light' ? 'dark' : 'system';
+    setMode(next as any);
   };
+
+  const currentThemeLabel = useMemo(() => {
+    if (mode === 'system') return 'System';
+    if (mode === 'light') return 'Light';
+    return 'Dark';
+  }, [mode]);
 
   interface SettingItem {
     icon: any;
@@ -93,11 +103,11 @@ export const SettingsScreen: React.FC = () => {
           showArrow: true,
         },
         {
-          icon: theme === 'light' ? Sun : Moon,
+          icon: theme.isDark ? Moon : Sun,
           label: 'Theme',
           description: 'Choose your app appearance',
           action: handleThemePress,
-          value: 'Light',
+          value: currentThemeLabel,
           showArrow: true,
         },
       ],
@@ -194,25 +204,25 @@ export const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Button
           variant="ghost"
           size="icon"
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textPrimary} />
         </Button>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Settings</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {settingSections.map((section, sectionIndex) => (
           <View key={sectionIndex} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <Card style={styles.sectionCard}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{section.title}</Text>
+            <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
               {section.items.map((item, itemIndex) => (
                 <View key={itemIndex}>
                   <Pressable
@@ -220,17 +230,17 @@ export const SettingsScreen: React.FC = () => {
                     onPress={item.action}
                   >
                     <View style={styles.settingIcon}>
-                      <item.icon size={20} color="#3b82f6" />
+                      <item.icon size={20} color={theme.accent} />
                     </View>
                     <View style={styles.settingContent}>
-                      <Text style={styles.settingLabel}>{item.label}</Text>
-                      <Text style={styles.settingDescription}>{item.description}</Text>
+                      <Text style={[styles.settingLabel, { color: theme.textPrimary }]}>{item.label}</Text>
+                      <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>{item.description}</Text>
                       {item.value && (
-                        <Text style={styles.settingValue}>{item.value}</Text>
+                        <Text style={[styles.settingValue, { color: theme.accent }]}>{item.value}</Text>
                       )}
                     </View>
                     {item.component && <View style={styles.settingComponent}>{item.component}</View>}
-                    {item.showArrow && <ChevronRight size={20} color="#6b7280" style={styles.arrow} />}
+                    {item.showArrow && <ChevronRight size={20} color={theme.textSecondary} style={styles.arrow} />}
                   </Pressable>
                   {itemIndex < section.items.length - 1 && <Separator />}
                 </View>
@@ -240,21 +250,21 @@ export const SettingsScreen: React.FC = () => {
         ))}
 
         {/* Sign Out Button */}
-        <Card style={styles.signOutCard}>
+        <Card style={[styles.signOutCard, { backgroundColor: theme.card }]}>
           <Button
             variant="ghost"
             style={styles.signOutButton}
             onPress={handleSignOut}
           >
             <LogOut size={20} color="#ef4444" />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={[styles.signOutText, { color: '#ef4444' }]}>Sign Out</Text>
           </Button>
         </Card>
 
         {/* App Version */}
         <View style={styles.appVersion}>
-          <Text style={styles.appVersionText}>Car Wash App</Text>
-          <Text style={styles.appVersionText}>Version 1.0.0</Text>
+          <Text style={[styles.appVersionText, { color: theme.textSecondary }]}>Car Wash App</Text>
+          <Text style={[styles.appVersionText, { color: theme.textSecondary }]}>Version 1.0.0</Text>
         </View>
       </ScrollView>
     </View>

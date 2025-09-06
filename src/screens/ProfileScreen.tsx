@@ -6,9 +6,11 @@ import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Separator } from '../components/ui/Separator';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeColors } from '../lib/theme';
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
+  const theme = useThemeColors();
 
   // Mock user data - in a real app, this would come from authentication context
   const user = {
@@ -33,28 +35,28 @@ export const ProfileScreen: React.FC = () => {
 
   if (isGuest) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.bg }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }] }>
           <Button
             variant="ghost"
             size="icon"
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-            <ArrowLeft size={20} color="#374151" />
+            <ArrowLeft size={20} color={theme.textPrimary} />
           </Button>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Profile</Text>
         </View>
 
         <View style={styles.content}>
           {/* Guest State */}
           <Card style={styles.guestCard}>
             <View style={styles.guestIcon}>
-              <User size={32} color="#6b7280" />
+              <User size={32} color={theme.textSecondary} />
             </View>
-            <Text style={styles.guestTitle}>Welcome, Guest!</Text>
-            <Text style={styles.guestSubtitle}>
+            <Text style={[styles.guestTitle, { color: theme.textPrimary }]}>Welcome, Guest!</Text>
+            <Text style={[styles.guestSubtitle, { color: theme.textSecondary }]}>
               Sign in or create an account to access your profile and booking history
             </Text>
 
@@ -63,7 +65,7 @@ export const ProfileScreen: React.FC = () => {
                 <Text style={styles.signInButtonText}>Sign In</Text>
               </Button>
               <Button onPress={handleSignup} variant="outline" style={styles.createAccountButton}>
-                <Text style={styles.createAccountButtonText}>Create Account</Text>
+                <Text style={[styles.createAccountButtonText, { color: theme.textPrimary }]}>Create Account</Text>
               </Button>
             </View>
           </Card>
@@ -73,21 +75,21 @@ export const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }] }>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }] }>
         <Button
           variant="ghost"
           size="icon"
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textPrimary} />
         </Button>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Profile</Text>
         <View style={styles.headerActions}>
           <Button variant="ghost" size="icon" style={styles.editButton}>
-            <Edit size={20} color="#374151" />
+            <Edit size={20} color={theme.textPrimary} />
           </Button>
         </View>
       </View>
@@ -102,41 +104,41 @@ export const ProfileScreen: React.FC = () => {
               fallback={user.name.split(' ').map(n => n[0]).join('')}
             />
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.memberSince}>Member since {user.joinDate}</Text>
+              <Text style={[styles.userName, { color: theme.textPrimary }]}>{user.name}</Text>
+              <Text style={[styles.memberSince, { color: theme.textSecondary }]}>Member since {user.joinDate}</Text>
             </View>
           </View>
         </Card>
 
         {/* Contact Information */}
         <Card style={styles.contactCard}>
-          <Text style={styles.sectionTitle}>Contact Information</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Contact Information</Text>
           <View style={styles.contactList}>
             <View style={styles.contactItem}>
-              <Mail size={20} color="#6b7280" />
+              <Mail size={20} color={theme.textSecondary} />
               <View style={styles.contactDetails}>
-                <Text style={styles.contactLabel}>Email</Text>
-                <Text style={styles.contactValue}>{user.email}</Text>
+                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>Email</Text>
+                <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.email}</Text>
               </View>
             </View>
 
             <Separator style={styles.contactSeparator} />
 
             <View style={styles.contactItem}>
-              <Phone size={20} color="#6b7280" />
+              <Phone size={20} color={theme.textSecondary} />
               <View style={styles.contactDetails}>
-                <Text style={styles.contactLabel}>Phone</Text>
-                <Text style={styles.contactValue}>{user.phone}</Text>
+                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>Phone</Text>
+                <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.phone}</Text>
               </View>
             </View>
 
             <Separator style={styles.contactSeparator} />
 
             <View style={styles.contactItem}>
-              <MapPin size={20} color="#6b7280" />
+              <MapPin size={20} color={theme.textSecondary} />
               <View style={styles.contactDetails}>
-                <Text style={styles.contactLabel}>Location</Text>
-                <Text style={styles.contactValue}>{user.location}</Text>
+                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>Location</Text>
+                <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.location}</Text>
               </View>
             </View>
           </View>
@@ -144,13 +146,13 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Account Actions */}
         <Card style={styles.actionsCard}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Account</Text>
           <View style={styles.actionsList}>
             <Button variant="ghost" style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Edit Profile</Text>
+              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Edit Profile</Text>
             </Button>
             <Button variant="ghost" style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Change Password</Text>
+              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Change Password</Text>
             </Button>
             <Button variant="ghost" style={styles.actionButton}>
               <Text style={[styles.actionButtonText, styles.destructiveText]}>Sign Out</Text>

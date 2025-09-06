@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useThemeColors } from '../lib/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Wrench, Sparkles, Droplets, Brush, SprayCan } from 'lucide-react-native';
@@ -19,12 +20,13 @@ const SERVICES = [
 export default function ServicesScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const theme = useThemeColors();
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#111827' }}>Services</Text>
-        <Text style={{ marginTop: 4, color: '#6b7280' }}>Choose a service that fits your car</Text>
+        <Text style={{ fontSize: 22, fontWeight: '700', color: theme.textPrimary }}>Services</Text>
+        <Text style={{ marginTop: 4, color: theme.textSecondary }}>Choose a service that fits your car</Text>
       </View>
 
       <ScrollView
@@ -35,12 +37,12 @@ export default function ServicesScreen() {
           <Pressable
             key={key}
             style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: theme.card,
               borderRadius: 12,
               padding: 14,
               marginBottom: 12,
               borderWidth: 1,
-              borderColor: '#e5e7eb',
+              borderColor: theme.cardBorder,
               shadowColor: '#000',
               shadowOpacity: 0.05,
               shadowRadius: 8,
@@ -53,19 +55,19 @@ export default function ServicesScreen() {
                   width: 40,
                   height: 40,
                   borderRadius: 20,
-                  backgroundColor: '#eff6ff',
+                  backgroundColor: theme.surface,
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginRight: 12,
                 }}
               >
-                <Icon color="#2563eb" size={20} />
+                <Icon color={theme.accent} size={20} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>{title}</Text>
-                <Text style={{ marginTop: 2, color: '#6b7280' }}>{desc}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>{title}</Text>
+                <Text style={{ marginTop: 2, color: theme.textSecondary }}>{desc}</Text>
               </View>
-              <Text style={{ fontWeight: '700', color: '#2563eb' }}>{price} MAD</Text>
+              <Text style={{ fontWeight: '700', color: theme.accent }}>{price} MAD</Text>
             </View>
             <View style={{ marginTop: 12 }}>
               <Button onPress={() => (navigation as any).navigate('ServiceDetail', { serviceKey: key })}>

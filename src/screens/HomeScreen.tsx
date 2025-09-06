@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Pressable, Dimensions, useWindowDimensions, Alert } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, TextInput, Pressable, Dimensions, useWindowDimensions, Alert, FlatList, ViewToken } from 'react-native';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -8,11 +8,13 @@ import { User, Bell, Search, Navigation } from 'lucide-react-native';
 import LeafletMap from '../components/LeafletMap';
 import { Button } from '../components/ui/Button';
 import { mockWorkers, Worker } from '../data/workers';
+import { useThemeColors } from '../lib/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
+  const theme = useThemeColors();
   const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   // Leave room (≈56px) for the stacked top-right buttons and margins
@@ -20,6 +22,17 @@ export default function HomeScreen() {
   const [centerOn, setCenterOn] = useState<{ latitude: number; longitude: number; zoom?: number } | null>(null);
   const [myLocation, setMyLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locating, setLocating] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const filteredWorkers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return mockWorkers;
+    return mockWorkers.filter((w) => {
+      const nameMatch = w.name.toLowerCase().includes(q);
+      const serviceMatch = (w.services || []).some((s) => s.toLowerCase().includes(q));
+      return nameMatch || serviceMatch;
+    });
+  }, [query]);
 
   const renderWorkerMarker = (worker: Worker) => (
     <Pressable
@@ -35,34 +48,34 @@ export default function HomeScreen() {
       onPress={() => setSelectedWorker(selectedWorker === worker.id ? null : worker.id)}
     >
       <View style={[styles.avatar, selectedWorker === worker.id && styles.selectedAvatar]}>
-        <View style={styles.avatarPlaceholder}>
+        <View style={[styles.avatarPlaceholder, { backgroundColor: theme.accent, borderColor: theme.card }]}>
           <Text style={styles.avatarText}>{worker.name.charAt(0)}</Text>
         </View>
-        <View style={styles.onlineIndicator} />
+        <View style={[styles.onlineIndicator, { borderColor: theme.card }]} />
       </View>
 
       {selectedWorker === worker.id && (
-        <View style={styles.workerPopup}>
+        <View style={[styles.workerPopup, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.popupHeader}>
-            <View style={styles.avatarSmall}>
+            <View style={[styles.avatarSmall, { backgroundColor: theme.accent, borderColor: theme.card }]}>
               <Text style={styles.avatarTextSmall}>{worker.name.charAt(0)}</Text>
             </View>
             <View style={styles.workerInfo}>
-              <Text style={styles.workerName} numberOfLines={1}>{worker.name}</Text>
-              <Text style={styles.workerSpecialty}>{worker.services[0]}</Text>
+              <Text style={[styles.workerName, { color: theme.textPrimary }]} numberOfLines={1}>{worker.name}</Text>
+              <Text style={[styles.workerSpecialty, { color: theme.textSecondary }]}>{worker.services[0]}</Text>
             </View>
           </View>
           
           <View style={styles.popupDetails}>
             <View style={styles.ratingContainer}>
               <Text style={styles.star}>★</Text>
-              <Text style={styles.rating}>{worker.rating} ({worker.reviewCount})</Text>
+              <Text style={[styles.rating, { color: theme.textSecondary }]}>{worker.rating} ({worker.reviewCount})</Text>
             </View>
-            <Text style={styles.distance}>0.5 km away</Text>
+            <Text style={[styles.distance, { color: theme.textSecondary }]}>0.5 km away</Text>
           </View>
           
           <View style={styles.popupFooter}>
-            <Text style={styles.price}>{worker.price} MAD</Text>
+            <Text style={[styles.price, { color: theme.accent }]}>{worker.price} MAD</Text>
             <Button 
               size="sm" 
               onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
@@ -71,19 +84,19 @@ export default function HomeScreen() {
             </Button>
           </View>
           
-          <View style={styles.popupArrow} />
+          <View style={[styles.popupArrow, { borderTopColor: theme.card }]} />
         </View>
       )}
     </Pressable>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Interactive Map (Leaflet + OSM) */}
       <View style={styles.mapContainer}>
         <LeafletMap
           initialRegion={{ latitude: 31.6295, longitude: -7.9811, zoom: 13 }}
-          markers={mockWorkers.map((w) => ({
+          markers={filteredWorkers.map((w) => ({
             id: w.id,
             latitude: w.location.latitude,
             longitude: w.location.longitude,
@@ -91,36 +104,64 @@ export default function HomeScreen() {
             subtitle: w.services?.[0],
             price: w.price,
           }))}
-          onMarkerPress={(id) => setSelectedWorker(selectedWorker === id ? null : id)}
+          onMarkerPress={(id) => {
+            const next = selectedWorker === id ? null : id;
+            setSelectedWorker(next);
+            const w = mockWorkers.find(m => m.id === id);
+            if (w) {
+              setCenterOn(null);
+              const coords = { latitude: w.location.latitude, longitude: w.location.longitude, zoom: 15 };
+              setTimeout(() => setCenterOn(coords), 0);
+            }
+          }}
           onBookNow={(id) => navigation.navigate('Booking', { workerId: id })}
           centerOn={centerOn}
           myLocation={myLocation}
+          selectedId={selectedWorker}
+          darkMode={theme.isDark}
         />
       </View>
 
       {/* Floating search bar */}
-      <View style={[styles.searchContainer, { width: searchWidth }]}>
-        <Search color="#6b7280" size={16} style={styles.searchIcon} />
+      <View style={[styles.searchContainer, { width: searchWidth, backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+        <Search color={theme.textSecondary} size={16} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: theme.textPrimary }]}
           placeholder="Search for car wash services…"
-          placeholderTextColor="#6b7280"
+          placeholderTextColor={theme.textSecondary}
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+          onSubmitEditing={() => {
+            const first = filteredWorkers[0];
+            if (first) {
+              setSelectedWorker(first.id);
+              const coords = { latitude: first.location.latitude, longitude: first.location.longitude, zoom: 15 };
+              setCenterOn(null);
+              setTimeout(() => setCenterOn(coords), 0);
+            }
+          }}
         />
+        {query.length > 0 && (
+          <Pressable onPress={() => setQuery('')} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 16 }}>✕</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Top right buttons */}
       <View style={styles.topButtons}>
-        <Pressable style={styles.floatingButton} onPress={() => Alert.alert('Notifications', 'Coming soon') }>
-          <Bell color="#374151" size={20} />
+        <Pressable style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('Notifications') }>
+          <Bell color={theme.textPrimary} size={20} />
         </Pressable>
         <Pressable 
-          style={styles.floatingButton}
+          style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
           onPress={() => (navigation as any).navigate('Profile')}
         >
-          <User color="#374151" size={20} />
+          <User color={theme.textPrimary} size={20} />
         </Pressable>
         <Pressable 
-          style={styles.floatingButton}
+          style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
           onPress={async () => {
             if (locating) return;
             try {
@@ -147,62 +188,81 @@ export default function HomeScreen() {
             }
           }}
         >
-          <Navigation color="#374151" size={20} />
+          <Navigation color={theme.textPrimary} size={20} />
         </Pressable>
       </View>
 
       {/* GPS recenter button moved into topButtons above */}
 
-      {/* Worker carousel */}
+      {/* Worker full-width horizontal pager */}
       <View style={styles.carouselContainer}>
-        <ScrollView 
-          horizontal 
+        <FlatList
+          data={filteredWorkers}
+          keyExtractor={(item) => item.id}
+          horizontal
+          pagingEnabled
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.carouselContent}
-        >
-          {mockWorkers.map((worker: Worker) => (
-            <Pressable
-              key={worker.id}
-              style={[
-                styles.workerCard,
-                selectedWorker === worker.id && styles.selectedCard,
-              ]}
-              onPress={() => navigation.navigate('WorkerDetail', { workerId: worker.id })}
-            >
-              <View style={styles.cardContent}>
-                <View style={styles.cardAvatar}>
-                  <Text style={styles.cardAvatarText}>{worker.name.charAt(0)}</Text>
-                </View>
-                
-                <View style={styles.cardInfo}>
-                  <Text style={styles.cardName} numberOfLines={1}>{worker.name}</Text>
-                  <Text style={styles.workerSpecialty}>{worker.services[0]}</Text>
+          snapToAlignment="start"
+          decelerationRate="fast"
+          getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
+          renderItem={({ item: worker }) => (
+            <View style={{ width: screenWidth }}>
+              <Pressable
+                style={[
+                  styles.workerCardFull,
+                  { backgroundColor: theme.card, borderColor: theme.cardBorder },
+                  selectedWorker === worker.id && { borderColor: theme.accent },
+                ]}
+                onPress={() => navigation.navigate('WorkerDetail', { workerId: worker.id })}
+              >
+                <View style={styles.cardContent}>
+                  <View style={[styles.cardAvatar, { backgroundColor: theme.accent, borderColor: theme.card }]}>
+                    <Text style={styles.cardAvatarText}>{worker.name.charAt(0)}</Text>
+                  </View>
                   
-                  <View style={styles.cardDetails}>
-                    <View style={styles.cardRating}>
-                      <Text style={styles.cardStar}>★</Text>
-                      <Text style={styles.cardRatingText}>
-                        {worker.rating} ({worker.reviewCount})
-                      </Text>
+                  <View style={styles.cardInfo}>
+                    <Text style={[styles.cardName, { color: theme.textPrimary }]} numberOfLines={1}>{worker.name}</Text>
+                    <Text style={[styles.workerSpecialty, { color: theme.textSecondary }]}>{worker.services[0]}</Text>
+                    
+                    <View style={styles.cardDetails}>
+                      <View style={styles.cardRating}>
+                        <Text style={styles.cardStar}>★</Text>
+                        <Text style={[styles.cardRatingText, { color: theme.textSecondary }]}>
+                          {worker.rating} ({worker.reviewCount})
+                        </Text>
+                      </View>
+                      <Text style={[styles.cardDivider, { color: theme.cardBorder }]}>•</Text>
+                      <Text style={[styles.cardDistance, { color: theme.textSecondary }]}>0.5 km away</Text>
                     </View>
-                    <Text style={styles.cardDivider}>•</Text>
-                    <Text style={styles.cardDistance}>0.5 km away</Text>
+                  </View>
+                  
+                  <View style={styles.cardActions}>
+                    <Text style={[styles.cardPrice, { color: theme.accent }]}>{worker.price} MAD</Text>
+                    <Button 
+                      size="sm" 
+                      onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
+                    >
+                      Book
+                    </Button>
                   </View>
                 </View>
-                
-                <View style={styles.cardActions}>
-                  <Text style={styles.cardPrice}>{worker.price} MAD</Text>
-                  <Button 
-                    size="sm" 
-                    onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
-                  >
-                    Book
-                  </Button>
-                </View>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
+              </Pressable>
+            </View>
+          )}
+          onViewableItemsChanged={useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
+            if (viewableItems && viewableItems.length > 0) {
+              const first = viewableItems[0];
+              const worker = first.item as Worker;
+              if (worker?.id) {
+                setSelectedWorker(worker.id);
+                setCenterOn(null);
+                const coords = { latitude: worker.location.latitude, longitude: worker.location.longitude, zoom: 15 };
+                setTimeout(() => setCenterOn(coords), 0);
+              }
+            }
+          }).current}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
+        />
       </View>
     </View>
   );
@@ -320,7 +380,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 4},
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 8,
@@ -513,6 +573,19 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(59, 130, 246, 0.3)',
     backgroundColor: 'white',
     shadowOpacity: 0.15,
+  },
+  workerCardFull: {
+    marginHorizontal: 12,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
   },
   cardContent: {
     flexDirection: 'row',

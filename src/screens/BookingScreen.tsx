@@ -14,6 +14,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { RadioGroup, RadioGroupItem } from '../components/ui/RadioGroup';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
+import { useThemeColors } from '../lib/theme';
 
 // Mock worker data
 const mockWorkers = {
@@ -72,6 +73,7 @@ export default function BookingScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const theme = useThemeColors();
   const { workerId = "1" } = (route.params as { workerId?: string }) || {};
 
   // Get today's date for min date input
@@ -163,16 +165,16 @@ export default function BookingScreen() {
   }, [formData.date]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Book Service</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Book Service</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.content]} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {/* Selected Worker */}
         <Card style={styles.workerCard}>
           <View style={styles.workerInfo}>
@@ -182,8 +184,8 @@ export default function BookingScreen() {
               size={48}
             />
             <View style={styles.workerDetails}>
-              <Text style={styles.workerName}>{worker?.name}</Text>
-              <Text style={styles.workerRole}>Selected Car Washer</Text>
+              <Text style={[styles.workerName, { color: theme.textPrimary }]}>{worker?.name}</Text>
+              <Text style={[styles.workerRole, { color: theme.textSecondary }]}>Selected Car Washer</Text>
             </View>
             <Badge variant="secondary" style={styles.priceBadge}>
               Starting at {basePrice} MAD
@@ -194,8 +196,8 @@ export default function BookingScreen() {
         {/* Location */}
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <MapPin size={20} color="#3b82f6" />
-            <Label style={styles.sectionTitle}>Service Location</Label>
+            <MapPin size={20} color={theme.accent} />
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Service Location</Label>
           </View>
           <Input
             value={formData.location}
@@ -203,7 +205,7 @@ export default function BookingScreen() {
             placeholder="Enter your address"
             style={styles.input}
           />
-          <Text style={styles.helperText}>
+          <Text style={[styles.helperText, { color: theme.textSecondary }]}>
             The worker will come to this location to wash your car
           </Text>
         </Card>
@@ -211,22 +213,22 @@ export default function BookingScreen() {
         {/* Date & Time */}
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <Calendar size={20} color="#3b82f6" />
-            <Label style={styles.sectionTitle}>Date & Time</Label>
+            <Calendar size={20} color={theme.accent} />
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Date & Time</Label>
           </View>
 
           <View style={styles.dateTimeRow}>
             <View style={styles.dateTimeItem}>
-              <Label style={styles.fieldLabel}>Date *</Label>
-              <Pressable onPress={() => setShowDatePicker(true)} style={styles.dateField}>
-                <Text style={[styles.dateFieldText, !formData.date && { color: '#9ca3af' }]}>
+              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>Date *</Label>
+              <Pressable onPress={() => setShowDatePicker(true)} style={[styles.dateField, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                <Text style={[styles.dateFieldText, { color: theme.textPrimary }, !formData.date && { color: theme.textSecondary }]}>
                   {formattedDate || 'Select a date'}
                 </Text>
               </Pressable>
             </View>
 
             <View style={styles.dateTimeItem}>
-              <Label style={styles.fieldLabel}>Time *</Label>
+              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>Time *</Label>
               <Select
                 value={formData.time}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, time: value }))}
@@ -241,8 +243,8 @@ export default function BookingScreen() {
         {/* Car Type */}
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <Car size={20} color="#3b82f6" />
-            <Label style={styles.sectionTitle}>Vehicle Type *</Label>
+            <Car size={20} color={theme.accent} />
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Vehicle Type *</Label>
           </View>
 
           <RadioGroup
@@ -256,14 +258,15 @@ export default function BookingScreen() {
                 onPress={() => setFormData((prev) => ({ ...prev, carType: car.id }))}
                 style={[
                   styles.carTypeOption,
-                  formData.carType === car.id && { borderColor: '#3b82f6', backgroundColor: '#eff6ff' },
+                  { borderColor: theme.cardBorder, backgroundColor: theme.card },
+                  formData.carType === car.id && { borderColor: theme.accent, backgroundColor: theme.surface },
                 ]}
               >
                 <View style={styles.carTypeLeft}>
                   <RadioGroupItem value={car.id} id={car.id} />
-                  <Text style={styles.carTypeName}>{car.name}</Text>
+                  <Text style={[styles.carTypeName, { color: theme.textPrimary }]}>{car.name}</Text>
                 </View>
-                <Text style={styles.carTypePrice}>
+                <Text style={[styles.carTypePrice, { color: theme.textSecondary }]}>
                   {Math.round(basePrice * car.multiplier)} MAD
                 </Text>
               </Pressable>
@@ -273,7 +276,7 @@ export default function BookingScreen() {
 
         {/* Additional Notes */}
         <Card style={styles.sectionCard}>
-          <Label style={styles.sectionTitle}>Additional Notes (Optional)</Label>
+          <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Additional Notes (Optional)</Label>
           <Textarea
             value={formData.notes}
             onChangeText={(text) => setFormData((prev) => ({ ...prev, notes: text }))}
@@ -286,15 +289,15 @@ export default function BookingScreen() {
         {/* Payment Method */}
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
-            <CreditCard size={20} color="#3b82f6" />
-            <Label style={styles.sectionTitle}>Payment Method</Label>
+            <CreditCard size={20} color={theme.accent} />
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Payment Method</Label>
           </View>
 
           <View style={styles.paymentMethod}>
-            <View style={styles.paymentIndicator} />
+            <View style={[styles.paymentIndicator, { backgroundColor: theme.accent }]} />
             <View style={styles.paymentInfo}>
-              <Text style={styles.paymentTitle}>Cash on Delivery</Text>
-              <Text style={styles.paymentDescription}>
+              <Text style={[styles.paymentTitle, { color: theme.textPrimary }]}>Cash on Delivery</Text>
+              <Text style={[styles.paymentDescription, { color: theme.textSecondary }] }>
                 Pay the worker directly after service completion
               </Text>
             </View>
@@ -302,23 +305,23 @@ export default function BookingScreen() {
         </Card>
 
         {/* Price Summary */}
-        <Card style={styles.priceCard}>
+        <Card style={[styles.priceCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Service Fee:</Text>
-            <Text style={styles.priceValue}>{basePrice} MAD</Text>
+            <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>Service Fee:</Text>
+            <Text style={[styles.priceValue, { color: theme.textPrimary }]}>{basePrice} MAD</Text>
           </View>
           {selectedCarType && selectedCarType.multiplier !== 1 && (
             <View style={styles.priceRow}>
-              <Text style={styles.priceAdjustment}>
+              <Text style={[styles.priceAdjustment, { color: theme.textSecondary }] }>
                 {selectedCarType.name} adjustment:
               </Text>
-              <Text style={styles.priceAdjustment}>×{selectedCarType.multiplier}</Text>
+              <Text style={[styles.priceAdjustment, { color: theme.textSecondary }]}>×{selectedCarType.multiplier}</Text>
             </View>
           )}
-          <View style={styles.priceDivider} />
+          <View style={[styles.priceDivider, { backgroundColor: theme.cardBorder }]} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalValue}>{finalPrice} MAD</Text>
+            <Text style={[styles.totalLabel, { color: theme.textPrimary }]}>Total:</Text>
+            <Text style={[styles.totalValue, { color: theme.accent }]}>{finalPrice} MAD</Text>
           </View>
         </Card>
 
@@ -327,20 +330,20 @@ export default function BookingScreen() {
       {/* Date Picker Modal */}
       <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
-          <Pressable style={styles.modalSheet} onPress={() => {}}>
-            <Text style={styles.modalTitle}>Select a date</Text>
+          <Pressable style={[styles.modalSheet, { backgroundColor: theme.card }]} onPress={() => {}}>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Select a date</Text>
             <ScrollView style={styles.modalList} contentContainerStyle={{ paddingBottom: 8 }}>
               {dateOptions.map((d) => (
                 <Pressable
                   key={d.value}
-                  style={styles.modalItem}
+                  style={[styles.modalItem, { borderBottomColor: theme.cardBorder }]}
                   onPress={() => {
                     setFormData((prev) => ({ ...prev, date: d.value }));
                     setShowDatePicker(false);
                   }}
                 >
-                  <Text style={styles.modalItemDate}>{d.label}</Text>
-                  <Text style={{ color: '#6b7280' }}>{d.value}</Text>
+                  <Text style={[styles.modalItemDate, { color: theme.textPrimary }]}>{d.label}</Text>
+                  <Text style={{ color: theme.textSecondary }}>{d.value}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -352,7 +355,7 @@ export default function BookingScreen() {
       </Modal>
 
       {/* Bottom fixed footer respecting safe area */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }] }>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8), backgroundColor: theme.card, borderTopColor: theme.cardBorder }] }>
         <Button style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Confirm Booking</Text>
         </Button>

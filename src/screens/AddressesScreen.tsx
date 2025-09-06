@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Plus, MoreVertical, Home, Briefcase } from 'lucide-r
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { useThemeColors } from '../lib/theme';
 
 interface Address {
   id: string;
@@ -36,6 +37,7 @@ export default function AddressesScreen() {
   const navigation = useNavigation();
   const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
   const insets = useSafeAreaInsets();
+  const theme = useThemeColors();
 
   const getTypeIcon = (type: Address['type']) => {
     switch (type) {
@@ -112,13 +114,13 @@ export default function AddressesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top','bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top','bottom']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Manage Addresses</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Manage Addresses</Text>
       </View>
 
       <ScrollView
@@ -140,25 +142,25 @@ export default function AddressesScreen() {
             return (
               <Card key={address.id} style={styles.addressCard}>
                 <View style={styles.addressContent}>
-                  <View style={styles.addressIconContainer}>
-                    <IconComponent size={20} color="#3b82f6" />
+                  <View style={[styles.addressIconContainer, { backgroundColor: theme.overlay }]}>
+                    <IconComponent size={20} color={theme.accent} />
                   </View>
                   <View style={styles.addressInfo}>
                     <View style={styles.addressHeader}>
-                      <Text style={styles.addressLabel}>{address.label}</Text>
+                      <Text style={[styles.addressLabel, { color: theme.textPrimary }]}>{address.label}</Text>
                       {address.isDefault && (
-                        <Badge variant="secondary" style={styles.defaultBadge}>
-                          <Text style={styles.defaultBadgeText}>Default</Text>
+                        <Badge variant="secondary" style={[styles.defaultBadge, { backgroundColor: theme.surface }] }>
+                          <Text style={[styles.defaultBadgeText, { color: theme.textPrimary }]}>Default</Text>
                         </Badge>
                       )}
                     </View>
-                    <Text style={styles.addressText}>{address.address}</Text>
+                    <Text style={[styles.addressText, { color: theme.textSecondary }]}>{address.address}</Text>
                   </View>
                   <Pressable 
                     style={styles.moreButton} 
                     onPress={() => showAddressOptions(address)}
                   >
-                    <MoreVertical size={16} color="#6b7280" />
+                    <MoreVertical size={16} color={theme.textSecondary} />
                   </Pressable>
                 </View>
               </Card>
@@ -168,9 +170,9 @@ export default function AddressesScreen() {
 
         {addresses.length === 0 && (
           <View style={styles.emptyState}>
-            <MapPin size={48} color="#9ca3af" style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>No addresses saved</Text>
-            <Text style={styles.emptyDescription}>
+            <MapPin size={48} color={theme.textSecondary} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No addresses saved</Text>
+            <Text style={[styles.emptyDescription, { color: theme.textSecondary }] }>
               Add your frequently used addresses for faster booking
             </Text>
             <Button style={styles.emptyButton} onPress={handleAddNewAddress}>

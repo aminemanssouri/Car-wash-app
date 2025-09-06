@@ -9,6 +9,7 @@ import { Separator } from '../components/ui/Separator';
 import { Switch } from '../components/ui/Switch';
 import { signupValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeColors } from '../lib/theme';
 
 interface SignupFormData {
   name: string;
@@ -25,6 +26,7 @@ export default function SignupScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupType, setSignupType] = useState<'email' | 'phone'>('email');
   const [isLoading, setIsLoading] = useState(false);
+  const theme = useThemeColors();
 
   const { control, handleSubmit, formState: { errors }, watch } = useForm<SignupFormData>({
     defaultValues: {
@@ -72,27 +74,31 @@ export default function SignupScreen() {
     isActive: boolean 
   }) => (
     <Pressable
-      style={[styles.tabButton, isActive && styles.activeTab]}
+      style={[
+        styles.tabButton,
+        { backgroundColor: 'transparent' },
+        isActive && { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+      ]}
       onPress={() => setSignupType(value)}
     >
-      <Icon size={16} color={isActive ? '#3b82f6' : '#6b7280'} />
-      <Text style={[styles.tabText, isActive && styles.activeTabText]}>{label}</Text>
+      <Icon size={16} color={isActive ? theme.accent : theme.textSecondary} />
+      <Text style={[styles.tabText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
     </Pressable>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Button
           variant="ghost"
           size="icon"
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textSecondary} />
         </Button>
-        <Text style={styles.headerTitle}>Sign Up</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Sign Up</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -101,8 +107,8 @@ export default function SignupScreen() {
           <View style={styles.logoContainer}>
             <View style={styles.logo} />
           </View>
-          <Text style={styles.welcomeTitle}>Create Account</Text>
-          <Text style={styles.welcomeSubtitle}>Join us to book professional car wash services</Text>
+          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Create Account</Text>
+          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Join us to book professional car wash services</Text>
         </View>
 
         {/* Signup Form */}
@@ -120,13 +126,13 @@ export default function SignupScreen() {
                 error={errors.name}
               />
               <View style={styles.nameIcon}>
-                <User size={16} color="#6b7280" />
+                <User size={16} color={theme.textSecondary} />
               </View>
             </View>
 
             {/* Signup Type Tabs */}
             <View style={styles.tabsContainer}>
-              <View style={styles.tabsList}>
+              <View style={[styles.tabsList, { backgroundColor: theme.surface }] }>
                 <TabButton 
                   label="Email" 
                   value="email" 
@@ -183,8 +189,8 @@ export default function SignupScreen() {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? 
-                  <EyeOff size={20} color="#6b7280" /> : 
-                  <Eye size={20} color="#6b7280" />
+                  <EyeOff size={20} color={theme.textSecondary} /> : 
+                  <Eye size={20} color={theme.textSecondary} />
                 }
               </Pressable>
             </View>
@@ -209,8 +215,8 @@ export default function SignupScreen() {
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? 
-                  <EyeOff size={20} color="#6b7280" /> : 
-                  <Eye size={20} color="#6b7280" />
+                  <EyeOff size={20} color={theme.textSecondary} /> : 
+                  <Eye size={20} color={theme.textSecondary} />
                 }
               </Pressable>
             </View>
@@ -228,14 +234,14 @@ export default function SignupScreen() {
                   />
                 )}
               />
-              <Text style={styles.termsText}>
+              <Text style={[styles.termsText, { color: theme.textPrimary }]}>
                 I agree to the{' '}
                 <Pressable onPress={() => Alert.alert('Terms', 'Terms of Service')}>
-                  <Text style={styles.termsLink}>Terms of Service</Text>
+                  <Text style={[styles.termsLink, { color: theme.accent }]}>Terms of Service</Text>
                 </Pressable>
                 {' '}and{' '}
                 <Pressable onPress={() => Alert.alert('Privacy', 'Privacy Policy')}>
-                  <Text style={styles.termsLink}>Privacy Policy</Text>
+                  <Text style={[styles.termsLink, { color: theme.accent }]}>Privacy Policy</Text>
                 </Pressable>
               </Text>
             </View>
@@ -253,9 +259,9 @@ export default function SignupScreen() {
 
             {/* Divider */}
             <View style={styles.divider}>
-              <Separator style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <Separator style={styles.dividerLine} />
+              <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
+              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+              <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
             </View>
 
             {/* Continue as Guest */}
@@ -264,15 +270,15 @@ export default function SignupScreen() {
               onPress={handleContinueAsGuest}
               style={styles.guestButton}
             >
-              <Text style={styles.guestButtonText}>Continue as Guest</Text>
+              <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>Continue as Guest</Text>
             </Button>
 
             {/* Sign In Link */}
             <View style={styles.signinContainer}>
-              <Text style={styles.signinText}>
+              <Text style={[styles.signinText, { color: theme.textSecondary }] }>
                 Already have an account?{' '}
                 <Pressable onPress={() => navigation.navigate('Login' as never)}>
-                  <Text style={styles.signinLink}>Sign in</Text>
+                  <Text style={[styles.signinLink, { color: theme.accent }]}>Sign in</Text>
                 </Pressable>
               </Text>
             </View>

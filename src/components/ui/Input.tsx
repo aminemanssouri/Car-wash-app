@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput, TextInputProps, StyleSheet, View, Text } from 'react-native';
+import { useThemeColors } from '../../lib/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -12,12 +13,18 @@ export const Input: React.FC<InputProps> = ({
   style, 
   ...props 
 }) => {
+  const theme = useThemeColors();
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: theme.textPrimary }]}>{label}</Text>}
       <TextInput
-        style={[styles.input, error && styles.inputError, style]}
-        placeholderTextColor="#9ca3af"
+        style={[
+          styles.input,
+          { borderColor: theme.cardBorder as string, backgroundColor: theme.card, color: theme.textPrimary },
+          error && styles.inputError,
+          style,
+        ]}
+        placeholderTextColor={theme.textSecondary}
         {...props}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}

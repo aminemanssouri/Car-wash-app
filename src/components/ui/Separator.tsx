@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, ViewStyle, StyleSheet } from 'react-native';
+import { View, ViewStyle, StyleSheet, StyleProp } from 'react-native';
+import { useThemeColors } from '../../lib/theme';
 
 interface SeparatorProps {
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   orientation?: 'horizontal' | 'vertical';
 }
 
@@ -10,8 +11,10 @@ export const Separator: React.FC<SeparatorProps> = ({
   style, 
   orientation = 'horizontal' 
 }) => {
+  const theme = useThemeColors();
   const separatorStyle = [
     styles.separator,
+    { backgroundColor: theme.cardBorder },
     orientation === 'horizontal' ? styles.horizontal : styles.vertical,
     style
   ];

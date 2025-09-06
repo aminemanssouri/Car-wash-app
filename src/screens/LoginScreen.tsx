@@ -8,6 +8,7 @@ import { FormInput } from '../components/ui/FormInput';
 import { Separator } from '../components/ui/Separator';
 import { loginValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
+import { useThemeColors } from '../lib/theme';
 
 interface LoginFormData {
   email: string;
@@ -20,6 +21,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
   const [isLoading, setIsLoading] = useState(false);
+  const theme = useThemeColors();
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     defaultValues: {
@@ -52,27 +54,31 @@ export default function LoginScreen() {
     isActive: boolean 
   }) => (
     <Pressable
-      style={[styles.tabButton, isActive && styles.activeTab]}
+      style={[
+        styles.tabButton,
+        { backgroundColor: 'transparent' },
+        isActive && { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+      ]}
       onPress={() => setLoginType(value)}
     >
-      <Icon size={16} color={isActive ? '#3b82f6' : '#6b7280'} />
-      <Text style={[styles.tabText, isActive && styles.activeTabText]}>{label}</Text>
+      <Icon size={16} color={isActive ? theme.accent : theme.textSecondary} />
+      <Text style={[styles.tabText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
     </Pressable>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Button
           variant="ghost"
           size="icon"
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textSecondary} />
         </Button>
-        <Text style={styles.headerTitle}>Sign In</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Sign In</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -81,8 +87,8 @@ export default function LoginScreen() {
           <View style={styles.logoContainer}>
             <View style={styles.logo} />
           </View>
-          <Text style={styles.welcomeTitle}>Welcome Back</Text>
-          <Text style={styles.welcomeSubtitle}>Sign in to book your car wash service</Text>
+          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Welcome Back</Text>
+          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Sign in to book your car wash service</Text>
         </View>
 
         {/* Login Form */}
@@ -90,7 +96,7 @@ export default function LoginScreen() {
           <View style={styles.form}>
             {/* Login Type Tabs */}
             <View style={styles.tabsContainer}>
-              <View style={styles.tabsList}>
+              <View style={[styles.tabsList, { backgroundColor: theme.surface }] }>
                 <TabButton 
                   label="Email" 
                   value="email" 
@@ -147,8 +153,8 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? 
-                  <EyeOff size={20} color="#6b7280" /> : 
-                  <Eye size={20} color="#6b7280" />
+                  <EyeOff size={20} color={theme.textSecondary} /> : 
+                  <Eye size={20} color={theme.textSecondary} />
                 }
               </Pressable>
             </View>
@@ -156,7 +162,7 @@ export default function LoginScreen() {
             {/* Forgot Password */}
             <View style={styles.forgotPasswordContainer}>
               <Pressable onPress={() => Alert.alert('Forgot Password', 'Password reset coming soon')}>
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
               </Pressable>
             </View>
 
@@ -173,9 +179,9 @@ export default function LoginScreen() {
 
             {/* Divider */}
             <View style={styles.divider}>
-              <Separator style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <Separator style={styles.dividerLine} />
+              <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
+              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+              <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
             </View>
 
             {/* Continue as Guest */}
@@ -184,15 +190,15 @@ export default function LoginScreen() {
               onPress={handleContinueAsGuest}
               style={styles.guestButton}
             >
-              <Text style={styles.guestButtonText}>Continue as Guest</Text>
+              <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>Continue as Guest</Text>
             </Button>
 
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>
+              <Text style={[styles.signupText, { color: theme.textSecondary }] }>
                 Don't have an account?{' '}
                 <Pressable onPress={() => navigation.navigate('Signup' as never)}>
-                  <Text style={styles.signupLink}>Sign up</Text>
+                  <Text style={[styles.signupLink, { color: theme.accent }]}>Sign up</Text>
                 </Pressable>
               </Text>
             </View>

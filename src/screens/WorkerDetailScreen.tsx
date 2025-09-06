@@ -10,6 +10,7 @@ import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { useThemeColors } from '../lib/theme';
 
 // Mock worker data - matches original app structure
 const mockWorkerData = {
@@ -79,6 +80,7 @@ export default function WorkerDetailScreen() {
   const route = useRoute();
   const { workerId } = route.params as { workerId: string };
   const insets = useSafeAreaInsets();
+  const theme = useThemeColors();
 
   const worker = mockWorkerData[workerId as keyof typeof mockWorkerData];
 
@@ -113,13 +115,13 @@ export default function WorkerDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top','bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top','bottom']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color="#374151" />
+          <ArrowLeft size={20} color={theme.textSecondary} />
         </Pressable>
-        <Text style={styles.headerTitle}>Worker Profile</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Worker Profile</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -135,12 +137,12 @@ export default function WorkerDetailScreen() {
             <View style={styles.workerInfo}>
               <View style={styles.workerNameRow}>
                 <View style={styles.workerNameContainer}>
-                  <Text style={styles.workerName}>{worker.name}</Text>
+                  <Text style={[styles.workerName, { color: theme.textPrimary }]}>{worker.name}</Text>
                   <View style={styles.ratingRow}>
                     <View style={styles.ratingContainer}>
                       <Star size={16} color="#fbbf24" fill="#fbbf24" />
-                      <Text style={styles.rating}>{worker.rating}</Text>
-                      <Text style={styles.reviewCount}>({worker.reviewCount} reviews)</Text>
+                      <Text style={[styles.rating, { color: theme.textPrimary }]}>{worker.rating}</Text>
+                      <Text style={[styles.reviewCount, { color: theme.textSecondary }]}>({worker.reviewCount} reviews)</Text>
                     </View>
                   </View>
                 </View>
@@ -151,12 +153,12 @@ export default function WorkerDetailScreen() {
 
               <View style={styles.workerStats}>
                 <View style={styles.statItem}>
-                  <MapPin size={16} color="#6b7280" />
-                  <Text style={styles.statText}>{worker.distance} away</Text>
+                  <MapPin size={16} color={theme.textSecondary} />
+                  <Text style={[styles.statText, { color: theme.textSecondary }]}>{worker.distance} away</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Clock size={16} color="#6b7280" />
-                  <Text style={styles.statText}>{worker.estimatedTime}</Text>
+                  <Clock size={16} color={theme.textSecondary} />
+                  <Text style={[styles.statText, { color: theme.textSecondary }]}>{worker.estimatedTime}</Text>
                 </View>
               </View>
             </View>
@@ -166,15 +168,15 @@ export default function WorkerDetailScreen() {
 
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{worker.completedJobs}</Text>
+              <Text style={[styles.statNumber, { color: theme.accent }]}>{worker.completedJobs}</Text>
               <Text style={styles.statLabel}>Jobs Done</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{worker.experience}</Text>
+              <Text style={[styles.statNumber, { color: theme.accent }]}>{worker.experience}</Text>
               <Text style={styles.statLabel}>Experience</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{worker.price} MAD</Text>
+              <Text style={[styles.statNumber, { color: theme.accent }]}>{worker.price} MAD</Text>
               <Text style={styles.statLabel}>Starting Price</Text>
             </View>
           </View>
@@ -182,13 +184,13 @@ export default function WorkerDetailScreen() {
 
         {/* Description */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.description}>{worker.description}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>About</Text>
+          <Text style={[styles.description, { color: theme.textSecondary }]}>{worker.description}</Text>
         </Card>
 
         {/* Specialties */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Specialties</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Specialties</Text>
           <View style={styles.specialtiesContainer}>
             {worker.specialties.map((specialty, index) => (
               <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
@@ -200,27 +202,27 @@ export default function WorkerDetailScreen() {
 
         {/* Reviews */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Recent Reviews</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Recent Reviews</Text>
           <View style={styles.reviewsContainer}>
             {worker.reviews.map((review) => (
-              <View key={review.id} style={styles.reviewItem}>
+              <View key={review.id} style={[styles.reviewItem, { borderBottomColor: theme.cardBorder }]}>
                 <View style={styles.reviewHeader}>
                   <View style={styles.reviewerInfo}>
-                    <Text style={styles.reviewerName}>{review.name}</Text>
+                    <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.name}</Text>
                     <View style={styles.reviewRating}>
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
                           size={12}
-                          color={i < review.rating ? "#fbbf24" : "#d1d5db"}
+                          color={i < review.rating ? "#fbbf24" : theme.cardBorder}
                           fill={i < review.rating ? "#fbbf24" : "none"}
                         />
                       ))}
                     </View>
                   </View>
-                  <Text style={styles.reviewDate}>{review.date}</Text>
+                  <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>{review.date}</Text>
                 </View>
-                <Text style={styles.reviewComment}>{review.comment}</Text>
+                <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>{review.comment}</Text>
               </View>
             ))}
           </View>
@@ -240,18 +242,18 @@ export default function WorkerDetailScreen() {
 
           <View style={styles.secondaryButtons}>
             <Button variant="outline" style={styles.secondaryButton} onPress={handleScheduleLater}>
-              <Calendar size={16} color="#3b82f6" />
-              <Text style={styles.secondaryButtonText}>Schedule Later</Text>
+              <Calendar size={16} color={theme.accent} />
+              <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>Schedule Later</Text>
             </Button>
             <Button variant="outline" style={styles.secondaryButton} onPress={handleChat}>
-              <MessageCircle size={16} color="#3b82f6" />
-              <Text style={styles.secondaryButtonText}>Chat</Text>
+              <MessageCircle size={16} color={theme.accent} />
+              <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>Chat</Text>
             </Button>
           </View>
 
           <Button variant="outline" style={styles.callButton} onPress={handleCall}>
-            <Phone size={16} color="#3b82f6" />
-            <Text style={styles.callButtonText}>Call {worker.phone}</Text>
+            <Phone size={16} color={theme.accent} />
+            <Text style={[styles.callButtonText, { color: theme.accent }]}>Call {worker.phone}</Text>
           </Button>
         </View>
       </ScrollView>
