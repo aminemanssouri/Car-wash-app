@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
-import { ArrowLeft, Eye, EyeOff, Mail, Phone, User } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, Mail, Phone, User, UserCheck, Briefcase } from 'lucide-react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -10,6 +10,7 @@ import { Switch } from '../components/ui/Switch';
 import { signupValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SignupFormData {
   name: string;
@@ -25,6 +26,7 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupType, setSignupType] = useState<'email' | 'phone'>('email');
+  const [role, setRole] = useState<'customer' | 'worker'>('customer');
   const [isLoading, setIsLoading] = useState(false);
   const theme = useThemeColors();
 
@@ -39,9 +41,15 @@ export default function SignupScreen() {
     }
   });
 
+  const { signUp } = useAuth();
+
   const password = watch('password');
 
   const onSubmit = async (data: SignupFormData) => {
+    if (signupType === 'phone') {
+      Alert.alert('Not supported yet', 'Phone-based sign up is not available yet. Please use email.');
+      return;
+    }
     if (data.password !== data.confirmPassword) {
       Alert.alert('Error', "Passwords don't match");
       return;
@@ -53,19 +61,24 @@ export default function SignupScreen() {
     }
 
     setIsLoading(true);
-
-    // Simulate signup process
-    setTimeout(() => {
-      setIsLoading(false);
+    
+    try {
+      const email = data.email;
+      await signUp(email, data.password, data.name, data.phone, role);
       Alert.alert('Success', 'Account created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
-    }, 1500);
+    } catch (error: any) {
+      Alert.alert('Signup Failed', error.message || 'Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleContinueAsGuest = () => {
     navigation.goBack();
   };
+
 
   const TabButton = ({ label, value, icon: Icon, isActive }: { 
     label: string; 
@@ -83,6 +96,25 @@ export default function SignupScreen() {
     >
       <Icon size={16} color={isActive ? theme.accent : theme.textSecondary} />
       <Text style={[styles.tabText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
+    </Pressable>
+  );
+
+  const RoleButton = ({ label, value, icon: Icon, isActive }: { 
+    label: string; 
+    value: 'customer' | 'worker'; 
+    icon: any; 
+    isActive: boolean 
+  }) => (
+    <Pressable
+      style={[
+        styles.roleButton,
+        { backgroundColor: 'transparent', borderColor: theme.cardBorder },
+        isActive && { backgroundColor: theme.accent + '10', borderColor: theme.accent },
+      ]}
+      onPress={() => setRole(value)}
+    >
+      <Icon size={20} color={isActive ? theme.accent : theme.textSecondary} />
+      <Text style={[styles.roleText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
     </Pressable>
   );
 
@@ -107,7 +139,7 @@ export default function SignupScreen() {
           <View style={styles.logoContainer}>
             <View style={styles.logo} />
           </View>
-          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Create Account</Text>
+          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Create {role === 'worker' ? 'Worker' : 'Customer'} Account</Text>
           <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Join us to book professional car wash services</Text>
         </View>
 
@@ -139,12 +171,7 @@ export default function SignupScreen() {
                   icon={Mail} 
                   isActive={signupType === 'email'} 
                 />
-                <TabButton 
-                  label="Phone" 
-                  value="phone" 
-                  icon={Phone} 
-                  isActive={signupType === 'phone'} 
-                />
+                {/* Temporarily disabled phone signup until OTP flow is implemented */}
               </View>
             </View>
 
@@ -171,6 +198,15 @@ export default function SignupScreen() {
                 error={errors.phone}
               />
             )}
+
+            {/* Role selection */}
+            <View style={styles.roleContainer}>
+              <Text style={styles.roleLabel}>I am signing up as</Text>
+              <View style={styles.roleButtons}>
+                <RoleButton label="Customer" value="customer" icon={UserCheck} isActive={role === 'customer'} />
+                <RoleButton label="Worker" value="worker" icon={Briefcase} isActive={role === 'worker'} />
+              </View>
+            </View>
 
             {/* Password Field */}
             <View style={styles.passwordContainer}>
@@ -474,6 +510,35 @@ const styles = StyleSheet.create({
   },
   signinLink: {
     color: '#3b82f6',
+    fontWeight: '500',
+  },
+  roleContainer: {
+    marginBottom: 16,
+  },
+  roleLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#374151',
+  },
+  roleButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  roleText: {
+    fontSize: 14,
     fontWeight: '500',
   },
 });

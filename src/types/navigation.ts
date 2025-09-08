@@ -10,7 +10,10 @@ export type RootStackParamList = {
   Addresses: undefined;
   ServiceDetail: { serviceKey: string };
   Notifications: undefined;
+  ComingSoon: { feature?: string };
+  SupportLegal: undefined;
   ServiceWorkers: { serviceKey: string };
+  EditProfile: undefined;
 };
 
 export type TabParamList = {

@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, MessageCircle, Phone, Mail, ChevronRight } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function HelpScreen() {
   const navigation = useNavigation();
+  const { t } = useLanguage();
 
   const helpSections = [
     {
@@ -69,13 +72,13 @@ export default function HelpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','bottom']}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
           <ArrowLeft size={20} color="#374151" />
         </Pressable>
-        <Text style={styles.headerTitle}>Help Center</Text>
+        <Text style={styles.headerTitle}>{t('help_center')}</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -133,7 +136,7 @@ export default function HelpScreen() {
           </Button>
         </Card>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

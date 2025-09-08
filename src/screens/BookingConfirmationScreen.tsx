@@ -10,11 +10,13 @@ import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function BookingConfirmationScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   
   // Get booking data from route params with safe defaults
   const bookingData = ({
@@ -94,20 +96,20 @@ export default function BookingConfirmationScreen() {
             <CheckCircle size={32} color="#16a34a" />
           </View>
           <View style={styles.successText}>
-            <Text style={styles.successTitle}>Booking Confirmed!</Text>
-            <Text style={styles.successSubtitle}>Your car wash service has been scheduled</Text>
+            <Text style={styles.successTitle}>{t('booking_confirmed')}</Text>
+            <Text style={styles.successSubtitle}>{t('scheduled_message')}</Text>
           </View>
         </View>
 
         {/* Booking ID */}
         <Card style={styles.bookingIdCard}>
-          <Text style={styles.bookingIdLabel}>Booking ID</Text>
+          <Text style={styles.bookingIdLabel}>{t('booking_id')}</Text>
           <Text style={styles.bookingIdValue}>{bookingId}</Text>
         </Card>
 
         {/* Worker Info */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Your Car Washer</Text>
+          <Text style={styles.sectionTitle}>{t('your_car_washer')}</Text>
           <View style={styles.workerInfo}>
             <Avatar 
               source={getWorkerAvatar(bookingData.workerName)} 
@@ -116,21 +118,21 @@ export default function BookingConfirmationScreen() {
             />
             <View style={styles.workerDetails}>
               <Text style={styles.workerName}>{bookingData.workerName}</Text>
-              <Text style={styles.workerRole}>Professional Car Washer</Text>
+              <Text style={styles.workerRole}>{t('professional_car_washer')}</Text>
             </View>
-            <Badge variant="default">Confirmed</Badge>
+            <Badge variant="default">{t('confirmed')}</Badge>
           </View>
         </Card>
 
         {/* Booking Details */}
         <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Booking Details</Text>
+          <Text style={styles.sectionTitle}>{t('booking_details')}</Text>
           <View style={styles.detailsContainer}>
             {/* Location */}
             <View style={styles.detailItem}>
               <MapPin size={20} color="#6b7280" />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Service Location</Text>
+                <Text style={styles.detailLabel}>{t('service_location')}</Text>
                 <Text style={styles.detailValue}>{bookingData.location}</Text>
               </View>
             </View>
@@ -141,9 +143,9 @@ export default function BookingConfirmationScreen() {
             <View style={styles.detailItem}>
               <Calendar size={20} color="#6b7280" />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Date & Time</Text>
+                <Text style={styles.detailLabel}>{t('date_time')}</Text>
                 <Text style={styles.detailValue}>
-                  {formatDate(bookingData.date)} at {bookingData.time}
+                  {formatDate(bookingData.date)} {t('at')} {bookingData.time}
                 </Text>
               </View>
             </View>
@@ -154,7 +156,7 @@ export default function BookingConfirmationScreen() {
             <View style={styles.detailItem}>
               <Car size={20} color="#6b7280" />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Vehicle Type</Text>
+                <Text style={styles.detailLabel}>{t('vehicle_type')}</Text>
                 <Text style={styles.detailValue}>{getCarTypeName(bookingData.carType)}</Text>
               </View>
             </View>
@@ -165,8 +167,8 @@ export default function BookingConfirmationScreen() {
             <View style={styles.detailItem}>
               <CreditCard size={20} color="#6b7280" />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Payment Method</Text>
-                <Text style={styles.detailValue}>Cash on Delivery</Text>
+                <Text style={styles.detailLabel}>{t('payment_method')}</Text>
+                <Text style={styles.detailValue}>{t('cash_on_delivery')}</Text>
               </View>
             </View>
 
@@ -175,7 +177,7 @@ export default function BookingConfirmationScreen() {
               <>
                 <Separator style={styles.detailSeparator} />
                 <View style={styles.notesSection}>
-                  <Text style={styles.detailLabel}>Additional Notes</Text>
+                  <Text style={styles.detailLabel}>{t('additional_notes')}</Text>
                   <Text style={styles.detailValue}>{bookingData.notes}</Text>
                 </View>
               </>
@@ -186,31 +188,31 @@ export default function BookingConfirmationScreen() {
         {/* Price Summary */}
         <Card style={styles.priceCard}>
           <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Total Amount</Text>
+            <Text style={styles.priceLabel}>{t('total_amount')}</Text>
             <Text style={styles.priceValue}>{bookingData.price} MAD</Text>
           </View>
-          <Text style={styles.priceNote}>To be paid upon service completion</Text>
+          <Text style={styles.priceNote}>{t('to_be_paid_upon_completion')}</Text>
         </Card>
 
         {/* Important Info */}
         <Card style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Important Information</Text>
+          <Text style={styles.infoTitle}>{t('important_information')}</Text>
           <View style={styles.infoList}>
-            <Text style={styles.infoItem}>• The worker will arrive at your location 5-10 minutes before the scheduled time</Text>
-            <Text style={styles.infoItem}>• Please ensure water access is available at the service location</Text>
-            <Text style={styles.infoItem}>• Payment is due upon completion of the service</Text>
-            <Text style={styles.infoItem}>• You can contact the worker directly if needed</Text>
+            <Text style={styles.infoItem}>{t('info_line_1')}</Text>
+            <Text style={styles.infoItem}>{t('info_line_2')}</Text>
+            <Text style={styles.infoItem}>{t('info_line_3')}</Text>
+            <Text style={styles.infoItem}>{t('info_line_4')}</Text>
           </View>
         </Card>
 
         {/* Action Buttons */}
         <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           <Button style={styles.primaryButton} onPress={handleViewBookings}>
-            <Text style={styles.primaryButtonText}>View My Bookings</Text>
+            <Text style={styles.primaryButtonText}>{t('view_my_bookings')}</Text>
           </Button>
           <Button variant="outline" style={styles.secondaryButton} onPress={handleGoHome}>
             <Home size={16} color="#3b82f6" />
-            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+            <Text style={styles.secondaryButtonText}>{t('back_to_home')}</Text>
           </Button>
         </View>
       </ScrollView>

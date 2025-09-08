@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const SERVICES = [
   { key: 'basic', title: 'Basic Wash', desc: 'Exterior wash and dry', price: 60, Icon: Droplets },
@@ -21,12 +22,13 @@ export default function ServicesScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const theme = useThemeColors();
+  const { t } = useLanguage();
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: theme.textPrimary }}>Services</Text>
-        <Text style={{ marginTop: 4, color: theme.textSecondary }}>Choose a service that fits your car</Text>
+        <Text style={{ fontSize: 22, fontWeight: '700', color: theme.textPrimary }}>{t('services_title')}</Text>
+        <Text style={{ marginTop: 4, color: theme.textSecondary }}>{t('services_subtitle')}</Text>
       </View>
 
       <ScrollView
@@ -64,14 +66,14 @@ export default function ServicesScreen() {
                 <Icon color={theme.accent} size={20} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>{title}</Text>
-                <Text style={{ marginTop: 2, color: theme.textSecondary }}>{desc}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>{t(`service_${key}_title`)}</Text>
+                <Text style={{ marginTop: 2, color: theme.textSecondary }}>{t(`service_${key}_desc`)}</Text>
               </View>
               <Text style={{ fontWeight: '700', color: theme.accent }}>{price} MAD</Text>
             </View>
             <View style={{ marginTop: 12 }}>
               <Button onPress={() => (navigation as any).navigate('ServiceDetail', { serviceKey: key })}>
-                View details
+                {t('view_details')}
               </Button>
             </View>
           </Pressable>

@@ -9,12 +9,14 @@ import LeafletMap from '../components/LeafletMap';
 import { Button } from '../components/ui/Button';
 import { mockWorkers, Worker } from '../data/workers';
 import { useThemeColors } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const theme = useThemeColors();
+  const { t } = useLanguage();
   const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   // Leave room (≈56px) for the stacked top-right buttons and margins
@@ -71,7 +73,7 @@ export default function HomeScreen() {
               <Text style={styles.star}>★</Text>
               <Text style={[styles.rating, { color: theme.textSecondary }]}>{worker.rating} ({worker.reviewCount})</Text>
             </View>
-            <Text style={[styles.distance, { color: theme.textSecondary }]}>0.5 km away</Text>
+            <Text style={[styles.distance, { color: theme.textSecondary }]}>0.5 {t('km_away')}</Text>
           </View>
           
           <View style={styles.popupFooter}>
@@ -80,7 +82,7 @@ export default function HomeScreen() {
               size="sm" 
               onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
             >
-              Book Now
+              {t('book_now')}
             </Button>
           </View>
           
@@ -127,7 +129,7 @@ export default function HomeScreen() {
         <Search color={theme.textSecondary} size={16} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: theme.textPrimary }]}
-          placeholder="Search for car wash services…"
+          placeholder={t('search_placeholder')}
           placeholderTextColor={theme.textSecondary}
           value={query}
           onChangeText={setQuery}
@@ -151,7 +153,7 @@ export default function HomeScreen() {
 
       {/* Top right buttons */}
       <View style={styles.topButtons}>
-        <Pressable style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('Notifications') }>
+        <Pressable style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('ComingSoon', { feature: 'Notifications' }) }>
           <Bell color={theme.textPrimary} size={20} />
         </Pressable>
         <Pressable 
@@ -168,7 +170,7 @@ export default function HomeScreen() {
               setLocating(true);
               const { status } = await Location.requestForegroundPermissionsAsync();
               if (status !== 'granted') {
-                Alert.alert('Location Permission', 'Permission denied. Using default city center.');
+                Alert.alert(t('location_permission'), t('permission_denied_msg'));
                 const fallback = { latitude: 31.6295, longitude: -7.9811, zoom: 13 };
                 setCenterOn(null);
                 setTimeout(() => setCenterOn(fallback), 0);
@@ -232,7 +234,7 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                       <Text style={[styles.cardDivider, { color: theme.cardBorder }]}>•</Text>
-                      <Text style={[styles.cardDistance, { color: theme.textSecondary }]}>0.5 km away</Text>
+                      <Text style={[styles.cardDistance, { color: theme.textSecondary }]}>0.5 {t('km_away')}</Text>
                     </View>
                   </View>
                   
@@ -242,7 +244,7 @@ export default function HomeScreen() {
                       size="sm" 
                       onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
                     >
-                      Book
+                      {t('book')}
                     </Button>
                   </View>
                 </View>

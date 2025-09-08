@@ -1,0 +1,170 @@
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../types/navigation';
+import { ArrowLeft, HelpCircle, Shield, FileText, Smartphone, ExternalLink } from 'lucide-react-native';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Separator } from '../components/ui/Separator';
+import { useThemeColors } from '../lib/theme';
+
+export default function SupportLegalScreen() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const theme = useThemeColors();
+
+  const openLink = async (url: string) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      Linking.openURL(url);
+    } else {
+      Alert.alert('Unable to open link');
+    }
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+        <Button variant="ghost" size="icon" onPress={() => navigation.goBack()} style={styles.backButton}>
+          <ArrowLeft size={20} color={theme.textPrimary} />
+        </Button>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Support & Legal</Text>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Help Center */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: theme.surface }]}>
+              <HelpCircle size={18} color={theme.accent} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>Help Center</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>Get answers and contact support</Text>
+            </View>
+            <Pressable onPress={() => (navigation as any).navigate('Help')} style={styles.action}>
+              <ExternalLink size={18} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        </Card>
+
+        {/* Privacy Policy */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: theme.surface }]}>
+              <Shield size={18} color={theme.accent} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>Privacy Policy</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>Understand how we handle your data</Text>
+            </View>
+            <Pressable onPress={() => Alert.alert('Privacy Policy', 'Privacy policy content will be added soon.')} style={styles.action}>
+              <FileText size={18} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+          <Separator />
+          <Text style={[styles.body, { color: theme.textSecondary }]}>We respect your privacy and are committed to protecting your personal information. Detailed policy will be available here.</Text>
+        </Card>
+
+        {/* Terms of Service */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: theme.surface }]}>
+              <FileText size={18} color={theme.accent} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>Terms of Service</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>Your rights and obligations</Text>
+            </View>
+            <Pressable onPress={() => Alert.alert('Terms of Service', 'Terms content will be added soon.')} style={styles.action}>
+              <FileText size={18} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+          <Separator />
+          <Text style={[styles.body, { color: theme.textSecondary }]}>Please read these terms carefully before using the app. Detailed terms will be provided here.</Text>
+        </Card>
+
+        {/* About */}
+        <Card style={styles.sectionCard}>
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: theme.surface }]}>
+              <Smartphone size={18} color={theme.accent} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>About</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>CarWash Pro — Version 1.0.0</Text>
+            </View>
+          </View>
+          <Separator />
+          <Text style={[styles.body, { color: theme.textSecondary }]}>CarWash Pro helps you book car wash services easily in Marrakech and beyond.</Text>
+        </Card>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 50,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  sectionCard: {
+    padding: 12,
+    marginBottom: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 4,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  action: {
+    padding: 4,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  desc: {
+    fontSize: 13,
+  },
+  body: {
+    fontSize: 13,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+});

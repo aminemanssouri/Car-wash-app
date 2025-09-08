@@ -2,8 +2,9 @@ import React from 'react';
 import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationLightTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Calendar, User, Settings, Wrench } from 'lucide-react-native';
+import { Home, Calendar, User, Settings, Wrench, Briefcase } from 'lucide-react-native';
 import { useThemeColors } from '../lib/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 import HomeScreen from '../screens/HomeScreen';
 import BookingsScreen from '../screens/BookingsScreen';
@@ -21,12 +22,20 @@ import HelpScreen from '../screens/HelpScreen';
 import AddressesScreen from '../screens/AddressesScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ServiceWorkersScreen from '../screens/ServiceWorkersScreen';
+import WorkerDashboardScreen from '../screens/WorkerDashboardScreen';
+import ComingSoonScreen from '../screens/ComingSoonScreen';
+import SupportLegalScreen from '../screens/SupportLegalScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import AddAddressScreen from '../screens/AddAddressScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
   const theme = useThemeColors();
+  const { user } = useAuth();
+  const userRole = user?.profile?.role || 'customer';
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -39,6 +48,8 @@ function TabNavigator() {
             IconComponent = Calendar;
           } else if (route.name === 'Services') {
             IconComponent = Wrench;
+          } else if (route.name === 'Dashboard') {
+            IconComponent = Briefcase;
           } else if (route.name === 'Profile') {
             IconComponent = User;
           } else if (route.name === 'Settings') {
@@ -56,11 +67,21 @@ function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Services" component={ServicesScreen} />
-      <Tab.Screen name="Bookings" component={BookingsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      {userRole === 'worker' ? (
+        <>
+          <Tab.Screen name="Dashboard" component={WorkerDashboardScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
+          <Tab.Screen name="Settings" component={SettingsScreen} />
+        </>
+      ) : (
+        <>
+          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen name="Services" component={ServicesScreen} />
+          <Tab.Screen name="Bookings" component={BookingsScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
+          <Tab.Screen name="Settings" component={SettingsScreen} />
+        </>
+      )}
     </Tab.Navigator>
   );
 }
@@ -81,7 +102,12 @@ export default function Navigation() {
         <Stack.Screen name="Addresses" component={AddressesScreen} />
         <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="ComingSoon" component={ComingSoonScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="SupportLegal" component={SupportLegalScreen} />
         <Stack.Screen name="ServiceWorkers" component={ServiceWorkersScreen} />
+        <Stack.Screen name="WorkerDashboard" component={WorkerDashboardScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="AddAddress" component={AddAddressScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

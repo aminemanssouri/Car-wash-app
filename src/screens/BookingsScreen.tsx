@@ -9,11 +9,13 @@ import { Separator } from '../components/ui/Separator';
 import { mockBookings, Booking } from '../data/bookings';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
   const theme = useThemeColors();
+  const { t } = useLanguage();
 
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
@@ -35,15 +37,15 @@ export const BookingsScreen: React.FC = () => {
   const getStatusText = (status: Booking['status']) => {
     switch (status) {
       case 'pending':
-        return 'Pending';
+        return t('status_pending');
       case 'confirmed':
-        return 'Confirmed';
+        return t('status_confirmed');
       case 'in-progress':
-        return 'In Progress';
+        return t('status_in_progress');
       case 'completed':
-        return 'Completed';
+        return t('status_completed');
       case 'cancelled':
-        return 'Cancelled';
+        return t('status_cancelled');
       default:
         return status;
     }
@@ -118,16 +120,16 @@ export const BookingsScreen: React.FC = () => {
         >
           <ArrowLeft size={20} color={theme.textPrimary} />
         </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>My Bookings</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('my_bookings')}</Text>
       </View>
 
       {/* Tabs */}
       <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <View style={[styles.tabsList, { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6' }]}>
-          <TabButton label="All" value="all" isActive={activeTab === 'all'} />
-          <TabButton label="Upcoming" value="upcoming" isActive={activeTab === 'upcoming'} />
-          <TabButton label="Active" value="active" isActive={activeTab === 'active'} />
-          <TabButton label="Completed" value="completed" isActive={activeTab === 'completed'} />
+          <TabButton label={t('tab_all')} value="all" isActive={activeTab === 'all'} />
+          <TabButton label={t('tab_upcoming')} value="upcoming" isActive={activeTab === 'upcoming'} />
+          <TabButton label={t('tab_active')} value="active" isActive={activeTab === 'active'} />
+          <TabButton label={t('tab_completed')} value="completed" isActive={activeTab === 'completed'} />
         </View>
       </View>
 
@@ -136,12 +138,12 @@ export const BookingsScreen: React.FC = () => {
         {filteredBookings.length === 0 ? (
           <View style={styles.emptyState}>
             <Calendar size={48} color={theme.textSecondary} style={styles.emptyIcon} />
-            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No bookings found</Text>
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('no_bookings_found')}</Text>
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }] }>
-              {activeTab === 'all' ? "You haven't made any bookings yet" : `No ${activeTab} bookings at the moment`}
+              {activeTab === 'all' ? t('no_bookings_yet') : t('no_status_bookings').replace('{status}', t(`tab_${activeTab}` as any))}
             </Text>
             <Button onPress={() => navigation.navigate('Home' as never)} style={styles.bookButton}>
-              <Text style={styles.bookButtonText}>Book a Service</Text>
+              <Text style={styles.bookButtonText}>{t('book_a_service')}</Text>
             </Button>
           </View>
         ) : (
@@ -161,7 +163,7 @@ export const BookingsScreen: React.FC = () => {
                           </Text>
                         </View>
                       </View>
-                      <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>Booked on {formatDate(booking.bookingDate)}</Text>
+                      <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>{t('booked_on')} {formatDate(booking.bookingDate)}</Text>
                     </View>
                     <Pressable style={styles.moreButton} onPress={() => Alert.alert('More Options', 'Booking options')}>
                       <MoreVertical size={16} color={theme.textSecondary} />
@@ -224,7 +226,7 @@ export const BookingsScreen: React.FC = () => {
                         onPress={() => handleBookingAction('contact', booking.id)}
                       >
                         <Phone size={16} color={theme.textPrimary} />
-                        <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Call</Text>
+                        <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('call')}</Text>
                       </Button>
                       <Button
                         variant="outline"
@@ -233,7 +235,7 @@ export const BookingsScreen: React.FC = () => {
                         onPress={() => handleBookingAction('contact', booking.id)}
                       >
                         <MessageCircle size={16} color={theme.textPrimary} />
-                        <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Chat</Text>
+                        <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('chat')}</Text>
                       </Button>
                     </View>
                   )}
@@ -244,7 +246,7 @@ export const BookingsScreen: React.FC = () => {
                       onPress={() => handleBookingAction('rate', booking.id)}
                     >
                       <Star size={16} color="#ffffff" />
-                      <Text style={styles.rateButtonText}>Rate Service</Text>
+                      <Text style={styles.rateButtonText}>{t('rate_service')}</Text>
                     </Button>
                   )}
                 </Card>

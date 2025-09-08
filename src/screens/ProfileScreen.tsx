@@ -1,26 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { ArrowLeft, User, Mail, Phone, MapPin, Edit } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { ArrowLeft, User, Mail, Phone, MapPin, Edit, Star, Calendar, Briefcase, UserCheck, Key } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Separator } from '../components/ui/Separator';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const theme = useThemeColors();
-
-  // Mock user data - in a real app, this would come from authentication context
-  const user = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+212 6XX XXX XXX',
-    location: 'Marrakech, Morocco',
-    avatar: '/placeholder.svg?height=80&width=80',
-    joinDate: 'January 2024',
-  };
+  const { user, signOut } = useAuth();
+  const { t } = useLanguage();
 
   const handleLogin = () => {
     navigation.navigate('Login' as never);
@@ -30,8 +24,36 @@ export const ProfileScreen: React.FC = () => {
     navigation.navigate('Signup' as never);
   };
 
-  // For demo purposes, showing guest state
-  const isGuest = true;
+  const handleEditProfile = () => {
+    (navigation as any).navigate('EditProfile');
+  };
+
+  const handleForgotPassword = () => {
+    (navigation as any).navigate('ForgotPassword');
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      t('sign_out_confirm_title'),
+      t('sign_out_confirm_message'),
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: t('sign_out'), 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert(t('error'), t('failed_sign_out'));
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const isGuest = !user;
 
   if (isGuest) {
     return (
@@ -46,7 +68,7 @@ export const ProfileScreen: React.FC = () => {
           >
             <ArrowLeft size={20} color={theme.textPrimary} />
           </Button>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Profile</Text>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('profile')}</Text>
         </View>
 
         <View style={styles.content}>
@@ -55,17 +77,17 @@ export const ProfileScreen: React.FC = () => {
             <View style={styles.guestIcon}>
               <User size={32} color={theme.textSecondary} />
             </View>
-            <Text style={[styles.guestTitle, { color: theme.textPrimary }]}>Welcome, Guest!</Text>
+            <Text style={[styles.guestTitle, { color: theme.textPrimary }]}>{t('welcome_guest')}</Text>
             <Text style={[styles.guestSubtitle, { color: theme.textSecondary }]}>
-              Sign in or create an account to access your profile and booking history
+              {t('guest_prompt')}
             </Text>
 
             <View style={styles.guestButtons}>
               <Button onPress={handleLogin} style={styles.signInButton}>
-                <Text style={styles.signInButtonText}>Sign In</Text>
+                <Text style={styles.signInButtonText}>{t('sign_in')}</Text>
               </Button>
               <Button onPress={handleSignup} variant="outline" style={styles.createAccountButton}>
-                <Text style={[styles.createAccountButtonText, { color: theme.textPrimary }]}>Create Account</Text>
+                <Text style={[styles.createAccountButtonText, { color: theme.textPrimary }]}>{t('create_account')}</Text>
               </Button>
             </View>
           </Card>
@@ -74,10 +96,15 @@ export const ProfileScreen: React.FC = () => {
     );
   }
 
+  // Get user display data
+  const displayName = user.profile?.full_name || user.email.split('@')[0];
+  const userRole = user.profile?.role || 'customer';
+  const joinDate = user.profile?.created_at ? new Date(user.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : t('recently');
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }] }>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }] }>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
         <Button
           variant="ghost"
           size="icon"
@@ -86,9 +113,9 @@ export const ProfileScreen: React.FC = () => {
         >
           <ArrowLeft size={20} color={theme.textPrimary} />
         </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Profile</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('profile')}</Text>
         <View style={styles.headerActions}>
-          <Button variant="ghost" size="icon" style={styles.editButton}>
+          <Button variant="ghost" size="icon" style={styles.editButton} onPress={() => (navigation as any).navigate('EditProfile')}>
             <Edit size={20} color={theme.textPrimary} />
           </Button>
         </View>
@@ -99,46 +126,77 @@ export const ProfileScreen: React.FC = () => {
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
             <Avatar
-              src={user.avatar}
+              src={user.profile?.avatar_url || undefined}
               size={80}
-              fallback={user.name.split(' ').map(n => n[0]).join('')}
+              fallback={displayName.split(' ').map((n: string) => n[0]).join('')}
             />
             <View style={styles.profileInfo}>
-              <Text style={[styles.userName, { color: theme.textPrimary }]}>{user.name}</Text>
-              <Text style={[styles.memberSince, { color: theme.textSecondary }]}>Member since {user.joinDate}</Text>
+              <Text style={[styles.userName, { color: theme.textPrimary }]}>{displayName}</Text>
+              <View style={styles.roleContainer}>
+                {userRole === 'worker' ? (
+                  <Briefcase size={16} color={theme.accent} />
+                ) : (
+                  <UserCheck size={16} color={theme.accent} />
+                )}
+                <Text style={[styles.roleText, { color: theme.accent }]}>
+                  {userRole === 'worker' ? t('service_provider') : t('customer')}
+                </Text>
+              </View>
+              <Text style={[styles.memberSince, { color: theme.textSecondary }]}>{t('member_since')} {joinDate}</Text>
             </View>
           </View>
         </Card>
 
+        {/* Role-specific Stats */}
+        {userRole === 'worker' && (
+          <Card style={styles.statsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('your_stats')}</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Star size={20} color={theme.accent} />
+                <Text style={[styles.statValue, { color: theme.textPrimary }]}>4.8</Text>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('rating_label')}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Calendar size={20} color={theme.accent} />
+                <Text style={[styles.statValue, { color: theme.textPrimary }]}>127</Text>
+                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('jobs_done')}</Text>
+              </View>
+            </View>
+          </Card>
+        )}
+
         {/* Contact Information */}
         <Card style={styles.contactCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Contact Information</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('contact_information')}</Text>
           <View style={styles.contactList}>
             <View style={styles.contactItem}>
               <Mail size={20} color={theme.textSecondary} />
               <View style={styles.contactDetails}>
-                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>Email</Text>
+                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>{t('email')}</Text>
                 <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.email}</Text>
               </View>
             </View>
 
+            {user.profile?.phone && (
+              <>
+                <Separator style={styles.contactSeparator} />
+                <View style={styles.contactItem}>
+                  <Phone size={20} color={theme.textSecondary} />
+                  <View style={styles.contactDetails}>
+                    <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>{t('phone')}</Text>
+                    <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.profile.phone}</Text>
+                  </View>
+                </View>
+              </>
+            )}
+
             <Separator style={styles.contactSeparator} />
-
-            <View style={styles.contactItem}>
-              <Phone size={20} color={theme.textSecondary} />
-              <View style={styles.contactDetails}>
-                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>Phone</Text>
-                <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.phone}</Text>
-              </View>
-            </View>
-
-            <Separator style={styles.contactSeparator} />
-
             <View style={styles.contactItem}>
               <MapPin size={20} color={theme.textSecondary} />
               <View style={styles.contactDetails}>
-                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>Location</Text>
-                <Text style={[styles.contactValue, { color: theme.textSecondary }]}>{user.location}</Text>
+                <Text style={[styles.contactLabel, { color: theme.textPrimary }]}>{t('location')}</Text>
+                <Text style={[styles.contactValue, { color: theme.textSecondary }]}>Marrakech, Morocco</Text>
               </View>
             </View>
           </View>
@@ -146,16 +204,23 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Account Actions */}
         <Card style={styles.actionsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('account_label')}</Text>
           <View style={styles.actionsList}>
-            <Button variant="ghost" style={styles.actionButton}>
-              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Edit Profile</Text>
+            <Button variant="ghost" style={styles.actionButton} onPress={handleEditProfile}>
+              <Edit size={20} color={theme.textSecondary} style={styles.actionIcon} />
+              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('edit_profile')}</Text>
             </Button>
-            <Button variant="ghost" style={styles.actionButton}>
-              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>Change Password</Text>
+            <Button variant="ghost" style={styles.actionButton} onPress={handleForgotPassword}>
+              <Key size={20} color={theme.textSecondary} style={styles.actionIcon} />
+              <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('change_password')}</Text>
             </Button>
-            <Button variant="ghost" style={styles.actionButton}>
-              <Text style={[styles.actionButtonText, styles.destructiveText]}>Sign Out</Text>
+            {userRole === 'worker' && (
+              <Button variant="ghost" style={styles.actionButton} onPress={() => navigation.navigate('WorkerDashboard' as never)}>
+                <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('worker_dashboard')}</Text>
+              </Button>
+            )}
+            <Button variant="ghost" style={styles.actionButton} onPress={handleSignOut}>
+              <Text style={[styles.actionButtonText, styles.destructiveText]}>{t('sign_out')}</Text>
             </Button>
           </View>
         </Card>
@@ -319,6 +384,12 @@ const styles = StyleSheet.create({
     height: 48,
     justifyContent: 'flex-start',
     paddingHorizontal: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionIcon: {
+    marginRight: 0,
   },
   actionButtonText: {
     fontSize: 16,
@@ -326,6 +397,37 @@ const styles = StyleSheet.create({
   },
   destructiveText: {
     color: '#ef4444',
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  roleText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statsCard: {
+    padding: 24,
+    marginBottom: 24,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  statLabel: {
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
 

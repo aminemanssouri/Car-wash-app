@@ -11,10 +11,10 @@ import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
 import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
-import { RadioGroup, RadioGroupItem } from '../components/ui/RadioGroup';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { useThemeColors } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Mock worker data
 const mockWorkers = {
@@ -74,6 +74,7 @@ export default function BookingScreen() {
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
+  const { t } = useLanguage();
   const { workerId = "1" } = (route.params as { workerId?: string }) || {};
 
   // Get today's date for min date input
@@ -126,17 +127,17 @@ export default function BookingScreen() {
   const handleSubmit = () => {
     // Validate required fields with specific messages
     const missing: string[] = [];
-    if (!formData.date) missing.push('Date');
-    if (!formData.time) missing.push('Time');
-    if (!formData.carType) missing.push('Vehicle Type');
+    if (!formData.date) missing.push(t('date'));
+    if (!formData.time) missing.push(t('time'));
+    if (!formData.carType) missing.push(t('vehicle_type'));
     if (missing.length) {
-      Alert.alert('Missing fields', `Please complete: ${missing.join(', ')}`);
+      Alert.alert(t('missing_fields'), `${t('please_complete')}: ${missing.join(', ')}`);
       return;
     }
 
     // Ensure worker exists
     if (!worker) {
-      Alert.alert('Worker not found', 'Please go back and select a worker again.');
+      Alert.alert(t('worker_not_found'), t('please_select_worker_again'));
       return;
     }
 
@@ -185,10 +186,10 @@ export default function BookingScreen() {
             />
             <View style={styles.workerDetails}>
               <Text style={[styles.workerName, { color: theme.textPrimary }]}>{worker?.name}</Text>
-              <Text style={[styles.workerRole, { color: theme.textSecondary }]}>Selected Car Washer</Text>
+              <Text style={[styles.workerRole, { color: theme.textSecondary }]}>{t('your_car_washer')}</Text>
             </View>
             <Badge variant="secondary" style={styles.priceBadge}>
-              Starting at {basePrice} MAD
+              {`${basePrice} MAD`}
             </Badge>
           </View>
         </Card>
@@ -197,16 +198,16 @@ export default function BookingScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <MapPin size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Service Location</Label>
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('service_location')}</Label>
           </View>
           <Input
             value={formData.location}
             onChangeText={(text) => setFormData((prev) => ({ ...prev, location: text }))}
-            placeholder="Enter your address"
+            placeholder={t('enter_your_address')}
             style={styles.input}
           />
           <Text style={[styles.helperText, { color: theme.textSecondary }]}>
-            The worker will come to this location to wash your car
+            {t('the_worker_will_come_to_this_location_to_wash_your_car')}
           </Text>
         </Card>
 
@@ -214,26 +215,41 @@ export default function BookingScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Calendar size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Date & Time</Label>
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('date_time')}</Label>
           </View>
 
           <View style={styles.dateTimeRow}>
             <View style={styles.dateTimeItem}>
-              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>Date *</Label>
-              <Pressable onPress={() => setShowDatePicker(true)} style={[styles.dateField, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-                <Text style={[styles.dateFieldText, { color: theme.textPrimary }, !formData.date && { color: theme.textSecondary }]}>
-                  {formattedDate || 'Select a date'}
-                </Text>
-              </Pressable>
+              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>{t('date')} *</Label>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateChips} contentContainerStyle={{ gap: 8 }}>
+                {dateOptions.slice(0, 14).map((d) => {
+                  const [weekday, rest] = d.label.split(',');
+                  const selected = formData.date === d.value;
+                  return (
+                    <Pressable
+                      key={d.value}
+                      onPress={() => setFormData((prev) => ({ ...prev, date: d.value }))}
+                      style={[
+                        styles.dateChip,
+                        { borderColor: theme.cardBorder, backgroundColor: theme.card },
+                        selected && { borderColor: theme.accent, backgroundColor: theme.surface },
+                      ]}
+                    >
+                      <Text style={[styles.dateChipWeekday, { color: selected ? theme.accent : theme.textSecondary }]}>{weekday?.trim()}</Text>
+                      <Text style={[styles.dateChipDate, { color: theme.textPrimary }]}>{rest?.trim()}</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
             </View>
 
             <View style={styles.dateTimeItem}>
-              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>Time *</Label>
+              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>{t('time')} *</Label>
               <Select
                 value={formData.time}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, time: value }))}
                 options={timeSlots}
-                placeholder="Select time"
+                placeholder={t('select_time')}
                 style={styles.select}
               />
             </View>
@@ -244,43 +260,34 @@ export default function BookingScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Car size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Vehicle Type *</Label>
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('vehicle_type')}</Label>
           </View>
 
-          <RadioGroup
+          <Select
             value={formData.carType}
             onValueChange={(value) => setFormData((prev) => ({ ...prev, carType: value }))}
-            style={styles.radioGroup}
-          >
-            {carTypes.map((car) => (
-              <Pressable
-                key={car.id}
-                onPress={() => setFormData((prev) => ({ ...prev, carType: car.id }))}
-                style={[
-                  styles.carTypeOption,
-                  { borderColor: theme.cardBorder, backgroundColor: theme.card },
-                  formData.carType === car.id && { borderColor: theme.accent, backgroundColor: theme.surface },
-                ]}
-              >
-                <View style={styles.carTypeLeft}>
-                  <RadioGroupItem value={car.id} id={car.id} />
-                  <Text style={[styles.carTypeName, { color: theme.textPrimary }]}>{car.name}</Text>
-                </View>
-                <Text style={[styles.carTypePrice, { color: theme.textSecondary }]}>
-                  {Math.round(basePrice * car.multiplier)} MAD
-                </Text>
-              </Pressable>
-            ))}
-          </RadioGroup>
+            options={carTypes.map((c) => ({ label: c.name, value: c.id }))}
+            placeholder={t('select_vehicle_type')}
+            style={styles.select}
+            modalTitle={t('select_vehicle_type')}
+            getOptionRightText={(opt) => {
+              const c = carTypes.find((x) => x.id === opt.value);
+              return c ? `${Math.round(basePrice * c.multiplier)} MAD` : undefined;
+            }}
+            getOptionSubtitle={(opt) => {
+              const c = carTypes.find((x) => x.id === opt.value);
+              return c && c.multiplier !== 1 ? `x${c.multiplier}` : undefined;
+            }}
+          />
         </Card>
 
         {/* Additional Notes */}
         <Card style={styles.sectionCard}>
-          <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Additional Notes (Optional)</Label>
+          <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('additional_notes')}</Label>
           <Textarea
             value={formData.notes}
             onChangeText={(text) => setFormData((prev) => ({ ...prev, notes: text }))}
-            placeholder="Any special instructions or requests..."
+            placeholder={t('any_special_instructions_or_requests')}
             rows={3}
             style={styles.textarea}
           />
@@ -290,15 +297,15 @@ export default function BookingScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <CreditCard size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>Payment Method</Label>
+            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('payment_method')}</Label>
           </View>
 
           <View style={styles.paymentMethod}>
             <View style={[styles.paymentIndicator, { backgroundColor: theme.accent }]} />
             <View style={styles.paymentInfo}>
-              <Text style={[styles.paymentTitle, { color: theme.textPrimary }]}>Cash on Delivery</Text>
+              <Text style={[styles.paymentTitle, { color: theme.textPrimary }]}>{t('cash_on_delivery')}</Text>
               <Text style={[styles.paymentDescription, { color: theme.textSecondary }] }>
-                Pay the worker directly after service completion
+                {t('to_be_paid_upon_completion')}
               </Text>
             </View>
           </View>
@@ -331,7 +338,7 @@ export default function BookingScreen() {
       <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: theme.card }]} onPress={() => {}}>
-            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Select a date</Text>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('select_date')}</Text>
             <ScrollView style={styles.modalList} contentContainerStyle={{ paddingBottom: 8 }}>
               {dateOptions.map((d) => (
                 <Pressable
@@ -348,16 +355,16 @@ export default function BookingScreen() {
               ))}
             </ScrollView>
             <Button onPress={() => setShowDatePicker(false)}>
-              <Text style={styles.submitButtonText}>Close</Text>
+              <Text style={styles.submitButtonText}>{t('close')}</Text>
             </Button>
           </Pressable>
         </Pressable>
       </Modal>
 
       {/* Bottom fixed footer respecting safe area */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8), backgroundColor: theme.card, borderTopColor: theme.cardBorder }] }>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom - 12, 0), backgroundColor: theme.card, borderTopColor: theme.cardBorder }] }>
         <Button style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Confirm Booking</Text>
+          <Text style={styles.submitButtonText}>{t('confirm_booking')}</Text>
         </Button>
       </View>
     </SafeAreaView>
@@ -394,7 +401,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 0,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
@@ -475,6 +482,30 @@ const styles = StyleSheet.create({
   dateFieldText: {
     fontSize: 14,
     color: '#111827',
+  },
+  dateChips: {
+    marginTop: 6,
+  },
+  dateChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 110,
+  },
+  dateChipWeekday: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dateChipDate: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
   },
   radioGroup: {
     gap: 8,
@@ -580,7 +611,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     height: 48,
-    marginBottom: 24,
+    marginBottom: 0,
   },
   submitButtonText: {
     fontSize: 16,

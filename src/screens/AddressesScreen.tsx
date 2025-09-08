@@ -110,7 +110,7 @@ export default function AddressesScreen() {
   };
 
   const handleAddNewAddress = () => {
-    Alert.alert('Add Address', 'Add new address functionality will be available soon.');
+    (navigation as any).navigate('AddAddress');
   };
 
   return (

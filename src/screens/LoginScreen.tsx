@@ -9,6 +9,7 @@ import { Separator } from '../components/ui/Separator';
 import { loginValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginFormData {
   email: string;
@@ -31,16 +32,23 @@ export default function LoginScreen() {
     }
   });
 
+  const { signIn } = useAuth();
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     
-    // Simulate login process
-    setTimeout(() => {
+    try {
+      if (loginType === 'phone') {
+        Alert.alert('Not supported yet', 'Phone-based login is not available yet. Please use email.');
+        return;
+      }
+      await signIn(data.email, data.password);
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'Please check your credentials and try again.');
+    } finally {
       setIsLoading(false);
-      Alert.alert('Success', 'Login successful!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
-    }, 1500);
+    }
   };
 
   const handleContinueAsGuest = () => {
@@ -96,19 +104,14 @@ export default function LoginScreen() {
           <View style={styles.form}>
             {/* Login Type Tabs */}
             <View style={styles.tabsContainer}>
-              <View style={[styles.tabsList, { backgroundColor: theme.surface }] }>
+              <View style={styles.tabsList}>
                 <TabButton 
                   label="Email" 
                   value="email" 
                   icon={Mail} 
                   isActive={loginType === 'email'} 
                 />
-                <TabButton 
-                  label="Phone" 
-                  value="phone" 
-                  icon={Phone} 
-                  isActive={loginType === 'phone'} 
-                />
+                {/* Phone login temporarily disabled until OTP flow is implemented */}
               </View>
             </View>
 
@@ -124,17 +127,7 @@ export default function LoginScreen() {
                 rules={loginValidation.email}
                 error={errors.email}
               />
-            ) : (
-              <FormInput
-                name="phone"
-                control={control}
-                label="Phone Number"
-                placeholder="+212 6XX XXX XXX"
-                keyboardType="phone-pad"
-                rules={loginValidation.phone}
-                error={errors.phone}
-              />
-            )}
+            ) : null}
 
             {/* Password Field */}
             <View style={styles.passwordContainer}>
@@ -223,7 +216,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingTop: 50,
   },
   backButton: {
     width: 40,

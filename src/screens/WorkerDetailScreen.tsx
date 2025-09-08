@@ -111,7 +111,7 @@ export default function WorkerDetailScreen() {
   };
 
   const handleChat = () => {
-    Alert.alert('Chat', 'Chat feature coming soon!');
+    navigation.navigate('ComingSoon', { feature: 'Messaging' });
   };
 
   return (

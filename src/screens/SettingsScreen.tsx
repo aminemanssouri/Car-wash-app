@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import AnimatedModal from '../components/ui/AnimatedModal';
 import {
   ArrowLeft,
   User,
-  Bell,
   Globe,
   MapPin,
   CreditCard,
@@ -17,29 +17,35 @@ import {
 } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Switch } from '../components/ui/Switch';
 import { Separator } from '../components/ui/Separator';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors, useThemeMode } from '../lib/theme';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const theme = useThemeColors();
   const { mode, setMode } = useThemeMode();
-  const [notifications, setNotifications] = useState({
-    bookingUpdates: true,
-    workerMessages: true,
-    promotions: false,
-    reminders: true,
-  });
-  const [language, setLanguage] = useState('en');
+  const { signOut, user } = useAuth();
+  const { t, setLanguage, languageLabel } = useLanguage();
 
-  const handleNotificationChange = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState<'success' | 'info' | 'warning'>('info');
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
 
   const handleLanguagePress = () => {
-    Alert.alert('Language', 'Language selection coming soon');
+    Alert.alert(
+      t('language'),
+      t('choose_language'),
+      [
+        { text: t('english'), onPress: () => setLanguage('en', true) },
+        { text: t('french'), onPress: () => setLanguage('fr', true) },
+        { text: t('arabic'), onPress: () => setLanguage('ar', true) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
   };
 
   const handleThemePress = () => {
@@ -66,130 +72,66 @@ export const SettingsScreen: React.FC = () => {
 
   const settingSections: { title: string; items: SettingItem[] }[] = [
     {
-      title: 'Account',
+      title: t('account'),
       items: [
         {
           icon: User,
-          label: 'Edit Profile',
-          description: 'Update your personal information',
-          action: () => Alert.alert('Edit Profile', 'Profile editing coming soon'),
+          label: t('edit_profile'),
+          description: t('update_personal_info'),
+          action: () => (navigation as any).navigate('EditProfile' as never),
           showArrow: true,
         },
         {
           icon: MapPin,
-          label: 'Manage Addresses',
-          description: 'Add or edit your saved locations',
-          action: () => (navigation as any).navigate('Addresses'),
+          label: t('manage_addresses'),
+          description: t('add_edit_locations'),
+          action: () => (navigation as any).navigate('Addresses' as never),
           showArrow: true,
         },
         {
           icon: CreditCard,
-          label: 'Payment Methods',
-          description: 'Manage your payment options',
-          action: () => Alert.alert('Payment', 'Payment methods coming soon'),
+          label: t('payment_methods'),
+          description: t('manage_payment_options'),
+          action: () => {
+            setModalType('info');
+            setModalTitle(t('payment_methods'));
+            setModalMessage(`${t('payment_methods')} ${t('is_coming_soon')}.`);
+            setModalVisible(true);
+          },
           showArrow: true,
         },
       ],
     },
     {
-      title: 'Preferences',
+      title: t('preferences'),
       items: [
         {
           icon: Globe,
-          label: 'Language',
-          description: 'Choose your preferred language',
+          label: t('language'),
+          description: t('choose_language'),
           action: handleLanguagePress,
-          value: 'English',
+          value: languageLabel,
           showArrow: true,
         },
         {
           icon: theme.isDark ? Moon : Sun,
-          label: 'Theme',
-          description: 'Choose your app appearance',
+          label: t('theme'),
+          description: t('choose_app_appearance'),
           action: handleThemePress,
           value: currentThemeLabel,
           showArrow: true,
         },
       ],
     },
+    // Notifications section removed
     {
-      title: 'Notifications',
+      title: t('support_legal'),
       items: [
         {
-          icon: Bell,
-          label: 'Booking Updates',
-          description: 'Get notified about booking status changes',
-          component: (
-            <Switch
-              checked={notifications.bookingUpdates}
-              onCheckedChange={() => handleNotificationChange('bookingUpdates')}
-            />
-          ),
-        },
-        {
-          icon: Bell,
-          label: 'Worker Messages',
-          description: 'Receive messages from car washers',
-          component: (
-            <Switch
-              checked={notifications.workerMessages}
-              onCheckedChange={() => handleNotificationChange('workerMessages')}
-            />
-          ),
-        },
-        {
-          icon: Bell,
-          label: 'Promotions',
-          description: 'Get notified about special offers',
-          component: (
-            <Switch
-              checked={notifications.promotions}
-              onCheckedChange={() => handleNotificationChange('promotions')}
-            />
-          ),
-        },
-        {
-          icon: Bell,
-          label: 'Reminders',
-          description: 'Receive booking reminders',
-          component: (
-            <Switch
-              checked={notifications.reminders}
-              onCheckedChange={() => handleNotificationChange('reminders')}
-            />
-          ),
-        },
-      ],
-    },
-    {
-      title: 'Support & Legal',
-      items: [
-        {
-          icon: HelpCircle,
-          label: 'Help Center',
-          description: 'Get help and support',
-          action: () => Alert.alert('Help', 'Help center coming soon'),
-          showArrow: true,
-        },
-        {
           icon: Shield,
-          label: 'Privacy Policy',
-          description: 'Read our privacy policy',
-          action: () => Alert.alert('Privacy', 'Privacy policy coming soon'),
-          showArrow: true,
-        },
-        {
-          icon: Shield,
-          label: 'Terms of Service',
-          description: 'Read our terms of service',
-          action: () => Alert.alert('Terms', 'Terms of service coming soon'),
-          showArrow: true,
-        },
-        {
-          icon: Smartphone,
-          label: 'About',
-          description: 'App version and information',
-          action: () => Alert.alert('About', 'Car Wash App v1.0.0'),
+          label: t('support_legal'),
+          description: t('help_privacy_terms_about'),
+          action: () => (navigation as any).navigate('SupportLegal'),
           showArrow: true,
         },
       ],
@@ -199,7 +141,17 @@ export const SettingsScreen: React.FC = () => {
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => console.log('Sign out') },
+      { 
+        text: 'Sign Out', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            await signOut();
+          } catch (e) {
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+          }
+        }
+      },
     ]);
   };
 
@@ -215,8 +167,16 @@ export const SettingsScreen: React.FC = () => {
         >
           <ArrowLeft size={20} color={theme.textPrimary} />
         </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Settings</Text>
-      </View>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('settings')}</Text>
+      {/* Animated Modal */}
+    <AnimatedModal
+      visible={modalVisible}
+      type={modalType}
+      title={modalTitle}
+      message={modalMessage}
+      onClose={() => setModalVisible(false)}
+    />
+    </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {settingSections.map((section, sectionIndex) => (

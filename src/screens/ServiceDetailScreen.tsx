@@ -7,12 +7,14 @@ import type { RouteProp, NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { iconFor, getServiceByKey } from '../data/services';
 import { Button } from '../components/ui/Button';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function ServiceDetailScreen() {
   const theme = useThemeColors();
   const route = useRoute<RouteProp<RootStackParamList, 'ServiceDetail'>>();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { serviceKey } = route.params || ({} as any);
+  const { t } = useLanguage();
 
   const service = useMemo(() => getServiceByKey(serviceKey), [serviceKey]);
   const Icon = service ? iconFor(service.icon) : undefined;
@@ -20,8 +22,8 @@ export default function ServiceDetailScreen() {
   if (!service) {
     return (
       <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: theme.bg, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-        <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>Service not found.</Text>
-        <Button onPress={() => navigation.goBack()}>Go back</Button>
+        <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>{t('service_not_found')}</Text>
+        <Button onPress={() => navigation.goBack()}>{t('go_back')}</Button>
       </SafeAreaView>
     );
   }
@@ -35,36 +37,36 @@ export default function ServiceDetailScreen() {
             {Icon ? <Icon size={24} color={theme.accent} /> : null}
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 22, fontWeight: '700', color: theme.textPrimary }}>{service.title}</Text>
-            <Text style={{ marginTop: 4, color: theme.textSecondary }}>{service.desc}</Text>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: theme.textPrimary }}>{t(`service_${service.key}_title`)}</Text>
+            <Text style={{ marginTop: 4, color: theme.textSecondary }}>{t(`service_${service.key}_desc`)}</Text>
           </View>
           <Text style={{ fontWeight: '700', color: theme.accent }}>{service.price} MAD</Text>
         </View>
 
         {/* Details */}
         <View style={{ backgroundColor: theme.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: theme.cardBorder, marginBottom: 12 }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary, marginBottom: 8 }}>What’s included</Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary, marginBottom: 8 }}>{t('whats_included')}</Text>
           <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
-            • High-pressure rinse{"\n"}
-            • pH-neutral shampoo{ "\n" }
-            • Soft microfiber hand wash and dry{"\n"}
-            • Windows and mirrors cleaning{"\n"}
-            • Tyre shine and exterior finishing
+            {t('include_line_1')}{"\n"}
+            {t('include_line_2')}{"\n"}
+            {t('include_line_3')}{"\n"}
+            {t('include_line_4')}{"\n"}
+            {t('include_line_5')}
           </Text>
         </View>
 
         <View style={{ backgroundColor: theme.card, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: theme.cardBorder }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary, marginBottom: 8 }}>Notes</Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary, marginBottom: 8 }}>{t('notes')}</Text>
           <Text style={{ color: theme.textSecondary, lineHeight: 20 }}>
-            Duration depends on vehicle size and condition. Prices may vary by provider. You can select a worker from the Home map and proceed to booking.
+            {t('notes_body')}
           </Text>
         </View>
 
         {/* Actions */}
         <View style={{ marginTop: 16 }}>
-          <Button onPress={() => navigation.navigate('ServiceWorkers', { serviceKey })}>View providers for this service</Button>
-          <Button onPress={() => (navigation as any).navigate('MainTabs', { screen: 'Home' })}>Find nearby providers</Button>
-          <Button variant="outline" onPress={() => navigation.goBack()}>Back</Button>
+          <Button onPress={() => navigation.navigate('ServiceWorkers', { serviceKey })}>{t('view_providers_for_service')}</Button>
+          <Button onPress={() => (navigation as any).navigate('MainTabs', { screen: 'Home' })}>{t('find_nearby_providers')}</Button>
+          <Button variant="outline" onPress={() => navigation.goBack()}>{t('back')}</Button>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -13,6 +13,9 @@ interface SelectProps {
   onValueChange?: (value: string) => void;
   options: SelectOption[];
   style?: any;
+  modalTitle?: string;
+  getOptionSubtitle?: (option: SelectOption) => string | undefined;
+  getOptionRightText?: (option: SelectOption) => string | undefined;
 }
 
 export const Select: React.FC<SelectProps> = ({ 
@@ -20,7 +23,10 @@ export const Select: React.FC<SelectProps> = ({
   value, 
   onValueChange,
   options,
-  style 
+  style,
+  modalTitle,
+  getOptionSubtitle,
+  getOptionRightText,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -54,6 +60,11 @@ export const Select: React.FC<SelectProps> = ({
           onPress={() => setIsOpen(false)}
         >
           <View style={styles.content}>
+            {modalTitle && (
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalHeaderText}>{modalTitle}</Text>
+              </View>
+            )}
             <ScrollView style={styles.optionsList}>
               {options.map((option) => (
                 <Pressable
@@ -64,12 +75,22 @@ export const Select: React.FC<SelectProps> = ({
                   ]}
                   onPress={() => handleSelect(option.value)}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    value === option.value && styles.selectedOptionText
-                  ]}>
-                    {option.label}
-                  </Text>
+                  <View style={styles.optionRow}>
+                    <View style={styles.optionTexts}>
+                      <Text style={[
+                        styles.optionText,
+                        value === option.value && styles.selectedOptionText
+                      ]}>
+                        {option.label}
+                      </Text>
+                      {!!getOptionSubtitle && !!getOptionSubtitle(option) && (
+                        <Text style={styles.optionSubtitle}>{getOptionSubtitle(option)}</Text>
+                      )}
+                    </View>
+                    {!!getOptionRightText && !!getOptionRightText(option) && (
+                      <Text style={styles.optionRightText}>{getOptionRightText(option)}</Text>
+                    )}
+                  </View>
                 </Pressable>
               ))}
             </ScrollView>
@@ -120,6 +141,17 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  modalHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  modalHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+  },
   optionsList: {
     maxHeight: 280,
   },
@@ -129,12 +161,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  optionTexts: {
+    flex: 1,
+  },
   selectedOption: {
     backgroundColor: '#eff6ff',
   },
   optionText: {
     fontSize: 16,
     color: '#111827',
+  },
+  optionSubtitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  optionRightText: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
   },
   selectedOptionText: {
     color: '#3b82f6',
