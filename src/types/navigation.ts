@@ -20,6 +20,8 @@ export type TabParamList = {
   Home: undefined;
   Services: undefined;
   Bookings: undefined;
+  Messaging: undefined;
+  Store: undefined;
   Profile: undefined;
   Settings: undefined;
 };

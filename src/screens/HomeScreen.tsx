@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { User, Bell, Search, Navigation } from 'lucide-react-native';
+import { User, Bell, Search, Navigation, Menu } from 'lucide-react-native';
 import LeafletMap from '../components/LeafletMap';
 import { Button } from '../components/ui/Button';
 import { mockWorkers, Worker } from '../data/workers';
@@ -124,8 +124,8 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Floating search bar */}
-      <View style={[styles.searchContainer, { width: searchWidth, backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+      {/* Floating search bar - moved to right */}
+      <View style={[styles.searchContainer, { width: searchWidth, backgroundColor: theme.surface, borderColor: theme.cardBorder, right: 12, left: 'auto' }]}>
         <Search color={theme.textSecondary} size={16} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: theme.textPrimary }]}
@@ -151,8 +151,11 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Top right buttons */}
-      <View style={styles.topButtons}>
+      {/* Left side buttons - vertically stacked */}
+      <View style={styles.leftButtons}>
+        <Pressable style={[styles.hamburgerButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('ComingSoon', { feature: 'Menu' }) }>
+          <Menu color={theme.textPrimary} size={22} />
+        </Pressable>
         <Pressable style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('ComingSoon', { feature: 'Notifications' }) }>
           <Bell color={theme.textPrimary} size={20} />
         </Pressable>
@@ -500,8 +503,8 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: 'absolute',
-    top: 50,
-    left: 12,
+    top: 42,
+    right: 12,
     zIndex: 30,
     flexDirection: 'row',
     alignItems: 'center',
@@ -525,11 +528,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
   },
-  topButtons: {
+  leftButtons: {
     position: 'absolute',
-    top: 64,
-    right: 24,
+    top: 49,
+    left: 12,
+    flexDirection: 'column',
     zIndex: 30,
+  },
+  hamburgerButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   floatingButton: {
     width: 40,

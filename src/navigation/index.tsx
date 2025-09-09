@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationLightTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Calendar, User, Settings, Wrench, Briefcase } from 'lucide-react-native';
+import { Home, Calendar, User, Settings, Wrench, Briefcase, MessageCircle, Store } from 'lucide-react-native';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -50,6 +50,10 @@ function TabNavigator() {
             IconComponent = Wrench;
           } else if (route.name === 'Dashboard') {
             IconComponent = Briefcase;
+          } else if (route.name === 'Messaging') {
+            IconComponent = MessageCircle;
+          } else if (route.name === 'Store') {
+            IconComponent = Store;
           } else if (route.name === 'Profile') {
             IconComponent = User;
           } else if (route.name === 'Settings') {
@@ -64,6 +68,8 @@ function TabNavigator() {
         tabBarStyle: {
           backgroundColor: theme.card,
           borderTopColor: theme.cardBorder,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
         },
       })}
     >
@@ -78,6 +84,26 @@ function TabNavigator() {
           <Tab.Screen name="Home" component={HomeScreen} />
           <Tab.Screen name="Services" component={ServicesScreen} />
           <Tab.Screen name="Bookings" component={BookingsScreen} />
+          <Tab.Screen 
+            name="Messaging" 
+            component={ComingSoonScreen}
+            listeners={({ navigation }) => ({
+              tabPress: (e) => {
+                e.preventDefault();
+                navigation.navigate('ComingSoon', { feature: 'Messaging' });
+              },
+            })}
+          />
+          <Tab.Screen 
+            name="Store" 
+            component={ComingSoonScreen}
+            listeners={({ navigation }) => ({
+              tabPress: (e) => {
+                e.preventDefault();
+                navigation.navigate('ComingSoon', { feature: 'Store' });
+              },
+            })}
+          />
           <Tab.Screen name="Profile" component={ProfileScreen} />
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </>

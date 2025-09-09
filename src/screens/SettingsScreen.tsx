@@ -71,7 +71,8 @@ export const SettingsScreen: React.FC = () => {
   }
 
   const settingSections: { title: string; items: SettingItem[] }[] = [
-    {
+    // Only show account section if user is authenticated
+    ...(user ? [{
       title: t('account'),
       items: [
         {
@@ -101,7 +102,7 @@ export const SettingsScreen: React.FC = () => {
           showArrow: true,
         },
       ],
-    },
+    }] : []),
     {
       title: t('preferences'),
       items: [
@@ -209,17 +210,19 @@ export const SettingsScreen: React.FC = () => {
           </View>
         ))}
 
-        {/* Sign Out Button */}
-        <Card style={[styles.signOutCard, { backgroundColor: theme.card }]}>
-          <Button
-            variant="ghost"
-            style={styles.signOutButton}
-            onPress={handleSignOut}
-          >
-            <LogOut size={20} color="#ef4444" />
-            <Text style={[styles.signOutText, { color: '#ef4444' }]}>Sign Out</Text>
-          </Button>
-        </Card>
+        {/* Sign Out Button - Only show if user is authenticated */}
+        {user && (
+          <Card style={[styles.signOutCard, { backgroundColor: theme.card }]}>
+            <Button
+              variant="ghost"
+              style={styles.signOutButton}
+              onPress={handleSignOut}
+            >
+              <LogOut size={20} color="#ef4444" />
+              <Text style={[styles.signOutText, { color: '#ef4444' }]}>Sign Out</Text>
+            </Button>
+          </Card>
+        )}
 
         {/* App Version */}
         <View style={styles.appVersion}>
