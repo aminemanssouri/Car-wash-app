@@ -14,6 +14,9 @@ export default {
       resizeMode: "contain",
       backgroundColor: "#3b82f6"
     },
+    "plugins": [
+    "expo-secure-store"
+  ],
     ios: {
       supportsTablet: true,
       config: {

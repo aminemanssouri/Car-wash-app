@@ -217,3 +217,32 @@ For support and questions:
 ---
 
 **Built with ❤️ using React Native and Expo**
+
+
+
+## sugested packages
+
+# Core packages
+npm install @tanstack/react-query zustand react-native-maps expo-notifications @react-native-async-storage/async-storage
+
+# UI enhancements
+npm install react-native-reanimated react-native-gesture-handler lottie-react-native react-native-modal
+
+# Forms & validation
+npm install yup react-native-keyboard-aware-scroll-view
+
+# Media
+npm install expo-camera expo-image-picker react-native-fast-image
+
+# Date/Time
+npm install dayjs react-native-calendars
+
+
+# Analytics & monitoring
+npm install @sentry/react-native
+
+# Payment (choose one)
+npm install react-native-stripe-sdk
+
+# Authentication
+npm install react-native-keychain @react-native-firebase/auth
