@@ -14,6 +14,7 @@ export type RootStackParamList = {
   SupportLegal: undefined;
   ServiceWorkers: { serviceKey: string };
   EditProfile: undefined;
+  Profile: undefined;
 };
 
 export type TabParamList = {
@@ -22,6 +23,5 @@ export type TabParamList = {
   Bookings: undefined;
   Messaging: undefined;
   Store: undefined;
-  Profile: undefined;
   Settings: undefined;
 };

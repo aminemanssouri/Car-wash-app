@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationLightTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Calendar, User, Settings, Wrench, Briefcase, MessageCircle, Store } from 'lucide-react-native';
+import { Home, Calendar, Settings, Wrench, Briefcase, MessageCircle, Store } from 'lucide-react-native';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -54,8 +54,6 @@ function TabNavigator() {
             IconComponent = MessageCircle;
           } else if (route.name === 'Store') {
             IconComponent = Store;
-          } else if (route.name === 'Profile') {
-            IconComponent = User;
           } else if (route.name === 'Settings') {
             IconComponent = Settings;
           }
@@ -76,7 +74,6 @@ function TabNavigator() {
       {userRole === 'worker' ? (
         <>
           <Tab.Screen name="Dashboard" component={WorkerDashboardScreen} />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </>
       ) : (
@@ -104,7 +101,6 @@ function TabNavigator() {
               },
             })}
           />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </>
       )}
@@ -118,6 +114,7 @@ export default function Navigation() {
     <NavigationContainer theme={theme.isDark ? NavigationDarkTheme : NavigationLightTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={TabNavigator} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="Signup" component={SignupScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="WorkerDetail" component={WorkerDetailScreen} />
