@@ -41,6 +41,14 @@ export default function HomeScreen() {
     });
   }, [query]);
 
+  const goToBooking = (id: string) => {
+    if (!user) {
+      (navigation as any).navigate('Login');
+      return;
+    }
+    (navigation as any).navigate('Booking', { workerId: id });
+  };
+
   const renderWorkerMarker = (worker: Worker) => (
     <Pressable
       key={worker.id}
@@ -85,7 +93,7 @@ export default function HomeScreen() {
             <Text style={[styles.price, { color: theme.accent }]}>{worker.price} MAD</Text>
             <Button 
               size="sm" 
-              onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
+              onPress={() => goToBooking(worker.id)}
             >
               {t('book_now')}
             </Button>
@@ -122,7 +130,7 @@ export default function HomeScreen() {
               setTimeout(() => setCenterOn(coords), 0);
             }
           }}
-          onBookNow={(id) => navigation.navigate('Booking', { workerId: id })}
+          onBookNow={(id) => goToBooking(id)}
           centerOn={centerOn}
           myLocation={myLocation}
           selectedId={selectedWorker}
@@ -251,7 +259,7 @@ export default function HomeScreen() {
                     <Text style={[styles.cardPrice, { color: theme.accent }]}>{worker.price} MAD</Text>
                     <Button 
                       size="sm" 
-                      onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
+                      onPress={() => goToBooking(worker.id)}
                     >
                       {t('book')}
                     </Button>

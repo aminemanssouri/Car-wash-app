@@ -10,12 +10,14 @@ import { mockBookings, Booking } from '../data/bookings';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
   const theme = useThemeColors();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
@@ -143,7 +145,18 @@ export const BookingsScreen: React.FC = () => {
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {filteredBookings.length === 0 ? (
+        {!user ? (
+          <View style={styles.emptyState}>
+            <Calendar size={48} color={theme.textSecondary} style={styles.emptyIcon} />
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('welcome_guest')}</Text>
+            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
+              {t('guest_prompt')}
+            </Text>
+            <Button onPress={() => (navigation as any).navigate('Login')} style={styles.bookButton}>
+              <Text style={styles.bookButtonText}>{t('sign_in')}</Text>
+            </Button>
+          </View>
+        ) : filteredBookings.length === 0 ? (
           <View style={styles.emptyState}>
             <Calendar size={48} color={theme.textSecondary} style={styles.emptyIcon} />
             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('no_bookings_found')}</Text>

@@ -10,6 +10,7 @@ import { Switch } from '../components/ui/Switch';
 import { signupValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SignupFormData {
@@ -23,6 +24,7 @@ interface SignupFormData {
 
 export default function SignupScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupType, setSignupType] = useState<'email' | 'phone'>('email');
@@ -133,7 +135,7 @@ export default function SignupScreen() {
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Sign Up</Text>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <View style={styles.logoContainer}>

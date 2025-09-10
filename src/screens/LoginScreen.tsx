@@ -8,6 +8,7 @@ import { FormInput } from '../components/ui/FormInput';
 import { Separator } from '../components/ui/Separator';
 import { loginValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -19,6 +20,7 @@ interface LoginFormData {
 
 export default function LoginScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [showPassword, setShowPassword] = useState(false);
   const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +79,7 @@ export default function LoginScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder, paddingTop: insets.top + 12 }]}>
         <Button
           variant="ghost"
           size="icon"
@@ -89,7 +91,7 @@ export default function LoginScreen() {
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Sign In</Text>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <View style={styles.logoContainer}>

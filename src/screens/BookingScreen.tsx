@@ -15,6 +15,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Mock worker data
 const mockWorkers = {
@@ -75,6 +76,7 @@ export default function BookingScreen() {
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { workerId = "1" } = (route.params as { workerId?: string }) || {};
 
   // Get today's date for min date input
@@ -164,6 +166,28 @@ export default function BookingScreen() {
     const year = String(d.getFullYear()).slice(2);
     return `${weekday}, ${day}/${month}/${year}`;
   }, [formData.date]);
+
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
+        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}> 
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <ArrowLeft size={20} color={theme.textSecondary} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('confirm_booking')}</Text>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: 24, alignItems: 'center' }}>
+          <Card style={{ padding: 20, width: '100%', maxWidth: 520, alignItems: 'center' }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 8 }}>{t('welcome_guest')}</Text>
+            <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: 'center', marginBottom: 16 }}>{t('guest_prompt')}</Text>
+            <Button onPress={() => (navigation as any).navigate('Login')}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{t('sign_in')}</Text>
+            </Button>
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
