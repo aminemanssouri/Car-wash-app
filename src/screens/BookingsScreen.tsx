@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
-import { ArrowLeft, Calendar, MapPin, Phone, MessageCircle, MoreVertical, Star } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'react-native';
+import { ArrowLeft, Calendar, MapPin, Phone, MessageCircle, MoreVertical, Star, Sparkles } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
@@ -75,6 +75,11 @@ export const BookingsScreen: React.FC = () => {
 
   const filteredBookings = filterBookings(mockBookings, activeTab);
 
+  // Coming Soon modal for Rate Service (fixed light theme, no dark mode)
+  const [showRateComingSoon, setShowRateComingSoon] = useState(false);
+  // Coming Soon modal for Call/Chat
+  const [showContactComingSoon, setShowContactComingSoon] = useState<null | 'call' | 'chat'>(null);
+
   const handleBookingAction = (action: string, bookingId: string) => {
     switch (action) {
       case 'cancel':
@@ -84,10 +89,13 @@ export const BookingsScreen: React.FC = () => {
         Alert.alert('Reschedule', `Reschedule booking ${bookingId}`);
         break;
       case 'rate':
-        Alert.alert('Rate Service', `Rate booking ${bookingId}`);
+        setShowRateComingSoon(true);
         break;
-      case 'contact':
-        Alert.alert('Contact Worker', `Contact worker for booking ${bookingId}`);
+      case 'call':
+        setShowContactComingSoon('call');
+        break;
+      case 'chat':
+        setShowContactComingSoon('chat');
         break;
     }
   };
@@ -207,9 +215,18 @@ export const BookingsScreen: React.FC = () => {
                     </View>
 
                     {booking.notes && (
-                      <View style={styles.notesContainer}>
+                      <View
+                        style={[
+                          styles.notesContainer,
+                          {
+                            backgroundColor: theme.isDark ? 'rgba(148,163,184,0.08)' : '#f9fafb',
+                            borderWidth: 1,
+                            borderColor: theme.cardBorder,
+                          },
+                        ]}
+                      >
                         <Text style={[styles.notesText, { color: theme.textPrimary }]}>
-                          <Text style={styles.notesLabel}>Notes: </Text>
+                          <Text style={[styles.notesLabel, { color: theme.textSecondary }]}>{t('notes')}: </Text>
                           {booking.notes}
                         </Text>
                       </View>
@@ -222,8 +239,15 @@ export const BookingsScreen: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        style={styles.actionButton}
-                        onPress={() => handleBookingAction('contact', booking.id)}
+                        style={[
+                          styles.actionButton,
+                          {
+                            borderColor: theme.isDark ? theme.cardBorder : '#d1d5db',
+                            backgroundColor: theme.isDark ? theme.card : '#ffffff',
+                            borderWidth: 1.2,
+                          },
+                        ]}
+                        onPress={() => handleBookingAction('call', booking.id)}
                       >
                         <Phone size={16} color={theme.textPrimary} />
                         <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('call')}</Text>
@@ -231,8 +255,15 @@ export const BookingsScreen: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        style={styles.actionButton}
-                        onPress={() => handleBookingAction('contact', booking.id)}
+                        style={[
+                          styles.actionButton,
+                          {
+                            borderColor: theme.isDark ? theme.cardBorder : '#d1d5db',
+                            backgroundColor: theme.isDark ? theme.card : '#ffffff',
+                            borderWidth: 1.2,
+                          },
+                        ]}
+                        onPress={() => handleBookingAction('chat', booking.id)}
                       >
                         <MessageCircle size={16} color={theme.textPrimary} />
                         <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('chat')}</Text>
@@ -255,6 +286,40 @@ export const BookingsScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* Coming Soon Modal - Light theme only */}
+      <Modal visible={showRateComingSoon} transparent animationType="fade" onRequestClose={() => setShowRateComingSoon(false)}>
+        <Pressable style={styles.csBackdrop} onPress={() => setShowRateComingSoon(false)}>
+          <Pressable style={styles.csCard} onPress={() => {}}>
+            <View style={styles.csIconWrap}>
+              <Sparkles size={28} color="#2563eb" />
+            </View>
+            <Text style={styles.csTitle}>Coming Soon</Text>
+            <Text style={styles.csSubtitle}>Ratings and reviews will be available in a future update.</Text>
+            <Button style={{ marginTop: 12 }} onPress={() => setShowRateComingSoon(false)}>
+              <Text style={styles.csButtonText}>OK</Text>
+            </Button>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Coming Soon Modal for Call/Chat - Light theme only */}
+      <Modal visible={!!showContactComingSoon} transparent animationType="fade" onRequestClose={() => setShowContactComingSoon(null)}>
+        <Pressable style={styles.csBackdrop} onPress={() => setShowContactComingSoon(null)}>
+          <Pressable style={styles.csCard} onPress={() => {}}>
+            <View style={styles.csIconWrap}>
+              <Sparkles size={28} color="#2563eb" />
+            </View>
+            <Text style={styles.csTitle}>Coming Soon</Text>
+            <Text style={styles.csSubtitle}>
+              {showContactComingSoon === 'call' ? 'Calling the worker will be available soon.' : 'In-app chat will be available soon.'}
+            </Text>
+            <Button style={{ marginTop: 12 }} onPress={() => setShowContactComingSoon(null)}>
+              <Text style={styles.csButtonText}>OK</Text>
+            </Button>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -487,6 +552,52 @@ const styles = StyleSheet.create({
   },
   rateButtonText: {
     fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  csBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  csCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    alignItems: 'center',
+  },
+  csIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#eef2ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  csTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  csSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  csButtonText: {
     color: '#ffffff',
     fontWeight: '600',
   },

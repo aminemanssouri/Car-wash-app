@@ -9,6 +9,11 @@ type Dictionary = Record<string, string>;
 const dictionaries: Record<AppLanguage, Dictionary> = {
   en: {
     settings: 'Settings',
+    home: 'Home',
+    messaging: 'Messaging',
+    store: 'Store',
+    dashboard: 'Dashboard',
+    menu: 'Menu',
     account: 'Account',
     preferences: 'Preferences',
     support_legal: 'Support & Legal',
@@ -183,6 +188,11 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
   },
   fr: {
     settings: 'Paramètres',
+    home: 'Accueil',
+    messaging: 'Messagerie',
+    store: 'Boutique',
+    dashboard: 'Tableau de bord',
+    menu: 'Menu',
     account: 'Compte',
     preferences: 'Préférences',
     support_legal: 'Support & Légal',
@@ -354,6 +364,11 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
   },
   ar: {
     settings: 'الإعدادات',
+    home: 'الرئيسية',
+    messaging: 'الرسائل',
+    store: 'المتجر',
+    dashboard: 'لوحة التحكم',
+    menu: 'القائمة',
     account: 'الحساب',
     preferences: 'التفضيلات',
     support_legal: 'الدعم والقانون',

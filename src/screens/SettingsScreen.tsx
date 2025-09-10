@@ -36,16 +36,7 @@ export const SettingsScreen: React.FC = () => {
   const [modalMessage, setModalMessage] = useState('');
 
   const handleLanguagePress = () => {
-    Alert.alert(
-      t('language'),
-      t('choose_language'),
-      [
-        { text: t('english'), onPress: () => setLanguage('en', true) },
-        { text: t('french'), onPress: () => setLanguage('fr', true) },
-        { text: t('arabic'), onPress: () => setLanguage('ar', true) },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    (navigation as any).navigate('Language');
   };
 
   const handleThemePress = () => {

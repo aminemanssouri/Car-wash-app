@@ -4,12 +4,14 @@ import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { User, Bell, Search, Navigation, Menu } from 'lucide-react-native';
+import { User, Bell, Search, Navigation as NavIcon, Menu, Home as HomeIcon, Wrench, Calendar, MessageCircle, Store, Settings, LogOut } from 'lucide-react-native';
 import LeafletMap from '../components/LeafletMap';
 import { Button } from '../components/ui/Button';
 import { mockWorkers, Worker } from '../data/workers';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
+import SideMenu from '../components/ui/SideMenu';
+import { useAuth } from '../contexts/AuthContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -19,6 +21,9 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const { user, signOut } = useAuth();
+  const userRole = (user as any)?.profile?.role || 'customer';
+  const [menuVisible, setMenuVisible] = useState(false);
   // Leave room (≈56px) for the stacked top-right buttons and margins
   const searchWidth = Math.min(Math.max(width - 24 - 56, 220), 640);
   const [centerOn, setCenterOn] = useState<{ latitude: number; longitude: number; zoom?: number } | null>(null);
@@ -93,6 +98,7 @@ export default function HomeScreen() {
   );
 
   return (
+    <>
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Interactive Map (Leaflet + OSM) */}
       <View style={styles.mapContainer}>
@@ -153,7 +159,7 @@ export default function HomeScreen() {
 
       {/* Left side buttons - vertically stacked */}
       <View style={styles.leftButtons}>
-        <Pressable style={[styles.hamburgerButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('ComingSoon', { feature: 'Menu' }) }>
+        <Pressable style={[styles.hamburgerButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => setMenuVisible(true)}>
           <Menu color={theme.textPrimary} size={22} />
         </Pressable>
         <Pressable style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('ComingSoon', { feature: 'Notifications' }) }>
@@ -193,7 +199,7 @@ export default function HomeScreen() {
             }
           }}
         >
-          <Navigation color={theme.textPrimary} size={20} />
+          <NavIcon color={theme.textPrimary} size={20} />
         </Pressable>
       </View>
 
@@ -270,6 +276,82 @@ export default function HomeScreen() {
         />
       </View>
     </View>
+    {/* Side Menu Overlay */}
+    <SideMenu
+      visible={menuVisible}
+      onClose={() => setMenuVisible(false)}
+      theme={theme}
+      header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.accent }} />
+          <Text style={{ fontSize: 16, fontWeight: '700', color: theme.textPrimary }}>{t('menu')}</Text>
+        </View>
+      }
+      items={
+        userRole === 'worker'
+          ? [
+              {
+                key: 'dashboard',
+                label: t('dashboard'),
+                icon: <HomeIcon size={18} color={theme.textPrimary} />,
+                onPress: () => (navigation as any).navigate('Dashboard'),
+              },
+            ]
+          : [
+              {
+                key: 'home',
+                label: t('home'),
+                icon: <HomeIcon size={18} color={theme.textPrimary} />,
+                onPress: () => (navigation as any).navigate('Home'),
+              },
+              {
+                key: 'services',
+                label: t('services_title'),
+                icon: <Wrench size={18} color={theme.textPrimary} />,
+                onPress: () => (navigation as any).navigate('Services'),
+              },
+              {
+                key: 'bookings',
+                label: t('my_bookings'),
+                icon: <Calendar size={18} color={theme.textPrimary} />,
+                onPress: () => (navigation as any).navigate('Bookings'),
+              },
+              {
+                key: 'messaging',
+                label: t('messaging'),
+                icon: <MessageCircle size={18} color={theme.textPrimary} />,
+                onPress: () => navigation.navigate('ComingSoon', { feature: 'Messaging' }),
+              },
+              {
+                key: 'store',
+                label: t('store'),
+                icon: <Store size={18} color={theme.textPrimary} />,
+                onPress: () => navigation.navigate('ComingSoon', { feature: 'Store' }),
+              },
+            ]
+      }
+      footerItems={[
+        {
+          key: 'settings',
+          label: t('settings'),
+          icon: <Settings size={18} color={theme.textPrimary} />,
+          onPress: () => (navigation as any).navigate('Settings'),
+        },
+        {
+          key: 'logout',
+          label: t('sign_out'),
+          icon: <LogOut size={18} color={theme.textPrimary} />,
+          onPress: async () => {
+            try {
+              await signOut();
+            } finally {
+              (navigation as any).navigate('Login');
+            }
+          },
+        },
+      ]}
+    />
+    </>
   );
 }
 

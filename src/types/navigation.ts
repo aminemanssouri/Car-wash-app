@@ -15,6 +15,7 @@ export type RootStackParamList = {
   ServiceWorkers: { serviceKey: string };
   EditProfile: undefined;
   Profile: undefined;
+  Language: undefined;
 };
 
 export type TabParamList = {

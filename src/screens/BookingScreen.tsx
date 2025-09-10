@@ -334,23 +334,23 @@ export default function BookingScreen() {
 
       </ScrollView>
 
-      {/* Date Picker Modal */}
+      {/* Date Picker Modal - Light theme unified style */}
       <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setShowDatePicker(false)}>
-          <Pressable style={[styles.modalSheet, { backgroundColor: theme.card }]} onPress={() => {}}>
-            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>{t('select_date')}</Text>
-            <ScrollView style={styles.modalList} contentContainerStyle={{ paddingBottom: 8 }}>
+        <Pressable style={styles.uBackdrop} onPress={() => setShowDatePicker(false)}>
+          <Pressable style={styles.uCard} onPress={() => {}}>
+            <Text style={styles.uTitle}>{t('select_date')}</Text>
+            <ScrollView style={styles.uList} contentContainerStyle={{ paddingBottom: 8 }}>
               {dateOptions.map((d) => (
                 <Pressable
                   key={d.value}
-                  style={[styles.modalItem, { borderBottomColor: theme.cardBorder }]}
+                  style={styles.uItem}
                   onPress={() => {
                     setFormData((prev) => ({ ...prev, date: d.value }));
                     setShowDatePicker(false);
                   }}
                 >
-                  <Text style={[styles.modalItemDate, { color: theme.textPrimary }]}>{d.label}</Text>
-                  <Text style={{ color: theme.textSecondary }}>{d.value}</Text>
+                  <Text style={styles.uItemTitle}>{d.label}</Text>
+                  <Text style={styles.uItemSub}>{d.value}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -648,5 +648,50 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
     fontWeight: '500',
+  },
+  // Unified modal styles (light theme only)
+  uBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  uCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  uTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  uList: {
+    marginBottom: 12,
+  },
+  uItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  uItemTitle: {
+    fontSize: 14,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  uItemSub: {
+    fontSize: 12,
+    color: '#6b7280',
   },
 });

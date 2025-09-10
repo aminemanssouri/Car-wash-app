@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, Animated, Pressable } from 'react-native';
 import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react-native';
-import { useThemeColors } from '../../lib/theme';
 
 export type AnimatedModalProps = {
   visible: boolean;
@@ -22,7 +21,6 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
   primaryActionText,
   onPrimaryAction,
 }) => {
-  const theme = useThemeColors();
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
@@ -48,21 +46,26 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
   }, [visible]);
 
   const Icon = type === 'success' ? CheckCircle2 : type === 'warning' ? AlertTriangle : Info;
-  const accent = type === 'success' ? '#22c55e' : type === 'warning' ? '#f59e0b' : theme.accent;
+  const accent = type === 'success' ? '#22c55e' : type === 'warning' ? '#f59e0b' : '#2563eb';
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
-      <View style={[styles.backdrop, { backgroundColor: theme.isDark ? 'rgba(0,0,0,0.6)' : 'rgba(17,24,39,0.45)' }]}>
+      <View style={styles.backdrop}>
         <Animated.View
           style={{
             transform: [{ scale }],
             opacity,
-            backgroundColor: theme.card,
+            backgroundColor: '#ffffff',
             borderRadius: 16,
             padding: 20,
             width: '86%',
+            maxWidth: 420,
             borderWidth: 1,
-            borderColor: theme.cardBorder,
+            borderColor: '#e5e7eb',
+            shadowColor: '#000',
+            shadowOpacity: 0.12,
+            shadowRadius: 12,
+            elevation: 6,
           }}
         >
           <View style={styles.headerRow}>
@@ -78,19 +81,19 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
               <Icon size={28} color={accent} />
             </Animated.View>
             <Pressable onPress={onClose} style={styles.closeBtn}>
-              <X size={20} color={theme.textSecondary} />
+              <X size={20} color={'#6b7280'} />
             </Pressable>
           </View>
 
-          <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
+          <Text style={[styles.title, { color: '#111827' }]}>{title}</Text>
           {message ? (
-            <Text style={[styles.message, { color: theme.textSecondary }]}>{message}</Text>
+            <Text style={[styles.message, { color: '#6b7280' }]}>{message}</Text>
           ) : null}
 
           <View style={styles.actionsRow}>
             {onClose && (
-              <Pressable onPress={onClose} style={[styles.actionBtn, { borderColor: theme.cardBorder }]}>
-                <Text style={[styles.actionText, { color: theme.textPrimary }]}>OK</Text>
+              <Pressable onPress={onClose} style={[styles.actionBtn, { borderColor: '#e5e7eb' }]}>
+                <Text style={[styles.actionText, { color: '#111827' }]}>OK</Text>
               </Pressable>
             )}
             {onPrimaryAction && (
@@ -114,6 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   headerRow: {
     flexDirection: 'row',
