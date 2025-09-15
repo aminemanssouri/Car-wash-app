@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
-import { ArrowLeft, Eye, EyeOff, Mail, Phone } from 'lucide-react-native';
+import { View, Text, StyleSheet, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
+
 import { useForm } from 'react-hook-form';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -22,7 +23,7 @@ export default function LoginScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [showPassword, setShowPassword] = useState(false);
-  const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
+  // Single login method (email)
   const [isLoading, setIsLoading] = useState(false);
   const theme = useThemeColors();
 
@@ -57,149 +58,110 @@ export default function LoginScreen() {
     navigation.goBack();
   };
 
-  const TabButton = ({ label, value, icon: Icon, isActive }: { 
-    label: string; 
-    value: 'email' | 'phone'; 
-    icon: any; 
-    isActive: boolean 
-  }) => (
-    <Pressable
-      style={[
-        styles.tabButton,
-        { backgroundColor: 'transparent' },
-        isActive && { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
-      ]}
-      onPress={() => setLoginType(value)}
-    >
-      <Icon size={16} color={isActive ? theme.accent : theme.textSecondary} />
-      <Text style={[styles.tabText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
-    </Pressable>
-  );
+  // Removed tabs (email only)
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder, paddingTop: insets.top + 12 }]}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <ArrowLeft size={20} color={theme.textSecondary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Sign In</Text>
-      </View>
-
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logo} />
+    <View style={[styles.container, { backgroundColor: theme.bg }]}> 
+      <KeyboardAvoidingView
+        style={[styles.content, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 12) }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={insets.top}
+      >
+        <View style={styles.centeredContent}>
+          {/* Welcome Section */}
+          <View style={styles.welcomeSection}>
+            <View style={styles.logoContainer}>
+              <View style={styles.logo} />
+            </View>
+            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Welcome Back</Text>
+            <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Sign in to book your car wash service</Text>
           </View>
-          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Welcome Back</Text>
-          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Sign in to book your car wash service</Text>
-        </View>
 
-        {/* Login Form */}
-        <Card style={styles.formCard}>
-          <View style={styles.form}>
-            {/* Login Type Tabs */}
-            <View style={styles.tabsContainer}>
-              <View style={styles.tabsList}>
-                <TabButton 
-                  label="Email" 
-                  value="email" 
-                  icon={Mail} 
-                  isActive={loginType === 'email'} 
+          {/* Login Form */}
+          <Card style={styles.formCard}>
+            <View style={styles.form}>
+              {/* Input Fields */}
+                <FormInput
+                  name="email"
+                  control={control}
+                  label="Email Address"
+                  placeholder="Enter your email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  rules={loginValidation.email}
+                  error={errors.email}
                 />
-                {/* Phone login temporarily disabled until OTP flow is implemented */}
+
+              {/* Password Field */}
+              <View style={styles.passwordContainer}>
+                <FormInput
+                  name="password"
+                  control={control}
+                  label="Password"
+                  placeholder="Enter your password"
+                  secureTextEntry={!showPassword}
+                  style={styles.passwordInput}
+                  rules={loginValidation.password}
+                  error={errors.password}
+                />
+                <Pressable
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? 
+                    <EyeOff size={20} color={theme.textSecondary} /> : 
+                    <Eye size={20} color={theme.textSecondary} />
+                  }
+                </Pressable>
               </View>
-            </View>
 
-            {/* Input Fields */}
-            {loginType === 'email' ? (
-              <FormInput
-                name="email"
-                control={control}
-                label="Email Address"
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                rules={loginValidation.email}
-                error={errors.email}
-              />
-            ) : null}
+              {/* Forgot Password */}
+              <View style={styles.forgotPasswordContainer}>
+                <Pressable onPress={() => Alert.alert('Forgot Password', 'Password reset coming soon')}>
+                  <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
+                </Pressable>
+              </View>
 
-            {/* Password Field */}
-            <View style={styles.passwordContainer}>
-              <FormInput
-                name="password"
-                control={control}
-                label="Password"
-                placeholder="Enter your password"
-                secureTextEntry={!showPassword}
-                style={styles.passwordInput}
-                rules={loginValidation.password}
-                error={errors.password}
-              />
-              <Pressable
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
+              {/* Submit Button */}
+              <Button 
+                onPress={handleSubmit(onSubmit)} 
+                style={styles.submitButton}
+                disabled={isLoading}
               >
-                {showPassword ? 
-                  <EyeOff size={20} color={theme.textSecondary} /> : 
-                  <Eye size={20} color={theme.textSecondary} />
-                }
-              </Pressable>
-            </View>
+                <Text style={styles.submitButtonText}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Text>
+              </Button>
 
-            {/* Forgot Password */}
-            <View style={styles.forgotPasswordContainer}>
-              <Pressable onPress={() => Alert.alert('Forgot Password', 'Password reset coming soon')}>
-                <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
-              </Pressable>
-            </View>
+              {/* Divider */}
+              <View style={styles.divider}>
+                <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
+                <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+                <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
+              </View>
 
-            {/* Submit Button */}
-            <Button 
-              onPress={handleSubmit(onSubmit)} 
-              style={styles.submitButton}
-              disabled={isLoading}
-            >
-              <Text style={styles.submitButtonText}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
-              </Text>
-            </Button>
+              {/* Continue as Guest */}
+              <Button 
+                variant="outline" 
+                onPress={handleContinueAsGuest}
+                style={styles.guestButton}
+              >
+                <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>Continue as Guest</Text>
+              </Button>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
-              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
-              <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
-            </View>
-
-            {/* Continue as Guest */}
-            <Button 
-              variant="outline" 
-              onPress={handleContinueAsGuest}
-              style={styles.guestButton}
-            >
-              <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>Continue as Guest</Text>
-            </Button>
-
-            {/* Sign Up Link */}
-            <View style={styles.signupContainer}>
-              <Text style={[styles.signupText, { color: theme.textSecondary }] }>
-                Don't have an account?{' '}
-                <Pressable onPress={() => navigation.navigate('Signup' as never)}>
+              {/* Sign Up Link */}
+              <View style={styles.signupRow}>
+                <Text style={[styles.signupText, { color: theme.textSecondary }]}>
+                  Don't have an account?
+                </Text>
+                <Pressable onPress={() => navigation.navigate('Signup' as never)} style={styles.signupButtonLink}>
                   <Text style={[styles.signupLink, { color: theme.accent }]}>Sign up</Text>
                 </Pressable>
-              </Text>
+              </View>
             </View>
-          </View>
-        </Card>
-      </ScrollView>
+          </Card>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -230,97 +192,69 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+  },
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
   },
   welcomeSection: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 12,
   },
   logoContainer: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     backgroundColor: '#eff6ff',
-    borderRadius: 32,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   logo: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     backgroundColor: '#3b82f6',
-    borderRadius: 16,
+    borderRadius: 14,
   },
   welcomeTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   welcomeSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#6b7280',
     textAlign: 'center',
   },
   formCard: {
-    padding: 24,
+    padding: 20,
     maxWidth: 400,
     alignSelf: 'center',
     width: '100%',
   },
   form: {
-    gap: 16,
-  },
-  tabsContainer: {
-    marginBottom: 8,
-  },
-  tabsList: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    padding: 4,
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    gap: 8,
-  },
-  activeTab: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  activeTabText: {
-    color: '#3b82f6',
+    gap: 12,
   },
   passwordContainer: {
     position: 'relative',
   },
   passwordInput: {
-    paddingRight: 50,
+    paddingRight: 44,
   },
   passwordToggle: {
     position: 'absolute',
     right: 12,
-    top: 38,
+    top: '50%',
+    marginTop: -14,
     padding: 8,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginTop: -8,
+    marginTop: -6,
   },
   forgotPasswordText: {
     fontSize: 14,
@@ -363,6 +297,17 @@ const styles = StyleSheet.create({
   signupContainer: {
     alignItems: 'center',
     marginTop: 8,
+  },
+  signupRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  signupButtonLink: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   signupText: {
     fontSize: 14,

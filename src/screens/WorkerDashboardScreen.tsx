@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { ArrowLeft, Calendar, DollarSign, Star, Clock, MapPin, Phone, User, CheckCircle, XCircle, AlertCircle } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { Calendar, DollarSign, Star, Clock, MapPin, TrendingUp, Eye, ChevronRight, BarChart3, Phone, CheckCircle, XCircle, AlertCircle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -20,10 +20,13 @@ export const WorkerDashboardScreen: React.FC = () => {
   const stats = {
     todayEarnings: 450,
     weeklyEarnings: 2100,
+    monthlyEarnings: 8750,
     rating: 4.8,
     completedJobs: 127,
     pendingBookings: 3,
     activeBookings: 1,
+    totalCustomers: 89,
+    avgJobTime: 45,
   };
 
   const mockBookings = {
@@ -278,31 +281,52 @@ export const WorkerDashboardScreen: React.FC = () => {
           </Card>
         </View>
 
-        {/* Bookings Section */}
-        <Card style={styles.bookingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Your Bookings</Text>
-          
-          {/* Tabs */}
-          <View style={styles.tabsContainer}>
-            <TabButton label="Pending" value="pending" count={mockBookings.pending.length} />
-            <TabButton label="Active" value="active" count={mockBookings.active.length} />
-            <TabButton label="Completed" value="completed" count={mockBookings.completed.length} />
+        {/* Quick Actions */}
+        <Pressable 
+          style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+          onPress={() => navigation.navigate('WorkerBookings' as never)}
+        >
+          <View style={[styles.actionIcon, { backgroundColor: theme.accent + '20' }]}>
+            <Calendar size={24} color={theme.accent} />
           </View>
+          <View style={styles.actionContent}>
+            <Text style={[styles.actionTitle, { color: theme.textPrimary }]}>Manage Bookings</Text>
+            <Text style={[styles.actionSubtitle, { color: theme.textSecondary }]}>
+              {stats.pendingBookings} pending • {stats.activeBookings} active
+            </Text>
+          </View>
+          <ChevronRight size={20} color={theme.textSecondary} />
+        </Pressable>
 
-          {/* Booking List */}
-          <View style={styles.bookingsList}>
-            {mockBookings[activeTab].length > 0 ? (
-              mockBookings[activeTab].map((booking) => (
-                <BookingCard key={booking.id} booking={booking} type={activeTab} />
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <AlertCircle size={48} color={theme.textSecondary} />
-                <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
-                  No {activeTab} bookings
-                </Text>
+        {/* Recent Activity */}
+        <Card style={styles.recentCard}>
+          <View style={styles.recentHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Recent Activity</Text>
+            <Pressable onPress={() => navigation.navigate('WorkerBookings' as never)}>
+              <Text style={[styles.viewAllText, { color: theme.accent }]}>View All</Text>
+            </Pressable>
+          </View>
+          
+          <View style={styles.recentList}>
+            {mockBookings.completed.slice(0, 2).map((booking) => (
+              <View key={booking.id} style={styles.recentItem}>
+                <Avatar
+                  size={36}
+                  fallback={booking.customerName.split(' ').map((n: string) => n[0]).join('')}
+                />
+                <View style={styles.recentContent}>
+                  <Text style={[styles.recentName, { color: theme.textPrimary }]}>{booking.customerName}</Text>
+                  <Text style={[styles.recentService, { color: theme.textSecondary }]}>{booking.service}</Text>
+                </View>
+                <View style={styles.recentRight}>
+                  <Text style={[styles.recentPrice, { color: theme.accent }]}>{booking.price} MAD</Text>
+                  <View style={styles.recentRating}>
+                    <Star size={12} color="#fbbf24" fill="#fbbf24" />
+                    <Text style={[styles.recentRatingText, { color: theme.textSecondary }]}>{booking.rating}</Text>
+                  </View>
+                </View>
               </View>
-            )}
+            ))}
           </View>
         </Card>
       </ScrollView>
@@ -512,6 +536,86 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 16,
     textAlign: 'center',
+  },
+  
+  // Quick Actions
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 16,
+    marginBottom: 24,
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+  },
+  
+  // Recent Activity
+  recentCard: {
+    padding: 20,
+    marginBottom: 20,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  recentList: {
+    gap: 16,
+  },
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  recentContent: {
+    flex: 1,
+  },
+  recentName: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  recentService: {
+    fontSize: 13,
+  },
+  recentRight: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  recentPrice: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  recentRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  recentRatingText: {
+    fontSize: 12,
   },
 });
 

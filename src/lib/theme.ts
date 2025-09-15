@@ -41,25 +41,25 @@ export function useThemeColors(): ThemeColors {
   if (isDark) {
     return {
       isDark,
-      bg: '#0b1220',
-      card: '#0f172a',
-      cardBorder: 'rgba(255,255,255,0.08)',
-      textPrimary: '#e5e7eb',
-      textSecondary: '#94a3b8',
-      accent: '#60a5fa',
-      surface: 'rgba(17,24,39,0.9)',
-      overlay: 'rgba(0,0,0,0.6)'
+      bg: '#1a0d2e',
+      card: '#2d1b3d',
+      cardBorder: 'rgba(254,209,65,0.15)',
+      textPrimary: '#fed141',
+      textSecondary: '#c4a7d1',
+      accent: '#fed141',
+      surface: 'rgba(45,27,61,0.9)',
+      overlay: 'rgba(108,42,132,0.6)'
     };
   }
   return {
     isDark: false,
-    bg: '#f1f5f9',
+    bg: '#fef7e8',
     card: '#ffffff',
-    cardBorder: 'rgba(255,255,255,0.2)',
-    textPrimary: '#111827',
-    textSecondary: '#6b7280',
-    accent: '#3b82f6',
+    cardBorder: 'rgba(108,42,132,0.1)',
+    textPrimary: '#6c2a84',
+    textSecondary: '#8b4f9f',
+    accent: '#6c2a84',
     surface: 'rgba(255,255,255,0.95)',
-    overlay: 'rgba(0,0,0,0.06)'
+    overlay: 'rgba(108,42,132,0.06)'
   };
 }

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Dimensions, useWindowDimensions, Alert, FlatList, ViewToken } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, Dimensions, useWindowDimensions, Alert, FlatList, ViewToken, Modal } from 'react-native';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { User, Bell, Search, Navigation as NavIcon, Menu, Home as HomeIcon, Wrench, Calendar, MessageCircle, Store, Settings, LogOut } from 'lucide-react-native';
+import { User, Bell, Search, Navigation as NavIcon, Menu, Home as HomeIcon, Wrench, Calendar, MessageCircle, Store, Settings, LogOut, AlertTriangle, X } from 'lucide-react-native';
 import LeafletMap from '../components/LeafletMap';
 import { Button } from '../components/ui/Button';
 import { mockWorkers, Worker } from '../data/workers';
@@ -12,6 +12,7 @@ import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import SideMenu from '../components/ui/SideMenu';
 import { useAuth } from '../contexts/AuthContext';
+import { useAuthNavigation } from '../hooks/useAuthNavigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -22,8 +23,10 @@ export default function HomeScreen() {
   const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { user, signOut } = useAuth();
+  const { navigateWithAuth } = useAuthNavigation();
   const userRole = (user as any)?.profile?.role || 'customer';
   const [menuVisible, setMenuVisible] = useState(false);
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
   // Leave room (≈56px) for the stacked top-right buttons and margins
   const searchWidth = Math.min(Math.max(width - 24 - 56, 220), 640);
   const [centerOn, setCenterOn] = useState<{ latitude: number; longitude: number; zoom?: number } | null>(null);
@@ -42,11 +45,20 @@ export default function HomeScreen() {
   }, [query]);
 
   const goToBooking = (id: string) => {
-    if (!user) {
-      (navigation as any).navigate('Login');
-      return;
+    navigateWithAuth('Booking', { workerId: id });
+  };
+
+  const handleSignOut = () => {
+    setSignOutModalVisible(true);
+  };
+
+  const confirmSignOut = async () => {
+    setSignOutModalVisible(false);
+    try {
+      await signOut();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
     }
-    (navigation as any).navigate('Booking', { workerId: id });
   };
 
   const renderWorkerMarker = (worker: Worker) => (
@@ -345,20 +357,68 @@ export default function HomeScreen() {
           icon: <Settings size={18} color={theme.textPrimary} />,
           onPress: () => (navigation as any).navigate('Settings'),
         },
-        {
+        ...(user ? [{
           key: 'logout',
           label: t('sign_out'),
           icon: <LogOut size={18} color={theme.textPrimary} />,
-          onPress: async () => {
-            try {
-              await signOut();
-            } finally {
-              (navigation as any).navigate('Login');
-            }
-          },
-        },
+          onPress: handleSignOut,
+        }] : []),
       ]}
     />
+    
+    {/* Sign Out Confirmation Modal */}
+    <Modal
+      visible={signOutModalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setSignOutModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <View style={styles.modalHeader}>
+            <View style={[styles.modalIcon, { backgroundColor: '#fef2f2' }]}>
+              <AlertTriangle size={24} color="#ef4444" />
+            </View>
+            <Pressable
+              style={styles.modalCloseButton}
+              onPress={() => setSignOutModalVisible(false)}
+            >
+              <X size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+
+          <View style={styles.modalBody}>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
+              {t('sign_out_confirm_title')}
+            </Text>
+            <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>
+              {t('sign_out_confirm_message')}
+            </Text>
+          </View>
+
+          <View style={styles.modalActions}>
+            <Button
+              variant="outline"
+              style={[styles.modalButton, { borderColor: theme.cardBorder }]}
+              onPress={() => setSignOutModalVisible(false)}
+            >
+              <Text style={[styles.modalButtonText, { color: theme.textPrimary }]}>
+                Cancel
+              </Text>
+            </Button>
+            <Button
+              style={[styles.modalButton, styles.confirmButton]}
+              onPress={confirmSignOut}
+            >
+              <LogOut size={16} color="#ffffff" style={styles.buttonIcon} />
+              <Text style={styles.confirmButtonText}>
+                {t('sign_out')}
+              </Text>
+            </Button>
+          </View>
+        </View>
+      </View>
+    </Modal>
     </>
   );
 }
@@ -728,7 +788,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  cardName: {
+  workerName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#111827',
@@ -773,5 +833,88 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3b82f6',
     marginBottom: 4,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBody: {
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  modalButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  confirmButton: {
+    backgroundColor: '#ef4444',
+  },
+  confirmButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  buttonIcon: {
+    marginRight: 0,
   },
 });

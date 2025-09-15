@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Wrench, Sparkles, Droplets, Brush, SprayCan } from 'lucide-react-native';
-import { Button } from '../components/ui/Button';
+import { Wrench, Sparkles, Droplets, Brush, SprayCan, ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
@@ -25,59 +27,102 @@ export default function ServicesScreen() {
   const { t } = useLanguage();
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: theme.textPrimary }}>{t('services_title')}</Text>
-        <Text style={{ marginTop: 4, color: theme.textSecondary }}>{t('services_subtitle')}</Text>
-      </View>
+    <SafeAreaView edges={[]} style={{ flex: 1, backgroundColor: theme.bg }}>
+      <Header 
+        title={t('services_title')} 
+        onBack={() => (navigation as any).navigate('MainTabs', { screen: 'Home' })} 
+      />
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: Math.max(16, insets.bottom + 12) }}
+        contentContainerStyle={{ 
+          padding: 16,
+          paddingBottom: Math.max(16, insets.bottom + 12) 
+        }}
         showsVerticalScrollIndicator={false}
       >
-        {SERVICES.map(({ key, title, desc, price, Icon }) => (
-          <Pressable
-            key={key}
-            style={{
-              backgroundColor: theme.card,
-              borderRadius: 12,
-              padding: 14,
-              marginBottom: 12,
-              borderWidth: 1,
-              borderColor: theme.cardBorder,
-              shadowColor: '#000',
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-            }}
-            onPress={() => (navigation as any).navigate('ServiceDetail', { serviceKey: key })}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          justifyContent: 'space-between',
+        }}>
+          {SERVICES.map(({ key, title, desc, price, Icon }) => (
+            <Pressable
+              key={key}
+              style={{
+                width: '48%',
+                backgroundColor: theme.card,
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: theme.cardBorder,
+                shadowColor: '#000',
+                shadowOpacity: theme.isDark ? 0.3 : 0.08,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 8,
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 160,
+              }}
+              onPress={() => (navigation as any).navigate('ServiceDetail', { serviceKey: key })}
+            >
+              {/* Icon container */}
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: theme.surface,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: theme.isDark ? `${theme.accent}20` : `${theme.accent}15`,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginRight: 12,
+                  marginBottom: 16,
                 }}
               >
-                <Icon color={theme.accent} size={20} />
+                <Icon color={theme.accent} size={28} />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: theme.textPrimary }}>{t(`service_${key}_title`)}</Text>
-                <Text style={{ marginTop: 2, color: theme.textSecondary }}>{t(`service_${key}_desc`)}</Text>
+              
+              {/* Service info */}
+              <Text style={{ 
+                fontSize: 16, 
+                fontWeight: '700', 
+                color: theme.textPrimary,
+                textAlign: 'center',
+                marginBottom: 6,
+              }}>
+                {t(`service_${key}_title`) || title}
+              </Text>
+              
+              <Text style={{ 
+                fontSize: 12, 
+                color: theme.textSecondary,
+                textAlign: 'center',
+                marginBottom: 12,
+                lineHeight: 16,
+              }}>
+                {t(`service_${key}_desc`) || desc}
+              </Text>
+              
+              {/* Price */}
+              <View style={{
+                backgroundColor: theme.isDark ? `${theme.accent}25` : `${theme.accent}10`,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: theme.isDark ? `${theme.accent}40` : `${theme.accent}20`,
+              }}>
+                <Text style={{ 
+                  fontWeight: '700', 
+                  color: theme.accent,
+                  fontSize: 14,
+                }}>
+                  {price} MAD
+                </Text>
               </View>
-              <Text style={{ fontWeight: '700', color: theme.accent }}>{price} MAD</Text>
-            </View>
-            <View style={{ marginTop: 12 }}>
-              <Button onPress={() => (navigation as any).navigate('ServiceDetail', { serviceKey: key })}>
-                {t('view_details')}
-              </Button>
-            </View>
-          </Pressable>
-        ))}
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -7,6 +7,7 @@ import type { RouteProp, NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { iconFor, getServiceByKey } from '../data/services';
 import { Button } from '../components/ui/Button';
+import { Header } from '../components/ui/Header';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function ServiceDetailScreen() {
@@ -21,15 +22,25 @@ export default function ServiceDetailScreen() {
 
   if (!service) {
     return (
-      <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: theme.bg, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-        <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>{t('service_not_found')}</Text>
-        <Button onPress={() => navigation.goBack()}>{t('go_back')}</Button>
+      <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
+        <Header 
+          title={t('service_details')} 
+          onBack={() => navigation.goBack()} 
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>{t('service_not_found')}</Text>
+          <Button onPress={() => navigation.goBack()}>{t('go_back')}</Button>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
+    <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
+      <Header 
+        title={t('service_details')} 
+        onBack={() => navigation.goBack()} 
+      />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>

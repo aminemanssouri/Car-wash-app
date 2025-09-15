@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import type { RootStackParamList } from '../types/navigation';
-import { ArrowLeft, MapPin, Car, CreditCard, Calendar } from 'lucide-react-native';
+import { Calendar, MapPin, Clock, User, Phone, Car, CreditCard, Check, ArrowLeft } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
-import { Label } from '../components/ui/Label';
-import { Select } from '../components/ui/Select';
-import { Textarea } from '../components/ui/Textarea';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Textarea } from '../components/ui/Textarea';
+import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useAuthNavigation } from '../hooks/useAuthNavigation';
+import { useBooking } from '../contexts/BookingContext';
+import { safeGoBack } from '../lib/navigation';
+import type { RootStackParamList } from '../types/navigation';
 
 // Mock worker data
 const mockWorkers = {
@@ -77,6 +80,8 @@ export default function BookingScreen() {
   const theme = useThemeColors();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { navigateWithAuth } = useAuthNavigation();
+  const { updateBookingData, setCurrentStep } = useBooking();
   const { workerId = "1" } = (route.params as { workerId?: string }) || {};
 
   // Get today's date for min date input
@@ -97,91 +102,42 @@ export default function BookingScreen() {
     return next || timeSlots[0].value;
   };
 
-  const [formData, setFormData] = useState({
-    location: "Current Location - Marrakech, Morocco",
-    date: today,
-    time: getNearestTimeSlot(),
-    carType: 'sedan',
-    notes: "",
-    paymentMethod: "cash",
-  });
-
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // Build simple date options for next 30 days
-  const dateOptions = Array.from({ length: 30 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const iso = `${yyyy}-${mm}-${dd}`;
-    const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
-    const label = `${weekday}, ${dd}/${mm}/${String(yyyy).slice(2)}`;
-    return { value: iso, label };
-  });
-
   const worker = mockWorkers[workerId as keyof typeof mockWorkers];
-  const selectedCarType = carTypes.find((car) => car.id === formData.carType);
   const basePrice = worker?.price || 80;
-  const finalPrice = selectedCarType ? Math.round(basePrice * selectedCarType.multiplier) : basePrice;
 
-  const handleSubmit = () => {
-    // Validate required fields with specific messages
-    const missing: string[] = [];
-    if (!formData.date) missing.push(t('date'));
-    if (!formData.time) missing.push(t('time'));
-    if (!formData.carType) missing.push(t('vehicle_type'));
-    if (missing.length) {
-      Alert.alert(t('missing_fields'), `${t('please_complete')}: ${missing.join(', ')}`);
-      return;
-    }
-
+  const handleStartBooking = () => {
     // Ensure worker exists
     if (!worker) {
-      Alert.alert(t('worker_not_found'), t('please_select_worker_again'));
+      Alert.alert('Worker Not Found', 'Please select a worker again');
       return;
     }
 
-    // Navigate to confirmation page with booking data
-    const bookingData = {
+    // Initialize booking data with worker info
+    updateBookingData({
       workerId,
-      workerName: worker?.name || 'Car Washer',
-      ...formData,
-      price: finalPrice.toString(),
-    };
+      workerName: worker.name,
+      basePrice,
+      finalPrice: basePrice,
+    });
 
-    navigation.navigate('BookingConfirmation', bookingData as any);
+    // Start the multi-step booking flow
+    setCurrentStep(1);
+    navigation.navigate('BookingDateTime');
   };
-
-  // today already computed above
-
-  // Localized display for selected date (e.g., Thu, 21/08/25)
-  const formattedDate = React.useMemo(() => {
-    if (!formData.date) return '';
-    const d = new Date(formData.date + 'T00:00:00');
-    const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = String(d.getFullYear()).slice(2);
-    return `${weekday}, ${day}/${month}/${year}`;
-  }, [formData.date]);
 
   if (!user) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
-        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}> 
-          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-            <ArrowLeft size={20} color={theme.textSecondary} />
-          </Pressable>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('confirm_booking')}</Text>
-        </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+        <Header 
+          title="Confirm Booking" 
+          onBack={() => safeGoBack(navigation)} 
+        />
         <ScrollView contentContainerStyle={{ padding: 24, alignItems: 'center' }}>
           <Card style={{ padding: 20, width: '100%', maxWidth: 520, alignItems: 'center' }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 8 }}>{t('welcome_guest')}</Text>
-            <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: 'center', marginBottom: 16 }}>{t('guest_prompt')}</Text>
-            <Button onPress={() => (navigation as any).navigate('Login')}>
-              <Text style={{ color: '#fff', fontWeight: '600' }}>{t('sign_in')}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.textPrimary, marginBottom: 8 }}>Welcome Guest</Text>
+            <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: 'center', marginBottom: 16 }}>Please sign in to continue with your booking</Text>
+            <Button onPress={() => navigateWithAuth('Booking', route.params)}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>Sign In</Text>
             </Button>
           </Card>
         </ScrollView>
@@ -190,205 +146,105 @@ export default function BookingScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top', 'bottom']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color={theme.textSecondary} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Book Service</Text>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+      <Header 
+        title="Book Service" 
+        onBack={() => safeGoBack(navigation)} 
+      />
 
-      <ScrollView style={[styles.content]} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Selected Worker */}
-        <Card style={styles.workerCard}>
+        <Card style={[styles.workerCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.workerInfo}>
             <Avatar 
               source={worker?.avatar} 
               name={worker?.name || ''} 
-              size={48}
+              size={64}
             />
             <View style={styles.workerDetails}>
               <Text style={[styles.workerName, { color: theme.textPrimary }]}>{worker?.name}</Text>
-              <Text style={[styles.workerRole, { color: theme.textSecondary }]}>{t('your_car_washer')}</Text>
-            </View>
-            <Badge variant="secondary" style={styles.priceBadge}>
-              {`${basePrice} MAD`}
-            </Badge>
-          </View>
-        </Card>
-
-        {/* Location */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <MapPin size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('service_location')}</Label>
-          </View>
-          <Input
-            value={formData.location}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, location: text }))}
-            placeholder={t('enter_your_address')}
-            style={styles.input}
-          />
-          <Text style={[styles.helperText, { color: theme.textSecondary }]}>
-            {t('the_worker_will_come_to_this_location_to_wash_your_car')}
-          </Text>
-        </Card>
-
-        {/* Date & Time */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Calendar size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('date_time')}</Label>
-          </View>
-
-          <View style={styles.dateTimeRow}>
-            <View style={styles.dateTimeItem}>
-              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>{t('date')} *</Label>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateChips} contentContainerStyle={{ gap: 8 }}>
-                {dateOptions.slice(0, 14).map((d) => {
-                  const [weekday, rest] = d.label.split(',');
-                  const selected = formData.date === d.value;
-                  return (
-                    <Pressable
-                      key={d.value}
-                      onPress={() => setFormData((prev) => ({ ...prev, date: d.value }))}
-                      style={[
-                        styles.dateChip,
-                        { borderColor: theme.cardBorder, backgroundColor: theme.card },
-                        selected && { borderColor: theme.accent, backgroundColor: theme.surface },
-                      ]}
-                    >
-                      <Text style={[styles.dateChipWeekday, { color: selected ? theme.accent : theme.textSecondary }]}>{weekday?.trim()}</Text>
-                      <Text style={[styles.dateChipDate, { color: theme.textPrimary }]}>{rest?.trim()}</Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-
-            <View style={styles.dateTimeItem}>
-              <Label style={[styles.fieldLabel, { color: theme.textPrimary }]}>{t('time')} *</Label>
-              <Select
-                value={formData.time}
-                onValueChange={(value) => setFormData((prev) => ({ ...prev, time: value }))}
-                options={timeSlots}
-                placeholder={t('select_time')}
-                style={styles.select}
-              />
+              <Text style={[styles.workerRole, { color: theme.textSecondary }]}>Professional Car Washer</Text>
+              <View style={styles.workerPriceRow}>
+                <Text style={[styles.workerPrice, { color: theme.accent }]}>{basePrice} MAD</Text>
+                <Text style={[styles.workerPriceLabel, { color: theme.textSecondary }]}>Starting Price</Text>
+              </View>
             </View>
           </View>
         </Card>
 
-        {/* Car Type */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Car size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('vehicle_type')}</Label>
-          </View>
-
-          <Select
-            value={formData.carType}
-            onValueChange={(value) => setFormData((prev) => ({ ...prev, carType: value }))}
-            options={carTypes.map((c) => ({ label: c.name, value: c.id }))}
-            placeholder={t('select_vehicle_type')}
-            style={styles.select}
-            modalTitle={t('select_vehicle_type')}
-            getOptionRightText={(opt) => {
-              const c = carTypes.find((x) => x.id === opt.value);
-              return c ? `${Math.round(basePrice * c.multiplier)} MAD` : undefined;
-            }}
-            getOptionSubtitle={(opt) => {
-              const c = carTypes.find((x) => x.id === opt.value);
-              return c && c.multiplier !== 1 ? `x${c.multiplier}` : undefined;
-            }}
-          />
-        </Card>
-
-        {/* Additional Notes */}
-        <Card style={styles.sectionCard}>
-          <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('additional_notes')}</Label>
-          <Textarea
-            value={formData.notes}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, notes: text }))}
-            placeholder={t('any_special_instructions_or_requests')}
-            rows={3}
-            style={styles.textarea}
-          />
-        </Card>
-
-        {/* Payment Method */}
-        <Card style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <CreditCard size={20} color={theme.accent} />
-            <Label style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('payment_method')}</Label>
-          </View>
-
-          <View style={styles.paymentMethod}>
-            <View style={[styles.paymentIndicator, { backgroundColor: theme.accent }]} />
-            <View style={styles.paymentInfo}>
-              <Text style={[styles.paymentTitle, { color: theme.textPrimary }]}>{t('cash_on_delivery')}</Text>
-              <Text style={[styles.paymentDescription, { color: theme.textSecondary }] }>
-                {t('to_be_paid_upon_completion')}
+        {/* Service Info */}
+        <Card style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.infoTitle, { color: theme.textPrimary }]}>What to Expect</Text>
+          <View style={styles.infoList}>
+            <View style={styles.infoItem}>
+              <View style={[styles.infoBullet, { backgroundColor: theme.accent }]} />
+              <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+                Professional mobile car wash service
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={[styles.infoBullet, { backgroundColor: theme.accent }]} />
+              <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+                We bring all equipment and water
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={[styles.infoBullet, { backgroundColor: theme.accent }]} />
+              <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+                Eco-friendly products used
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <View style={[styles.infoBullet, { backgroundColor: theme.accent }]} />
+              <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+                Satisfaction guaranteed
               </Text>
             </View>
           </View>
         </Card>
 
-        {/* Price Summary */}
-        <Card style={[styles.priceCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          <View style={styles.priceRow}>
-            <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>Service Fee:</Text>
-            <Text style={[styles.priceValue, { color: theme.textPrimary }]}>{basePrice} MAD</Text>
-          </View>
-          {selectedCarType && selectedCarType.multiplier !== 1 && (
-            <View style={styles.priceRow}>
-              <Text style={[styles.priceAdjustment, { color: theme.textSecondary }] }>
-                {selectedCarType.name} adjustment:
-              </Text>
-              <Text style={[styles.priceAdjustment, { color: theme.textSecondary }]}>×{selectedCarType.multiplier}</Text>
+        {/* Booking Steps Preview */}
+        <Card style={[styles.stepsCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <Text style={[styles.stepsTitle, { color: theme.textPrimary }]}>Booking Process</Text>
+          <View style={styles.stepsList}>
+            <View style={styles.stepItem}>
+              <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>1</Text>
+              </View>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Select date and time</Text>
             </View>
-          )}
-          <View style={[styles.priceDivider, { backgroundColor: theme.cardBorder }]} />
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: theme.textPrimary }]}>Total:</Text>
-            <Text style={[styles.totalValue, { color: theme.accent }]}>{finalPrice} MAD</Text>
+            <View style={styles.stepItem}>
+              <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>2</Text>
+              </View>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Choose vehicle details</Text>
+            </View>
+            <View style={styles.stepItem}>
+              <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>3</Text>
+              </View>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Provide service location</Text>
+            </View>
+            <View style={styles.stepItem}>
+              <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>4</Text>
+              </View>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Select payment method</Text>
+            </View>
+            <View style={styles.stepItem}>
+              <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
+                <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>5</Text>
+              </View>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Review and confirm</Text>
+            </View>
           </View>
         </Card>
-
       </ScrollView>
 
-      {/* Date Picker Modal - Light theme unified style */}
-      <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-        <Pressable style={styles.uBackdrop} onPress={() => setShowDatePicker(false)}>
-          <Pressable style={styles.uCard} onPress={() => {}}>
-            <Text style={styles.uTitle}>{t('select_date')}</Text>
-            <ScrollView style={styles.uList} contentContainerStyle={{ paddingBottom: 8 }}>
-              {dateOptions.map((d) => (
-                <Pressable
-                  key={d.value}
-                  style={styles.uItem}
-                  onPress={() => {
-                    setFormData((prev) => ({ ...prev, date: d.value }));
-                    setShowDatePicker(false);
-                  }}
-                >
-                  <Text style={styles.uItemTitle}>{d.label}</Text>
-                  <Text style={styles.uItemSub}>{d.value}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <Button onPress={() => setShowDatePicker(false)}>
-              <Text style={styles.submitButtonText}>{t('close')}</Text>
-            </Button>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Bottom fixed footer respecting safe area */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom - 12, 0), backgroundColor: theme.card, borderTopColor: theme.cardBorder }] }>
-        <Button style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>{t('confirm_booking')}</Text>
+      {/* Bottom Navigation */}
+      <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <Button style={styles.startButton} onPress={handleStartBooking}>
+          <Text style={styles.startButtonText}>Start Booking Process</Text>
         </Button>
       </View>
     </SafeAreaView>
@@ -401,10 +257,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   header: {
+    height: 56,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     backgroundColor: '#ffffff',
@@ -414,7 +271,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#111827',
   },
@@ -451,6 +308,96 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     marginTop: 2,
+  },
+  workerPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  workerPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  workerPriceLabel: {
+    fontSize: 12,
+  },
+  infoCard: {
+    padding: 16,
+    marginBottom: 24,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  infoList: {
+    gap: 8,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  infoBullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#6b7280',
+    marginTop: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  stepsCard: {
+    padding: 16,
+    marginBottom: 24,
+  },
+  stepsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  stepsList: {
+    gap: 12,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#e5e7eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+    lineHeight: 20,
+  },
+  startButton: {
+    height: 48,
+    marginBottom: 0,
+  },
+  startButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
   priceBadge: {
     marginLeft: 'auto',

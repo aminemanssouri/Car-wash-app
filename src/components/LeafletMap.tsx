@@ -49,7 +49,7 @@ export default function LeafletMap({ initialRegion, markers, onMarkerPress, onBo
   <style>
     html, body, #map { height: 100%; margin: 0; padding: 0; background: ${isDark ? '#0b1220' : '#f1f5f9'} }
     .marker-initial {
-      background: #3b82f6; color: #fff; width: 34px; height: 34px; border-radius: 17px;
+      background: #6c2a84; color: #fff; width: 34px; height: 34px; border-radius: 17px;
       display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid #fff;
       box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     }
@@ -59,8 +59,8 @@ export default function LeafletMap({ initialRegion, markers, onMarkerPress, onBo
     .popup-title { font-size: 14px; font-weight: 600; color: ${isDark ? '#e5e7eb' : '#111827'}; margin-bottom: 2px; }
     .popup-sub { font-size: 12px; color: ${isDark ? '#94a3b8' : '#6b7280'}; margin-bottom: 8px; }
     .popup-row { display: flex; align-items: center; justify-content: space-between; }
-    .popup-price { font-size: 12px; font-weight: 600; color: ${isDark ? '#60a5fa' : '#3b82f6'}; }
-    .book-btn { background: #3b82f6; color: #fff; border: 0; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+    .popup-price { font-size: 12px; font-weight: 600; color: ${isDark ? '#fed141' : '#6c2a84'}; }
+    .book-btn { background: #6c2a84; color: #fff; border: 0; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -83,7 +83,7 @@ export default function LeafletMap({ initialRegion, markers, onMarkerPress, onBo
     const markers = ${markersJson};
     window.markersMap = {};
     markers.forEach(m => {
-      const bg = '#3b82f6';
+      const bg = '#6c2a84';
       const initial = (m.title || ' ').charAt(0);
       const icon = L.divIcon({
         className: '',
@@ -174,7 +174,7 @@ export default function LeafletMap({ initialRegion, markers, onMarkerPress, onBo
             var entry = window.markersMap[k];
             if (!entry || !entry.marker) return;
             var isSel = (k === ${JSON.stringify(selectedId || '')});
-            var bg = isSel ? '#ef4444' : '#3b82f6';
+            var bg = isSel ? '#fed141' : '#6c2a84';
             var initial = entry.initial || '';
             var html = '<div class="marker-initial" style="background:' + bg + '">' + initial + '</div>';
             var icon = L.divIcon({ className: '', html: html, iconSize: [34,34], iconAnchor: [17,17] });

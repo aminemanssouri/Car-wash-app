@@ -4,12 +4,13 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { ArrowLeft, Star, MapPin, Clock, Phone, MessageCircle, Calendar } from 'lucide-react-native';
+import { Star, MapPin, Clock, Phone, MessageCircle, Calendar } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 
 // Mock worker data - matches original app structure
@@ -115,14 +116,11 @@ export default function WorkerDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top','bottom']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color={theme.textSecondary} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Worker Profile</Text>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+      <Header 
+        title="Worker Profile" 
+        onBack={() => navigation.goBack()} 
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Worker Info Card */}
@@ -229,7 +227,7 @@ export default function WorkerDetailScreen() {
         </Card>
 
         {/* Action Buttons */}
-        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44) }]}>
           <Button 
             style={[styles.bookButton, !worker.isAvailable && styles.disabledButton]} 
             disabled={!worker.isAvailable} 

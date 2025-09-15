@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, MapPin, Plus, MoreVertical, Home, Briefcase } from 'lucide-react-native';
+import { MapPin, Plus, MoreVertical, Home, Briefcase } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
+import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 
 interface Address {
@@ -114,14 +115,11 @@ export default function AddressesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top','bottom']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Manage Addresses</Text>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+      <Header 
+        title="Manage Addresses" 
+        onBack={() => navigation.goBack()} 
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

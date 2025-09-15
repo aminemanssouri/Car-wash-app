@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal, ScrollView } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
+import { useThemeColors } from '../../lib/theme';
 
 interface SelectOption {
   label: string;
@@ -29,6 +30,7 @@ export const Select: React.FC<SelectProps> = ({
   getOptionRightText,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const theme = useThemeColors();
 
   const selectedOption = options.find(option => option.value === value);
 
@@ -40,13 +42,23 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <View style={style}>
       <Pressable 
-        style={styles.trigger}
+        style={[
+          styles.trigger,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
+          }
+        ]}
         onPress={() => setIsOpen(true)}
       >
-        <Text style={[styles.triggerText, !selectedOption && styles.placeholder]}>
+        <Text style={[
+          styles.triggerText,
+          { color: selectedOption ? theme.textPrimary : theme.textSecondary },
+          !selectedOption && styles.placeholder
+        ]}>
           {selectedOption ? selectedOption.label : placeholder}
         </Text>
-        <ChevronDown size={16} color="#6b7280" />
+        <ChevronDown size={16} color={theme.textSecondary} />
       </Pressable>
 
       <Modal
@@ -59,10 +71,21 @@ export const Select: React.FC<SelectProps> = ({
           style={styles.overlay}
           onPress={() => setIsOpen(false)}
         >
-          <View style={styles.content}>
+          <View style={[
+            styles.content,
+            { backgroundColor: theme.card }
+          ]}>
             {modalTitle && (
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalHeaderText}>{modalTitle}</Text>
+              <View style={[
+                styles.modalHeader,
+                { borderBottomColor: theme.cardBorder }
+              ]}>
+                <Text style={[
+                  styles.modalHeaderText,
+                  { color: theme.textPrimary }
+                ]}>
+                  {modalTitle}
+                </Text>
               </View>
             )}
             <ScrollView style={styles.optionsList}>
@@ -71,7 +94,10 @@ export const Select: React.FC<SelectProps> = ({
                   key={option.value}
                   style={[
                     styles.option,
-                    value === option.value && styles.selectedOption
+                    { borderBottomColor: theme.cardBorder },
+                    value === option.value && {
+                      backgroundColor: theme.isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff'
+                    }
                   ]}
                   onPress={() => handleSelect(option.value)}
                 >
@@ -79,16 +105,27 @@ export const Select: React.FC<SelectProps> = ({
                     <View style={styles.optionTexts}>
                       <Text style={[
                         styles.optionText,
-                        value === option.value && styles.selectedOptionText
+                        { color: theme.textPrimary },
+                        value === option.value && { color: theme.accent, fontWeight: '500' }
                       ]}>
                         {option.label}
                       </Text>
                       {!!getOptionSubtitle && !!getOptionSubtitle(option) && (
-                        <Text style={styles.optionSubtitle}>{getOptionSubtitle(option)}</Text>
+                        <Text style={[
+                          styles.optionSubtitle,
+                          { color: theme.textSecondary }
+                        ]}>
+                          {getOptionSubtitle(option)}
+                        </Text>
                       )}
                     </View>
                     {!!getOptionRightText && !!getOptionRightText(option) && (
-                      <Text style={styles.optionRightText}>{getOptionRightText(option)}</Text>
+                      <Text style={[
+                        styles.optionRightText,
+                        { color: theme.textPrimary }
+                      ]}>
+                        {getOptionRightText(option)}
+                      </Text>
                     )}
                   </View>
                 </Pressable>
@@ -107,18 +144,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
   },
   triggerText: {
     fontSize: 16,
-    color: '#111827',
   },
   placeholder: {
-    color: '#9ca3af',
+    // Color will be handled by theme
   },
   overlay: {
     flex: 1,
@@ -127,7 +161,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     marginHorizontal: 20,
     maxHeight: 300,
@@ -145,12 +178,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
   },
   modalHeaderText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#111827',
   },
   optionsList: {
     maxHeight: 280,
@@ -159,7 +190,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
   },
   optionRow: {
     flexDirection: 'row',
@@ -170,25 +200,15 @@ const styles = StyleSheet.create({
   optionTexts: {
     flex: 1,
   },
-  selectedOption: {
-    backgroundColor: '#eff6ff',
-  },
   optionText: {
     fontSize: 16,
-    color: '#111827',
   },
   optionSubtitle: {
     fontSize: 12,
-    color: '#6b7280',
     marginTop: 2,
   },
   optionRightText: {
     fontSize: 14,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  selectedOptionText: {
-    color: '#3b82f6',
     fontWeight: '500',
   },
 });

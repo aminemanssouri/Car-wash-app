@@ -1,6 +1,7 @@
 import React from 'react';
 import { TextInput, TextInputProps, StyleSheet, View, Text } from 'react-native';
 import { Control, Controller, FieldError } from 'react-hook-form';
+import { useThemeColors } from '../../lib/theme';
 
 interface FormInputProps extends Omit<TextInputProps, 'value' | 'onChangeText'> {
   name: string;
@@ -19,17 +20,27 @@ export const FormInput: React.FC<FormInputProps> = ({
   style, 
   ...props 
 }) => {
+  const theme = useThemeColors();
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: theme.textPrimary }]}>{label}</Text>}
       <Controller
         name={name}
         control={control}
         rules={rules}
         render={({ field: { onChange, onBlur, value } }) => (
           <TextInput
-            style={[styles.input, error && styles.inputError, style]}
-            placeholderTextColor="#9ca3af"
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+                color: theme.textPrimary,
+              },
+              error && styles.inputError,
+              style,
+            ]}
+            placeholderTextColor={theme.textSecondary}
             onBlur={onBlur}
             onChangeText={onChange}
             value={value}
@@ -49,18 +60,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#374151',
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: '#ffffff',
-    color: '#111827',
   },
   inputError: {
     borderColor: '#ef4444',

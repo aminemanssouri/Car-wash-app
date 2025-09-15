@@ -8,12 +8,15 @@ import type { RootStackParamList } from '../types/navigation';
 import { getServiceByKey, iconFor } from '../data/services';
 import { mockWorkers, Worker } from '../data/workers';
 import { Button } from '../components/ui/Button';
+import { Header } from '../components/ui/Header';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function ServiceWorkersScreen() {
   const theme = useThemeColors();
   const route = useRoute<RouteProp<RootStackParamList, 'ServiceWorkers'>>();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { serviceKey } = route.params || ({} as any);
+  const { t } = useLanguage();
 
   const service = useMemo(() => getServiceByKey(serviceKey), [serviceKey]);
   const Icon = service ? iconFor(service.icon) : undefined;
@@ -26,27 +29,17 @@ export default function ServiceWorkersScreen() {
   }, [service]);
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: theme.bg }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-              {Icon ? <Icon size={20} color={theme.accent} /> : null}
-            </View>
-            <View>
-              <Text style={{ fontSize: 20, fontWeight: '700', color: theme.textPrimary }}>Providers</Text>
-              {service ? <Text style={{ color: theme.textSecondary, marginTop: 2 }}>{service.title}</Text> : null}
-            </View>
-          </View>
-          <Button variant="ghost" onPress={() => navigation.goBack()}>Close</Button>
-        </View>
-      </View>
+    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.bg }}>
+      <Header 
+        title={service ? `${t('providers')} - ${service.title}` : t('providers')} 
+        onBack={() => navigation.goBack()} 
+      />
 
       <FlatList
         data={filtered}
         keyExtractor={(w) => w.id}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-        ListEmptyComponent={<Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 24 }}>No workers found for this service.</Text>}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}
+        ListEmptyComponent={<Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 24 }}>{t('no_workers_found')}</Text>}
         renderItem={({ item: w }) => (
           <View style={{ backgroundColor: theme.card, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, padding: 12, marginBottom: 12 }}>
             <View style={{ flexDirection: 'row' }}>

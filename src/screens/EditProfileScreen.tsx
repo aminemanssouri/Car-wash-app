@@ -8,6 +8,7 @@ import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { ArrowLeft, Mail, User, Phone, Calendar as CalIcon, Globe, CreditCard, Camera, Edit3, Check } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
+import { Header } from '../components/ui/Header';
 import AnimatedModal from '../components/ui/AnimatedModal';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -132,16 +133,10 @@ export default function EditProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }] }>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder, paddingTop: insets.top + 12 }] }>
-        <Button variant="ghost" size="icon" onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('edit_profile')}</Text>
-        <Button onPress={onSave} variant="ghost" size="icon" style={styles.saveHeaderBtn}>
-          <Check size={20} color={theme.accent} />
-        </Button>
-      </View>
+      <Header 
+        title={t('edit_profile')} 
+        onBack={() => navigation.goBack()} 
+      />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Header Card */}
@@ -256,6 +251,24 @@ export default function EditProfileScreen() {
 
       </ScrollView>
 
+      {/* Save Button */}
+      <View style={[styles.saveButtonContainer, { backgroundColor: theme.bg }]}>
+        <Button
+          onPress={onSave}
+          disabled={saving}
+          style={[styles.saveButton, { backgroundColor: theme.accent }]}
+        >
+          {saving ? (
+            <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>Saving...</Text>
+          ) : (
+            <>
+              <Check size={16} color="#ffffff" />
+              <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>Save Changes</Text>
+            </>
+          )}
+        </Button>
+      </View>
+
       {/* Date Picker */}
       {showDatePicker && (
         <DateTimePicker
@@ -362,4 +375,24 @@ const styles = StyleSheet.create({
   },
   readonlyText: { fontSize: 16, flex: 1 },
   dateText: { fontSize: 16 },
+  
+  // Save Button
+  saveButtonContainer: {
+    padding: 16,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 52,
+    borderRadius: 12,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

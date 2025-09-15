@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
-import { ArrowLeft, Eye, EyeOff, Mail, Phone, User, UserCheck, Briefcase } from 'lucide-react-native';
+import { Eye, EyeOff, User } from 'lucide-react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { FormInput } from '../components/ui/FormInput';
 import { Separator } from '../components/ui/Separator';
 import { Switch } from '../components/ui/Switch';
+import { Header } from '../components/ui/Header';
 import { signupValidation } from '../utils/validationSchemas';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SignupFormData {
   name: string;
@@ -27,8 +28,7 @@ export default function SignupScreen() {
   const insets = useSafeAreaInsets();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [signupType, setSignupType] = useState<'email' | 'phone'>('email');
-  const [role, setRole] = useState<'customer' | 'worker'>('customer');
+  // Client-only signup; email only
   const [isLoading, setIsLoading] = useState(false);
   const theme = useThemeColors();
 
@@ -48,10 +48,7 @@ export default function SignupScreen() {
   const password = watch('password');
 
   const onSubmit = async (data: SignupFormData) => {
-    if (signupType === 'phone') {
-      Alert.alert('Not supported yet', 'Phone-based sign up is not available yet. Please use email.');
-      return;
-    }
+    // Email-only signup
     if (data.password !== data.confirmPassword) {
       Alert.alert('Error', "Passwords don't match");
       return;
@@ -66,7 +63,7 @@ export default function SignupScreen() {
     
     try {
       const email = data.email;
-      await signUp(email, data.password, data.name, data.phone, role);
+      await signUp(email, data.password, data.name, data.phone, 'customer');
       Alert.alert('Success', 'Account created successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
@@ -82,58 +79,14 @@ export default function SignupScreen() {
   };
 
 
-  const TabButton = ({ label, value, icon: Icon, isActive }: { 
-    label: string; 
-    value: 'email' | 'phone'; 
-    icon: any; 
-    isActive: boolean 
-  }) => (
-    <Pressable
-      style={[
-        styles.tabButton,
-        { backgroundColor: 'transparent' },
-        isActive && { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
-      ]}
-      onPress={() => setSignupType(value)}
-    >
-      <Icon size={16} color={isActive ? theme.accent : theme.textSecondary} />
-      <Text style={[styles.tabText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
-    </Pressable>
-  );
-
-  const RoleButton = ({ label, value, icon: Icon, isActive }: { 
-    label: string; 
-    value: 'customer' | 'worker'; 
-    icon: any; 
-    isActive: boolean 
-  }) => (
-    <Pressable
-      style={[
-        styles.roleButton,
-        { backgroundColor: 'transparent', borderColor: theme.cardBorder },
-        isActive && { backgroundColor: theme.accent + '10', borderColor: theme.accent },
-      ]}
-      onPress={() => setRole(value)}
-    >
-      <Icon size={20} color={isActive ? theme.accent : theme.textSecondary} />
-      <Text style={[styles.roleText, { color: theme.textSecondary }, isActive && { color: theme.accent }]}>{label}</Text>
-    </Pressable>
-  );
+  // Removed tabs and role selection (client-only, email signup)
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <ArrowLeft size={20} color={theme.textSecondary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Sign Up</Text>
-      </View>
+    <SafeAreaView edges={[]} style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Header 
+        title="Sign Up" 
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
         {/* Welcome Section */}
@@ -141,7 +94,7 @@ export default function SignupScreen() {
           <View style={styles.logoContainer}>
             <View style={styles.logo} />
           </View>
-          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Create {role === 'worker' ? 'Worker' : 'Customer'} Account</Text>
+          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Create Account</Text>
           <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Join us to book professional car wash services</Text>
         </View>
 
@@ -164,51 +117,19 @@ export default function SignupScreen() {
               </View>
             </View>
 
-            {/* Signup Type Tabs */}
-            <View style={styles.tabsContainer}>
-              <View style={[styles.tabsList, { backgroundColor: theme.surface }] }>
-                <TabButton 
-                  label="Email" 
-                  value="email" 
-                  icon={Mail} 
-                  isActive={signupType === 'email'} 
-                />
-                {/* Temporarily disabled phone signup until OTP flow is implemented */}
-              </View>
-            </View>
+            {/* Email Input */}
+            <FormInput
+              name="email"
+              control={control}
+              label="Email Address"
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              rules={signupValidation.email}
+              error={errors.email}
+            />
 
-            {/* Email/Phone Input */}
-            {signupType === 'email' ? (
-              <FormInput
-                name="email"
-                control={control}
-                label="Email Address"
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                rules={signupValidation.email}
-                error={errors.email}
-              />
-            ) : (
-              <FormInput
-                name="phone"
-                control={control}
-                label="Phone Number"
-                placeholder="+212 6XX XXX XXX"
-                keyboardType="phone-pad"
-                rules={signupValidation.phone}
-                error={errors.phone}
-              />
-            )}
-
-            {/* Role selection */}
-            <View style={styles.roleContainer}>
-              <Text style={styles.roleLabel}>I am signing up as</Text>
-              <View style={styles.roleButtons}>
-                <RoleButton label="Customer" value="customer" icon={UserCheck} isActive={role === 'customer'} />
-                <RoleButton label="Worker" value="worker" icon={Briefcase} isActive={role === 'worker'} />
-              </View>
-            </View>
+            {/* Client-only: role selection removed */}
 
             {/* Password Field */}
             <View style={styles.passwordContainer}>
@@ -272,16 +193,16 @@ export default function SignupScreen() {
                   />
                 )}
               />
-              <Text style={[styles.termsText, { color: theme.textPrimary }]}>
-                I agree to the{' '}
-                <Pressable onPress={() => Alert.alert('Terms', 'Terms of Service')}>
+              <View style={styles.termsRow}>
+                <Text style={[styles.termsText, { color: theme.textPrimary }]}>I agree to the</Text>
+                <Pressable onPress={() => Alert.alert('Terms', 'Terms of Service')} style={styles.termsLinkButton}>
                   <Text style={[styles.termsLink, { color: theme.accent }]}>Terms of Service</Text>
                 </Pressable>
-                {' '}and{' '}
-                <Pressable onPress={() => Alert.alert('Privacy', 'Privacy Policy')}>
+                <Text style={[styles.termsText, { color: theme.textPrimary }]}>and</Text>
+                <Pressable onPress={() => Alert.alert('Privacy', 'Privacy Policy')} style={styles.termsLinkButton}>
                   <Text style={[styles.termsLink, { color: theme.accent }]}>Privacy Policy</Text>
                 </Pressable>
-              </Text>
+              </View>
             </View>
 
             {/* Submit Button */}
@@ -312,18 +233,18 @@ export default function SignupScreen() {
             </Button>
 
             {/* Sign In Link */}
-            <View style={styles.signinContainer}>
+            <View style={styles.signinRow}>
               <Text style={[styles.signinText, { color: theme.textSecondary }] }>
-                Already have an account?{' '}
-                <Pressable onPress={() => navigation.navigate('Login' as never)}>
-                  <Text style={[styles.signinLink, { color: theme.accent }]}>Sign in</Text>
-                </Pressable>
+                Already have an account?
               </Text>
+              <Pressable onPress={() => navigation.navigate('Login' as never)} style={styles.signinButtonLink}>
+                <Text style={[styles.signinLink, { color: theme.accent }]}>Sign in</Text>
+              </Pressable>
             </View>
           </View>
         </Card>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -407,41 +328,7 @@ const styles = StyleSheet.create({
     top: 38,
     padding: 8,
   },
-  tabsContainer: {
-    marginBottom: 8,
-  },
-  tabsList: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    padding: 4,
-  },
-  tabButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    gap: 8,
-  },
-  activeTab: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  activeTabText: {
-    color: '#3b82f6',
-  },
+  
   passwordContainer: {
     position: 'relative',
   },
@@ -451,7 +338,8 @@ const styles = StyleSheet.create({
   passwordToggle: {
     position: 'absolute',
     right: 12,
-    top: 38,
+    top: '50%',
+    marginTop: -14,
     padding: 8,
   },
   termsContainer: {
@@ -459,8 +347,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
   },
-  termsText: {
+  termsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 4,
     flex: 1,
+  },
+  termsText: {
     fontSize: 14,
     color: '#374151',
     lineHeight: 20,
@@ -468,6 +362,10 @@ const styles = StyleSheet.create({
   termsLink: {
     color: '#3b82f6',
     fontWeight: '500',
+  },
+  termsLinkButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   submitButton: {
     height: 48,
@@ -506,6 +404,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
+  signinRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
   signinText: {
     fontSize: 14,
     color: '#6b7280',
@@ -514,33 +419,9 @@ const styles = StyleSheet.create({
     color: '#3b82f6',
     fontWeight: '500',
   },
-  roleContainer: {
-    marginBottom: 16,
+  signinButtonLink: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
-  roleLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#374151',
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-  },
-  roleText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  
 });

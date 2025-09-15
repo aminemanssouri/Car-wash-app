@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { ArrowLeft, HelpCircle, Shield, FileText, Smartphone, ExternalLink } from 'lucide-react-native';
+import { HelpCircle, Shield, FileText, Smartphone, ExternalLink } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 
 export default function SupportLegalScreen() {
@@ -23,14 +25,11 @@ export default function SupportLegalScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Button variant="ghost" size="icon" onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Support & Legal</Text>
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+      <Header 
+        title="Support & Legal" 
+        onBack={() => navigation.goBack()} 
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Help Center */}
@@ -100,7 +99,7 @@ export default function SupportLegalScreen() {
           <Text style={[styles.body, { color: theme.textSecondary }]}>CarWash Pro helps you book car wash services easily in Marrakech and beyond.</Text>
         </Card>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

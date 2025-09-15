@@ -4,6 +4,11 @@ export type RootStackParamList = {
   Signup: undefined;
   WorkerDetail: { workerId: string };
   Booking: { workerId: string };
+  BookingDateTime: undefined;
+  BookingVehicle: undefined;
+  BookingLocation: undefined;
+  BookingPayment: undefined;
+  BookingReview: undefined;
   BookingConfirmation: { bookingId: string };
   ForgotPassword: undefined;
   Help: undefined;

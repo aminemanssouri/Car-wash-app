@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput, TextInputProps, StyleSheet } from 'react-native';
+import { useThemeColors } from '../../lib/theme';
 
 interface TextareaProps extends Omit<TextInputProps, 'multiline'> {
   rows?: number;
@@ -10,12 +11,23 @@ export const Textarea: React.FC<TextareaProps> = ({
   style, 
   ...props 
 }) => {
+  const theme = useThemeColors();
+  
   return (
     <TextInput
-      style={[styles.textarea, { height: rows * 20 + 24 }, style]}
+      style={[
+        styles.textarea, 
+        { 
+          height: rows * 20 + 24,
+          backgroundColor: theme.card,
+          borderColor: theme.cardBorder,
+          color: theme.textPrimary,
+        }, 
+        style
+      ]}
       multiline
       textAlignVertical="top"
-      placeholderTextColor="#9ca3af"
+      placeholderTextColor={theme.textSecondary}
       {...props}
     />
   );
@@ -24,12 +36,9 @@ export const Textarea: React.FC<TextareaProps> = ({
 const styles = StyleSheet.create({
   textarea: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    backgroundColor: '#ffffff',
-    color: '#111827',
   },
 });

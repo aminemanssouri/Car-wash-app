@@ -4,6 +4,8 @@ import { ThemeProvider, useThemeColors } from './src/lib/theme';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 import { ModalProvider } from './src/contexts/ModalContext';
+import { BookingProvider } from './src/contexts/BookingContext';
+import { NavigationProvider } from './src/contexts/NavigationContext';
 
 function AppInner() {
   const theme = useThemeColors();
@@ -18,13 +20,17 @@ function AppInner() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <LanguageProvider>
-          <ModalProvider>
-            <AppInner />
-          </ModalProvider>
-        </LanguageProvider>
-      </AuthProvider>
+      <NavigationProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <ModalProvider>
+              <BookingProvider>
+                <AppInner />
+              </BookingProvider>
+            </ModalProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </NavigationProvider>
     </ThemeProvider>
   );
 }

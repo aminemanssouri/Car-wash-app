@@ -38,6 +38,9 @@ export default {
     web: {
       favicon: "./assets/favicon.png"
     },
+    plugins: [
+      "expo-secure-store"
+    ],
     extra: {
       supabaseUrl: "https://prxsvouchiodqppqeamz.supabase.co",
       supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByeHN2b3VjaGlvZHFwcHFlYW16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjI3MTUsImV4cCI6MjA3MjczODcxNX0.LPBGMPbEpY3yaljIHw4FKNTS7TDRq7_jhVw3u_cEUHU"

@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { ArrowLeft, MapPin, Home, Briefcase, Navigation, Check } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
+import { Header } from '../components/ui/Header';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -162,29 +163,17 @@ export default function AddAddressScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder, paddingTop: insets.top + 12 }]}>
-        <Button variant="ghost" size="icon" onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('add_address') || 'Add Address'}</Text>
-        <Button 
-          onPress={handleSave} 
-          variant="ghost" 
-          size="icon" 
-          style={styles.saveButton}
-          disabled={saving}
-        >
-          <Check size={20} color={saving ? theme.textSecondary : theme.accent} />
-        </Button>
-      </View>
+      <Header 
+        title={t('add address') || 'Add Address'} 
+        onBack={() => navigation.goBack()} 
+      />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Address Type Selection */}
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <MapPin size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address_type') || 'Address Type'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address type') || 'Address Type'}</Text>
           </View>
           
           <View style={styles.typeSelector}>
@@ -221,25 +210,25 @@ export default function AddAddressScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Home size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address_details') || 'Address Details'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address details') || 'Address Details'}</Text>
           </View>
           
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('address_label') || 'LABEL'}</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('address label') || 'Label'}</Text>
             <Input
               value={form.label}
               onChangeText={(v) => onChange('label', v)}
-              placeholder={t('address_label_placeholder') || 'e.g., Home, Office, Gym'}
+              placeholder={t('address label placeholder') || 'e.g., Home, Office, Gym'}
               style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('street_address') || 'STREET ADDRESS'}</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('street address') || 'Street Address'}</Text>
             <Input
               value={form.address}
               onChangeText={(v) => onChange('address', v)}
-              placeholder={t('street_address_placeholder') || 'Enter street address'}
+              placeholder={t('street address placeholder') || 'Enter street address'}
               multiline
               numberOfLines={2}
               style={[styles.fieldInput, styles.multilineInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
@@ -248,20 +237,20 @@ export default function AddAddressScreen() {
 
           <View style={styles.fieldRow}>
             <View style={[styles.fieldGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('city') || 'CITY'}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('city') || 'City'}</Text>
               <Input
                 value={form.city}
                 onChangeText={(v) => onChange('city', v)}
-                placeholder={t('city_placeholder') || 'Marrakech'}
+                placeholder={t('city ') || 'Marrakech'}
                 style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
               />
             </View>
             <View style={[styles.fieldGroup, { flex: 1, marginLeft: 8 }]}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('postal_code') || 'POSTAL CODE'}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('postal code') || 'Postal Code'}</Text>
               <Input
                 value={form.postalCode}
                 onChangeText={(v) => onChange('postalCode', v)}
-                placeholder={t('postal_code_placeholder') || '40000'}
+                placeholder={t('postal code') || '40000'}
                 keyboardType="numeric"
                 style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
               />
@@ -273,7 +262,7 @@ export default function AddAddressScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Navigation size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('location_services') || 'Location Services'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('location services') || 'Location Services'}</Text>
           </View>
           
           <Button 
@@ -285,7 +274,7 @@ export default function AddAddressScreen() {
             <View style={styles.locationButtonContent}>
               <Navigation size={18} color={loadingLocation ? theme.textSecondary : theme.accent} />
               <Text style={[styles.locationButtonText, { color: loadingLocation ? theme.textSecondary : theme.textPrimary }]}>
-                {loadingLocation ? (t('getting_location') || 'Getting Location...') : (t('use_current_location') || 'Use Current Location')}
+                {loadingLocation ? (t('getting location') || 'Getting Location...') : (t('use current location') || 'Use Current Location')}
               </Text>
             </View>
           </Button>
@@ -307,10 +296,10 @@ export default function AddAddressScreen() {
               </View>
               <View>
                 <Text style={[styles.defaultTitle, { color: theme.textPrimary }]}>
-                  {t('set_as_default') || 'Set as Default Address'}
+                  {t('set as default') || 'Set as Default Address'}
                 </Text>
                 <Text style={[styles.defaultSubtitle, { color: theme.textSecondary }]}>
-                  {t('default_address_description') || 'Use this address for future bookings by default'}
+                  {t('default address description') || 'Use this address for future bookings by default'}
                 </Text>
               </View>
             </View>
@@ -367,7 +356,7 @@ const styles = StyleSheet.create({
   // Form Fields
   fieldGroup: { marginBottom: 20 },
   fieldRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
+  fieldLabel: { fontSize: 12, fontWeight: '500', marginBottom: 8 },
   fieldInput: { 
     fontSize: 16, 
     borderWidth: 1.5, 

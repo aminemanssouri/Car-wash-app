@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'react-native';
-import { ArrowLeft, Calendar, MapPin, Phone, MessageCircle, MoreVertical, Star, Sparkles } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Calendar, MapPin, Phone, MessageCircle, MoreVertical, Star, Sparkles } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
 import { mockBookings, Booking } from '../data/bookings';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useAuthNavigation } from '../hooks/useAuthNavigation';
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -18,6 +21,7 @@ export const BookingsScreen: React.FC = () => {
   const theme = useThemeColors();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { navigateWithAuth } = useAuthNavigation();
 
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
@@ -119,19 +123,11 @@ export const BookingsScreen: React.FC = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('my_bookings')}</Text>
-      </View>
+    <SafeAreaView edges={[]} style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Header 
+        title={t('my_bookings')} 
+        onBack={() => navigation.goBack()} 
+      />
 
       {/* Tabs */}
       <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
@@ -152,7 +148,7 @@ export const BookingsScreen: React.FC = () => {
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
               {t('guest_prompt')}
             </Text>
-            <Button onPress={() => (navigation as any).navigate('Login')} style={styles.bookButton}>
+            <Button onPress={() => navigateWithAuth('Bookings')} style={styles.bookButton}>
               <Text style={styles.bookButtonText}>{t('sign_in')}</Text>
             </Button>
           </View>
@@ -333,7 +329,7 @@ export const BookingsScreen: React.FC = () => {
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

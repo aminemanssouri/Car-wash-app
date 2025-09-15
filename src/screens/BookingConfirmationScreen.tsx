@@ -10,13 +10,16 @@ import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useThemeColors } from '../lib/theme';
 
 export default function BookingConfirmationScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
+  const colors = useThemeColors();
   
   // Get booking data from route params with safe defaults
   const bookingData = ({
@@ -88,28 +91,32 @@ export default function BookingConfirmationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top','bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['bottom']}>
+      <Header 
+        title="Booking Confirmation" 
+        showBackButton={false}
+      />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Success Header */}
         <View style={styles.successHeader}>
-          <View style={styles.successIcon}>
+          <View style={[styles.successIcon, { backgroundColor: colors.isDark ? 'rgba(34, 197, 94, 0.2)' : '#dcfce7' }]}>
             <CheckCircle size={32} color="#16a34a" />
           </View>
           <View style={styles.successText}>
-            <Text style={styles.successTitle}>{t('booking_confirmed')}</Text>
-            <Text style={styles.successSubtitle}>{t('scheduled_message')}</Text>
+            <Text style={[styles.successTitle, { color: colors.isDark ? '#22c55e' : '#16a34a' }]}>{t('booking_confirmed')}</Text>
+            <Text style={[styles.successSubtitle, { color: colors.textSecondary }]}>{t('scheduled_message')}</Text>
           </View>
         </View>
 
         {/* Booking ID */}
-        <Card style={styles.bookingIdCard}>
-          <Text style={styles.bookingIdLabel}>{t('booking_id')}</Text>
-          <Text style={styles.bookingIdValue}>{bookingId}</Text>
+        <Card style={[styles.bookingIdCard, { backgroundColor: colors.isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff', borderColor: colors.isDark ? 'rgba(59, 130, 246, 0.3)' : '#bfdbfe' }]}>
+          <Text style={[styles.bookingIdLabel, { color: colors.textSecondary }]}>{t('booking_id')}</Text>
+          <Text style={[styles.bookingIdValue, { color: colors.isDark ? '#60a5fa' : '#3b82f6' }]}>{bookingId}</Text>
         </Card>
 
         {/* Worker Info */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>{t('your_car_washer')}</Text>
+        <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('your_car_washer')}</Text>
           <View style={styles.workerInfo}>
             <Avatar 
               source={getWorkerAvatar(bookingData.workerName)} 
@@ -117,23 +124,23 @@ export default function BookingConfirmationScreen() {
               size={48}
             />
             <View style={styles.workerDetails}>
-              <Text style={styles.workerName}>{bookingData.workerName}</Text>
-              <Text style={styles.workerRole}>{t('professional_car_washer')}</Text>
+              <Text style={[styles.workerName, { color: colors.textPrimary }]}>{bookingData.workerName}</Text>
+              <Text style={[styles.workerRole, { color: colors.textSecondary }]}>{t('professional_car_washer')}</Text>
             </View>
             <Badge variant="default">{t('confirmed')}</Badge>
           </View>
         </Card>
 
         {/* Booking Details */}
-        <Card style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>{t('booking_details')}</Text>
+        <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('booking_details')}</Text>
           <View style={styles.detailsContainer}>
             {/* Location */}
             <View style={styles.detailItem}>
-              <MapPin size={20} color="#6b7280" />
+              <MapPin size={20} color={colors.textSecondary} />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>{t('service_location')}</Text>
-                <Text style={styles.detailValue}>{bookingData.location}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>{t('service_location')}</Text>
+                <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{bookingData.location}</Text>
               </View>
             </View>
 
@@ -141,10 +148,10 @@ export default function BookingConfirmationScreen() {
 
             {/* Date & Time */}
             <View style={styles.detailItem}>
-              <Calendar size={20} color="#6b7280" />
+              <Calendar size={20} color={colors.textSecondary} />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>{t('date_time')}</Text>
-                <Text style={styles.detailValue}>
+                <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>{t('date_time')}</Text>
+                <Text style={[styles.detailValue, { color: colors.textSecondary }]}>
                   {formatDate(bookingData.date)} {t('at')} {bookingData.time}
                 </Text>
               </View>
@@ -154,10 +161,10 @@ export default function BookingConfirmationScreen() {
 
             {/* Vehicle Type */}
             <View style={styles.detailItem}>
-              <Car size={20} color="#6b7280" />
+              <Car size={20} color={colors.textSecondary} />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>{t('vehicle_type')}</Text>
-                <Text style={styles.detailValue}>{getCarTypeName(bookingData.carType)}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>{t('vehicle_type')}</Text>
+                <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{getCarTypeName(bookingData.carType)}</Text>
               </View>
             </View>
 
@@ -165,10 +172,10 @@ export default function BookingConfirmationScreen() {
 
             {/* Payment */}
             <View style={styles.detailItem}>
-              <CreditCard size={20} color="#6b7280" />
+              <CreditCard size={20} color={colors.textSecondary} />
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>{t('payment_method')}</Text>
-                <Text style={styles.detailValue}>{t('cash_on_delivery')}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>{t('payment_method')}</Text>
+                <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{t('cash_on_delivery')}</Text>
               </View>
             </View>
 
@@ -177,8 +184,8 @@ export default function BookingConfirmationScreen() {
               <>
                 <Separator style={styles.detailSeparator} />
                 <View style={styles.notesSection}>
-                  <Text style={styles.detailLabel}>{t('additional_notes')}</Text>
-                  <Text style={styles.detailValue}>{bookingData.notes}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textPrimary }]}>{t('additional_notes')}</Text>
+                  <Text style={[styles.detailValue, { color: colors.textSecondary }]}>{bookingData.notes}</Text>
                 </View>
               </>
             )}
@@ -186,33 +193,33 @@ export default function BookingConfirmationScreen() {
         </Card>
 
         {/* Price Summary */}
-        <Card style={styles.priceCard}>
+        <Card style={[styles.priceCard, { backgroundColor: colors.isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff', borderColor: colors.isDark ? 'rgba(59, 130, 246, 0.3)' : '#bfdbfe' }]}>
           <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>{t('total_amount')}</Text>
-            <Text style={styles.priceValue}>{bookingData.price} MAD</Text>
+            <Text style={[styles.priceLabel, { color: colors.textPrimary }]}>{t('total_amount')}</Text>
+            <Text style={[styles.priceValue, { color: colors.isDark ? '#60a5fa' : '#3b82f6' }]}>{bookingData.price} MAD</Text>
           </View>
-          <Text style={styles.priceNote}>{t('to_be_paid_upon_completion')}</Text>
+          <Text style={[styles.priceNote, { color: colors.textSecondary }]}>{t('to_be_paid_upon_completion')}</Text>
         </Card>
 
         {/* Important Info */}
-        <Card style={styles.infoCard}>
-          <Text style={styles.infoTitle}>{t('important_information')}</Text>
+        <Card style={[styles.infoCard, { backgroundColor: colors.isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff', borderColor: colors.isDark ? 'rgba(59, 130, 246, 0.3)' : '#bfdbfe' }]}>
+          <Text style={[styles.infoTitle, { color: colors.isDark ? '#60a5fa' : '#1e40af' }]}>{t('important_information')}</Text>
           <View style={styles.infoList}>
-            <Text style={styles.infoItem}>{t('info_line_1')}</Text>
-            <Text style={styles.infoItem}>{t('info_line_2')}</Text>
-            <Text style={styles.infoItem}>{t('info_line_3')}</Text>
-            <Text style={styles.infoItem}>{t('info_line_4')}</Text>
+            <Text style={[styles.infoItem, { color: colors.isDark ? '#60a5fa' : '#1e40af' }]}>{t('info_line_1')}</Text>
+            <Text style={[styles.infoItem, { color: colors.isDark ? '#60a5fa' : '#1e40af' }]}>{t('info_line_2')}</Text>
+            <Text style={[styles.infoItem, { color: colors.isDark ? '#60a5fa' : '#1e40af' }]}>{t('info_line_3')}</Text>
+            <Text style={[styles.infoItem, { color: colors.isDark ? '#60a5fa' : '#1e40af' }]}>{t('info_line_4')}</Text>
           </View>
         </Card>
 
         {/* Action Buttons */}
-        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44) }]}>
           <Button style={styles.primaryButton} onPress={handleViewBookings}>
             <Text style={styles.primaryButtonText}>{t('view_my_bookings')}</Text>
           </Button>
           <Button variant="outline" style={styles.secondaryButton} onPress={handleGoHome}>
-            <Home size={16} color="#3b82f6" />
-            <Text style={styles.secondaryButtonText}>{t('back_to_home')}</Text>
+            <Home size={16} color={colors.isDark ? '#60a5fa' : '#3b82f6'} />
+            <Text style={[styles.secondaryButtonText, { color: colors.isDark ? '#60a5fa' : '#3b82f6' }]}>{t('back_to_home')}</Text>
           </Button>
         </View>
       </ScrollView>
@@ -223,12 +230,11 @@ export default function BookingConfirmationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 32,
+    paddingVertical: 24,
   },
   successHeader: {
     alignItems: 'center',
@@ -238,7 +244,6 @@ const styles = StyleSheet.create({
   successIcon: {
     width: 64,
     height: 64,
-    backgroundColor: '#dcfce7',
     borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
@@ -249,30 +254,24 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#16a34a',
     textAlign: 'center',
   },
   successSubtitle: {
     fontSize: 14,
-    color: '#6b7280',
     textAlign: 'center',
     marginTop: 4,
   },
   bookingIdCard: {
     padding: 16,
     marginBottom: 24,
-    backgroundColor: '#eff6ff',
-    borderColor: '#bfdbfe',
     alignItems: 'center',
   },
   bookingIdLabel: {
     fontSize: 12,
-    color: '#6b7280',
   },
   bookingIdValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#3b82f6',
     marginTop: 4,
   },
   sectionCard: {
@@ -282,7 +281,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
     marginBottom: 12,
   },
   workerInfo: {
@@ -296,11 +294,9 @@ const styles = StyleSheet.create({
   workerName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
   },
   workerRole: {
     fontSize: 12,
-    color: '#6b7280',
     marginTop: 2,
   },
   detailsContainer: {
@@ -317,11 +313,9 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
   },
   detailValue: {
     fontSize: 14,
-    color: '#6b7280',
     marginTop: 2,
   },
   detailSeparator: {
@@ -333,8 +327,6 @@ const styles = StyleSheet.create({
   priceCard: {
     padding: 16,
     marginBottom: 24,
-    backgroundColor: '#eff6ff',
-    borderColor: '#bfdbfe',
   },
   priceRow: {
     flexDirection: 'row',
@@ -344,28 +336,22 @@ const styles = StyleSheet.create({
   priceLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
   },
   priceValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#3b82f6',
   },
   priceNote: {
     fontSize: 12,
-    color: '#6b7280',
     marginTop: 4,
   },
   infoCard: {
     padding: 16,
     marginBottom: 24,
-    backgroundColor: '#eff6ff',
-    borderColor: '#bfdbfe',
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1e40af',
     marginBottom: 8,
   },
   infoList: {
@@ -373,7 +359,6 @@ const styles = StyleSheet.create({
   },
   infoItem: {
     fontSize: 12,
-    color: '#1e40af',
     lineHeight: 16,
   },
   actionButtons: {
@@ -397,6 +382,5 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: 16,
-    color: '#3b82f6',
   },
 });

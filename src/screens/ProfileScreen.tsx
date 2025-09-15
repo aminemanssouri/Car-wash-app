@@ -5,10 +5,13 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../lib/navigation';
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -57,19 +60,11 @@ export const ProfileScreen: React.FC = () => {
 
   if (isGuest) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.bg }]}>
-        {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }] }>
-          <Button
-            variant="ghost"
-            size="icon"
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <ArrowLeft size={20} color={theme.textPrimary} />
-          </Button>
-          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('profile')}</Text>
-        </View>
+      <SafeAreaView edges={[]} style={[styles.container, { backgroundColor: theme.bg }]}>
+        <Header 
+          title={t('profile')} 
+          onBack={() => safeGoBack(navigation)}
+        />
 
         <View style={styles.content}>
           {/* Guest State */}
@@ -92,7 +87,7 @@ export const ProfileScreen: React.FC = () => {
             </View>
           </Card>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -102,24 +97,11 @@ export const ProfileScreen: React.FC = () => {
   const joinDate = user.profile?.created_at ? new Date(user.profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : t('recently');
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('profile')}</Text>
-        <View style={styles.headerActions}>
-          <Button variant="ghost" size="icon" style={styles.editButton} onPress={() => (navigation as any).navigate('EditProfile')}>
-            <Edit size={20} color={theme.textPrimary} />
-          </Button>
-        </View>
-      </View>
+    <SafeAreaView edges={[]} style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Header 
+        title={t('profile')} 
+        onBack={() => safeGoBack(navigation)}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
@@ -225,7 +207,7 @@ export const ProfileScreen: React.FC = () => {
           </View>
         </Card>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

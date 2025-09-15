@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationLightTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Calendar, Settings, Wrench, Briefcase, MessageCircle, Store } from 'lucide-react-native';
+import { Home, Calendar, Settings, Wrench, Briefcase, MessageCircle } from 'lucide-react-native';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,11 @@ import SignupScreen from '../screens/SignupScreen';
 import WorkerDetailScreen from '../screens/WorkerDetailScreen';
 import BookingScreen from '../screens/BookingScreen';
 import BookingConfirmationScreen from '../screens/BookingConfirmationScreen';
+import BookingDateTimeScreen from '../screens/BookingDateTimeScreen';
+import BookingVehicleScreen from '../screens/BookingVehicleScreen';
+import BookingLocationScreen from '../screens/BookingLocationScreen';
+import BookingPaymentScreen from '../screens/BookingPaymentScreen';
+import BookingReviewScreen from '../screens/BookingReviewScreen';
 import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import HelpScreen from '../screens/HelpScreen';
@@ -25,6 +30,8 @@ import AddressesScreen from '../screens/AddressesScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ServiceWorkersScreen from '../screens/ServiceWorkersScreen';
 import WorkerDashboardScreen from '../screens/WorkerDashboardScreen';
+import WorkerBookingsScreen from '../screens/WorkerBookingsScreen';
+import ManageBookingScreen from '../screens/ManageBookingScreen';
 import ComingSoonScreen from '../screens/ComingSoonScreen';
 import SupportLegalScreen from '../screens/SupportLegalScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
@@ -41,6 +48,7 @@ function TabNavigator() {
 
   return (
     <Tab.Navigator
+      initialRouteName="Home"
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let IconComponent;
@@ -55,8 +63,6 @@ function TabNavigator() {
             IconComponent = Briefcase;
           } else if (route.name === 'Messaging') {
             IconComponent = MessageCircle;
-          } else if (route.name === 'Store') {
-            IconComponent = Store;
           } else if (route.name === 'Settings') {
             IconComponent = Settings;
           }
@@ -75,8 +81,6 @@ function TabNavigator() {
               return t('dashboard') || 'Dashboard';
             case 'Messaging':
               return t('messaging') || 'Messaging';
-            case 'Store':
-              return t('store') || 'Store';
             case 'Settings':
               return t('settings') || 'Settings';
             default:
@@ -114,16 +118,6 @@ function TabNavigator() {
               },
             })}
           />
-          <Tab.Screen 
-            name="Store" 
-            component={ComingSoonScreen}
-            listeners={({ navigation }) => ({
-              tabPress: (e) => {
-                e.preventDefault();
-                navigation.navigate('ComingSoon', { feature: 'Store' });
-              },
-            })}
-          />
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </>
       )}
@@ -131,31 +125,61 @@ function TabNavigator() {
   );
 }
 
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AppStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={TabNavigator} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="Language" component={LanguageScreen} />
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="WorkerDetail" component={WorkerDetailScreen} />
+      <Stack.Screen name="Booking" component={BookingScreen} />
+      <Stack.Screen name="BookingDateTime" component={BookingDateTimeScreen} />
+      <Stack.Screen name="BookingVehicle" component={BookingVehicleScreen} />
+      <Stack.Screen name="BookingLocation" component={BookingLocationScreen} />
+      <Stack.Screen name="BookingPayment" component={BookingPaymentScreen} />
+      <Stack.Screen name="BookingReview" component={BookingReviewScreen} />
+      <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
+      <Stack.Screen name="Addresses" component={AddressesScreen} />
+      <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="ComingSoon" component={ComingSoonScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="SupportLegal" component={SupportLegalScreen} />
+      <Stack.Screen name="ServiceWorkers" component={ServiceWorkersScreen} />
+      <Stack.Screen name="WorkerDashboard" component={WorkerDashboardScreen} />
+      <Stack.Screen name="WorkerBookings" component={WorkerBookingsScreen} />
+      <Stack.Screen name="ManageBooking" component={ManageBookingScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="AddAddress" component={AddAddressScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export default function Navigation() {
   const theme = useThemeColors();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    // You can add a loading screen component here if needed
+    return null;
+  }
+
   return (
     <NavigationContainer theme={theme.isDark ? NavigationDarkTheme : NavigationLightTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="MainTabs" component={TabNavigator} />
-        <Stack.Screen name="Language" component={LanguageScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Signup" component={SignupScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="WorkerDetail" component={WorkerDetailScreen} />
-        <Stack.Screen name="Booking" component={BookingScreen} />
-        <Stack.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Help" component={HelpScreen} />
-        <Stack.Screen name="Addresses" component={AddressesScreen} />
-        <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="ComingSoon" component={ComingSoonScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="SupportLegal" component={SupportLegalScreen} />
-        <Stack.Screen name="ServiceWorkers" component={ServiceWorkersScreen} />
-        <Stack.Screen name="WorkerDashboard" component={WorkerDashboardScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="AddAddress" component={AddAddressScreen} />
-      </Stack.Navigator>
+      <AppStack />
     </NavigationContainer>
   );
 }

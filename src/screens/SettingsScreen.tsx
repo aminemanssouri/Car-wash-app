@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimatedModal from '../components/ui/AnimatedModal';
 import {
-  ArrowLeft,
   User,
   Globe,
   MapPin,
@@ -14,14 +14,18 @@ import {
   Moon,
   Sun,
   Smartphone,
+  AlertTriangle,
+  X,
 } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors, useThemeMode } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../lib/navigation';
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -34,6 +38,7 @@ export const SettingsScreen: React.FC = () => {
   const [modalType, setModalType] = useState<'success' | 'info' | 'warning'>('info');
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
 
   const handleLanguagePress = () => {
     (navigation as any).navigate('Language');
@@ -131,44 +136,24 @@ export const SettingsScreen: React.FC = () => {
   ];
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Sign Out', 
-        style: 'destructive', 
-        onPress: async () => {
-          try {
-            await signOut();
-          } catch (e) {
-            Alert.alert('Error', 'Failed to sign out. Please try again.');
-          }
-        }
-      },
-    ]);
+    setSignOutModalVisible(true);
+  };
+
+  const confirmSignOut = async () => {
+    setSignOutModalVisible(false);
+    try {
+      await signOut();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <Button
-          variant="ghost"
-          size="icon"
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <ArrowLeft size={20} color={theme.textPrimary} />
-        </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('settings')}</Text>
-      {/* Animated Modal */}
-    <AnimatedModal
-      visible={modalVisible}
-      type={modalType}
-      title={modalTitle}
-      message={modalMessage}
-      onClose={() => setModalVisible(false)}
-    />
-    </View>
+    <SafeAreaView edges={[]} style={[styles.container, { backgroundColor: theme.bg }]}>
+      <Header 
+        title={t('settings')} 
+        onBack={() => safeGoBack(navigation)} 
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {settingSections.map((section, sectionIndex) => (
@@ -221,7 +206,73 @@ export const SettingsScreen: React.FC = () => {
           <Text style={[styles.appVersionText, { color: theme.textSecondary }]}>Version 1.0.0</Text>
         </View>
       </ScrollView>
-    </View>
+
+      {/* Animated Modal */}
+      <AnimatedModal
+        visible={modalVisible}
+        type={modalType}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
+
+      {/* Modern Sign Out Modal */}
+      <Modal
+        visible={signOutModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSignOutModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modernModalContainer, { backgroundColor: theme.card }]}>
+            {/* Header with Icon */}
+            <View style={styles.modalHeader}>
+              <View style={[styles.modalIconContainer, { backgroundColor: '#fef2f2' }]}>
+                <AlertTriangle size={32} color="#ef4444" />
+              </View>
+              <Pressable 
+                style={styles.closeButton}
+                onPress={() => setSignOutModalVisible(false)}
+              >
+                <X size={20} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+
+            {/* Content */}
+            <View style={styles.modalContent}>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
+                Sign Out
+              </Text>
+              <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>
+                Are you sure you want to sign out? You'll need to sign in again to access your account.
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.modalActions}>
+              <Button
+                variant="outline"
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setSignOutModalVisible(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: theme.textPrimary }]}>
+                  Cancel
+                </Text>
+              </Button>
+              <Button
+                style={[styles.modalButton, styles.signOutConfirmButton]}
+                onPress={confirmSignOut}
+              >
+                <LogOut size={16} color="#ffffff" />
+                <Text style={styles.signOutConfirmButtonText}>
+                  Sign Out
+                </Text>
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
@@ -333,6 +384,91 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     textAlign: 'center',
+  },
+  // Modern Sign Out Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modernModalContainer: {
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  modalIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalContent: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  signOutConfirmButton: {
+    backgroundColor: '#ef4444',
+  },
+  signOutConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });
 
