@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import AnimatedModal from '../components/ui/AnimatedModal';
 
-export type ModalType = 'success' | 'info' | 'warning';
+export type ModalType = 'success' | 'info' | 'warning' | 'email';
 
 type ModalState = {
   visible: boolean;

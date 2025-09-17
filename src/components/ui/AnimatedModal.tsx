@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, Animated, Pressable } from 'react-native';
-import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react-native';
+import { CheckCircle2, Info, AlertTriangle, X, MailCheck } from 'lucide-react-native';
 
 export type AnimatedModalProps = {
   visible: boolean;
-  type?: 'success' | 'info' | 'warning';
+  type?: 'success' | 'info' | 'warning' | 'email';
   title: string;
   message?: string;
   onClose?: () => void;
@@ -45,8 +45,16 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
     }
   }, [visible]);
 
-  const Icon = type === 'success' ? CheckCircle2 : type === 'warning' ? AlertTriangle : Info;
-  const accent = type === 'success' ? '#22c55e' : type === 'warning' ? '#f59e0b' : '#2563eb';
+  const Icon =
+    type === 'success' ? CheckCircle2 :
+    type === 'warning' ? AlertTriangle :
+    type === 'email' ? MailCheck :
+    Info;
+  const accent =
+    type === 'success' ? '#22c55e' :
+    type === 'warning' ? '#f59e0b' :
+    type === 'email' ? '#2563eb' :
+    '#2563eb';
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
@@ -91,18 +99,20 @@ export const AnimatedModal: React.FC<AnimatedModalProps> = ({
           ) : null}
 
           <View style={styles.actionsRow}>
-            {onClose && (
-              <Pressable onPress={onClose} style={[styles.actionBtn, { borderColor: '#e5e7eb' }]}>
-                <Text style={[styles.actionText, { color: '#111827' }]}>OK</Text>
-              </Pressable>
-            )}
-            {onPrimaryAction && (
+            {/* Render a single action: if primary action exists, do not show the default OK button */}
+            {onPrimaryAction ? (
               <Pressable
                 onPress={onPrimaryAction}
                 style={[styles.primaryBtn, { backgroundColor: accent }]}
               >
                 <Text style={[styles.primaryText, { color: '#fff' }]}>{primaryActionText || 'Continue'}</Text>
               </Pressable>
+            ) : (
+              onClose && (
+                <Pressable onPress={onClose} style={[styles.actionBtn, { borderColor: '#e5e7eb' }]} >
+                  <Text style={[styles.actionText, { color: '#111827' }]}>OK</Text>
+                </Pressable>
+              )
             )}
           </View>
         </Animated.View>

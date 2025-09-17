@@ -51,6 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       setLoading(false);
       throw error;
+    } finally {
+      // Avoid blank screen after signup (no session while awaiting email confirmation)
+      setLoading(false);
     }
   };
 

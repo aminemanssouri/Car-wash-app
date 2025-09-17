@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 
 import { useForm } from 'react-hook-form';
@@ -8,14 +8,14 @@ import { Card } from '../components/ui/Card';
 import { FormInput } from '../components/ui/FormInput';
 import { Separator } from '../components/ui/Separator';
 import { loginValidation } from '../utils/validationSchemas';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
+import { useModal } from '../contexts/ModalContext';
 
 interface LoginFormData {
   email: string;
-  phone: string;
   password: string;
 }
 
@@ -30,25 +30,32 @@ export default function LoginScreen() {
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     defaultValues: {
       email: '',
-      phone: '',
       password: '',
     }
   });
 
   const { signIn } = useAuth();
+  const modal = useModal();
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     
     try {
-      if (loginType === 'phone') {
-        Alert.alert('Not supported yet', 'Phone-based login is not available yet. Please use email.');
-        return;
-      }
       await signIn(data.email, data.password);
-      navigation.goBack();
+      // Reset navigation to MainTabs on successful login
+      (navigation as any).dispatch?.(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' as never }],
+        })
+      );
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Please check your credentials and try again.');
+      const message = (error?.message as string) || 'Please check your credentials and try again.';
+      modal.show({
+        type: 'warning',
+        title: 'Login failed',
+        message,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +124,15 @@ export default function LoginScreen() {
 
               {/* Forgot Password */}
               <View style={styles.forgotPasswordContainer}>
-                <Pressable onPress={() => Alert.alert('Forgot Password', 'Password reset coming soon')}>
+                <Pressable
+                  onPress={() =>
+                    modal.show({
+                      type: 'info',
+                      title: 'Forgot password',
+                      message: 'Password reset is coming soon. Please check back later.',
+                    })
+                  }
+                >
                   <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
                 </Pressable>
               </View>

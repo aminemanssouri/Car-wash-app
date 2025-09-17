@@ -43,23 +43,27 @@ class AuthService {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Failed to create user');
 
-      // Create profile row to match our schema
-      const userId = authData.user.id;
-      const profilePayload: ProfileInsert = {
-        id: userId,
-        email,
-        full_name: fullName,
-        phone,
-        role,
-      } as ProfileInsert;
+      // If email confirmation is enabled, there may be NO session after signUp.
+      // In that case, client-side upsert will run as anon and be blocked by RLS.
+      // Only attempt upsert if we have a session; otherwise rely on a DB trigger.
+      if (authData.session) {
+        const userId = authData.user.id;
+        const profilePayload: ProfileInsert = {
+          id: userId,
+          email,
+          full_name: fullName,
+          phone,
+          role,
+        } as ProfileInsert;
 
-      // Upsert to be idempotent in case of retries
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert(profilePayload, { onConflict: 'id' });
-      if (profileError) {
-        // Log but don't block auth completion
-        console.error('Create profile error:', profileError);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert(profilePayload, { onConflict: 'id' });
+        if (profileError) {
+          console.error('Create profile error (with session):', profileError);
+        }
+      } else {
+        console.log('No session after signUp; skipping client upsert and relying on DB trigger to create profile.');
       }
 
       return { user: authData.user, session: authData.session };

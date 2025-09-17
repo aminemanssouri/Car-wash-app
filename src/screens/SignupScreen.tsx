@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, InteractionManager } from 'react-native';
 import { Eye, EyeOff, User } from 'lucide-react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { Button } from '../components/ui/Button';
@@ -9,9 +9,10 @@ import { Separator } from '../components/ui/Separator';
 import { Switch } from '../components/ui/Switch';
 import { Header } from '../components/ui/Header';
 import { signupValidation } from '../utils/validationSchemas';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
+import { useModal } from '../contexts/ModalContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SignupFormData {
@@ -44,18 +45,27 @@ export default function SignupScreen() {
   });
 
   const { signUp } = useAuth();
+  const modal = useModal();
 
   const password = watch('password');
 
   const onSubmit = async (data: SignupFormData) => {
     // Email-only signup
     if (data.password !== data.confirmPassword) {
-      Alert.alert('Error', "Passwords don't match");
+      modal.show({
+        type: 'warning',
+        title: "Passwords don't match",
+        message: 'Please make sure both passwords are identical.',
+      });
       return;
     }
 
     if (!data.agreeToTerms) {
-      Alert.alert('Error', 'Please agree to the terms and conditions');
+      modal.show({
+        type: 'warning',
+        title: 'Terms not accepted',
+        message: 'Please agree to the terms and conditions to continue.',
+      });
       return;
     }
 
@@ -64,11 +74,32 @@ export default function SignupScreen() {
     try {
       const email = data.email;
       await signUp(email, data.password, data.name, data.phone, 'customer');
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      // Show modern modal prompting email verification
+      modal.show({
+        type: 'email',
+        title: 'Verify your email',
+        message: `We sent a verification link to ${email}.\nOpen your email, confirm your account, then log in.`,
+        primaryActionText: 'OK',
+        onPrimaryAction: () => {
+          // Close modal first, then navigate after animations to avoid white screen
+          modal.hide?.();
+          InteractionManager.runAfterInteractions(() => {
+            (navigation as any).dispatch?.(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Login' as never }],
+              })
+            );
+          });
+        },
+      });
     } catch (error: any) {
-      Alert.alert('Signup Failed', error.message || 'Please try again.');
+      const message = (error?.message as string) || 'Please try again.';
+      modal.show({
+        type: 'warning',
+        title: 'Signup failed',
+        message,
+      });
     } finally {
       setIsLoading(false);
     }

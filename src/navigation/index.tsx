@@ -48,7 +48,8 @@ function TabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      key={userRole}
+      initialRouteName={userRole === 'worker' ? 'Dashboard' : 'Home'}
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let IconComponent;
