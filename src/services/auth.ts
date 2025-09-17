@@ -43,6 +43,16 @@ class AuthService {
       if (authError) throw authError;
       if (!authData.user) throw new Error('Failed to create user');
 
+      // Supabase may return a user object even when the email already exists
+      // In that case, user.identities can be an empty array. Treat this as duplicate email.
+      const identities = (authData.user as any)?.identities as any[] | undefined;
+      if (Array.isArray(identities) && identities.length === 0) {
+        throw Object.assign(new Error('This email is already registered. Please sign in or use a different email.'), {
+          code: 'user_already_exists',
+          status: 409,
+        });
+      }
+
       // If email confirmation is enabled, there may be NO session after signUp.
       // In that case, client-side upsert will run as anon and be blocked by RLS.
       // Only attempt upsert if we have a session; otherwise rely on a DB trigger.

@@ -94,11 +94,33 @@ export default function SignupScreen() {
         },
       });
     } catch (error: any) {
-      const message = (error?.message as string) || 'Please try again.';
+      const raw = String(error?.message || '');
+      const code = String(error?.code || '');
+      const status = Number(error?.status || 0);
+      const lower = raw.toLowerCase();
+
+      let friendly = 'Please try again.';
+      const isDuplicateEmail =
+        lower.includes('already registered') ||
+        lower.includes('already exists') ||
+        lower.includes('duplicate key') ||
+        code === 'user_already_exists' ||
+        status === 409;
+
+      if (isDuplicateEmail) {
+        friendly = 'This email is already registered. Please sign in or use a different email.';
+      } else if (lower.includes('invalid email')) {
+        friendly = 'Please enter a valid email address.';
+      } else if (lower.includes('weak password') || lower.includes('password')) {
+        friendly = 'Your password does not meet the requirements.';
+      } else if (raw) {
+        friendly = raw;
+      }
+
       modal.show({
         type: 'warning',
         title: 'Signup failed',
-        message,
+        message: friendly,
       });
     } finally {
       setIsLoading(false);
