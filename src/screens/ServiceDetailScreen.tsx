@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Header } from '../components/ui/Header';
 import { useLanguage } from '../contexts/LanguageContext';
 
+
 export default function ServiceDetailScreen() {
   const theme = useThemeColors();
   const route = useRoute<RouteProp<RootStackParamList, 'ServiceDetail'>>();
