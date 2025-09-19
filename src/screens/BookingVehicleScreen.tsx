@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Dimensions, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Dimensions, TextInput, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -7,10 +7,11 @@ import { Car, ChevronRight, ChevronLeft, Search, Check } from 'lucide-react-nati
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
-import { Input } from '../components/ui/Input';
+import { ComboBox, ComboBoxOption } from '../components/ui/ComboBox';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
+import { NaqiagoVehicleAPI, CarBrand, CarModel } from '../services/NaqiagoVehicleAPI';
 import type { RootStackParamList } from '../types/navigation';
 
 const carTypes = [
@@ -23,28 +24,6 @@ const carTypes = [
   { id: "convertible", name: "Convertible", multiplier: 1.2, icon: "🏎️" },
 ];
 
-const carBrands = [
-  { id: "toyota", name: "Toyota", popular: true },
-  { id: "honda", name: "Honda", popular: true },
-  { id: "nissan", name: "Nissan", popular: true },
-  { id: "hyundai", name: "Hyundai", popular: true },
-  { id: "kia", name: "Kia", popular: true },
-  { id: "volkswagen", name: "Volkswagen", popular: false },
-  { id: "ford", name: "Ford", popular: false },
-  { id: "chevrolet", name: "Chevrolet", popular: false },
-  { id: "bmw", name: "BMW", popular: false },
-  { id: "mercedes", name: "Mercedes-Benz", popular: false },
-  { id: "audi", name: "Audi", popular: false },
-  { id: "lexus", name: "Lexus", popular: false },
-  { id: "mazda", name: "Mazda", popular: false },
-  { id: "subaru", name: "Subaru", popular: false },
-  { id: "mitsubishi", name: "Mitsubishi", popular: false },
-  { id: "peugeot", name: "Peugeot", popular: false },
-  { id: "renault", name: "Renault", popular: false },
-  { id: "citroen", name: "Citroën", popular: false },
-  { id: "fiat", name: "Fiat", popular: false },
-  { id: "other", name: "Other", popular: false },
-];
 
 const carColors = [
   { id: "white", name: "White", color: "#FFFFFF", border: "#E5E7EB" },
@@ -67,24 +46,89 @@ export default function BookingVehicleScreen() {
   const { bookingData, updateBookingData, setCurrentStep } = useBooking();
 
   const [selectedCarType, setSelectedCarType] = useState(bookingData.carType);
-  const [selectedBrand, setSelectedBrand] = useState(bookingData.carBrand);
+  const [selectedBrand, setSelectedBrand] = useState<number | null>(bookingData.carBrandId || null);
   const [selectedColor, setSelectedColor] = useState(bookingData.carColor || '');
-  const [carModel, setCarModel] = useState(bookingData.carModel || '');
-  const [carYear, setCarYear] = useState(bookingData.carYear || '');
+  const [selectedModel, setSelectedModel] = useState<number | null>(bookingData.carModelId || null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(bookingData.carYear ? parseInt(bookingData.carYear) : null);
   const [showAllBrands, setShowAllBrands] = useState(false);
   const [brandSearch, setBrandSearch] = useState('');
+  
+  // API data states
+  const [brands, setBrands] = useState<CarBrand[]>([]);
+  const [models, setModels] = useState<CarModel[]>([]);
+  const [loadingBrands, setLoadingBrands] = useState(true);
+  const [loadingModels, setLoadingModels] = useState(false);
 
   const { width: screenWidth } = Dimensions.get('window');
   const isTablet = screenWidth >= 768;
   const cardColumns = isTablet ? 4 : 2;
   const brandColumns = isTablet ? 6 : 3;
 
-  const popularBrands = carBrands.filter(brand => brand.popular);
-  const otherBrands = carBrands.filter(brand => !brand.popular);
-  const filteredBrands = (showAllBrands ? carBrands : popularBrands).filter(brand => 
-    brand.name.toLowerCase().includes(brandSearch.toLowerCase())
+  // Load brands on component mount
+  useEffect(() => {
+    loadBrands();
+  }, []);
+
+  // Load models when brand is selected
+  useEffect(() => {
+    if (selectedBrand) {
+      loadModels(selectedBrand);
+    } else {
+      setModels([]);
+      setSelectedModel(null);
+    }
+  }, [selectedBrand]);
+
+  const loadBrands = async () => {
+    try {
+      setLoadingBrands(true);
+      const brandsData = await NaqiagoVehicleAPI.getAllBrands();
+      setBrands(brandsData);
+    } catch (error) {
+      console.error('Error loading brands:', error);
+      // Fallback to cached or default brands
+      setBrands(NaqiagoVehicleAPI.getPopularBrands());
+    } finally {
+      setLoadingBrands(false);
+    }
+  };
+
+  const loadModels = async (brandId: number) => {
+    try {
+      setLoadingModels(true);
+      const modelsData = await NaqiagoVehicleAPI.getModelsForBrand(brandId);
+      setModels(modelsData);
+    } catch (error) {
+      console.error('Error loading models:', error);
+      setModels(NaqiagoVehicleAPI.getPopularModels());
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  const popularBrands = brands.filter(brand => brand.popular);
+  const otherBrands = brands.filter(brand => !brand.popular);
+  const filteredBrands = NaqiagoVehicleAPI.searchBrands(
+    showAllBrands ? brands : popularBrands,
+    brandSearch
   );
   const displayedBrands = filteredBrands;
+
+  // Generate options for ComboBoxes
+  const modelOptions: ComboBoxOption[] = models.map(model => ({
+    id: model.id,
+    label: model.name,
+    value: model.id
+  }));
+
+  const yearOptions: ComboBoxOption[] = NaqiagoVehicleAPI.getYearOptions().map(year => ({
+    id: year,
+    label: year.toString(),
+    value: year
+  }));
+
+  const selectedBrandData = brands.find(brand => brand.id === selectedBrand);
+  const selectedModelData = models.find(model => model.id === selectedModel);
 
   const selectedCarTypeData = carTypes.find(type => type.id === selectedCarType);
   const basePrice = bookingData.basePrice || 80;
@@ -100,15 +144,24 @@ export default function BookingVehicleScreen() {
     
     updateBookingData({
       carType: selectedCarType,
-      carBrand: selectedBrand,
-      carModel: carModel.trim(),
-      carYear: carYear.trim(),
+      carBrand: selectedBrandData?.name || '',
+      carModel: selectedModelData?.name || '',
+      carYear: selectedYear?.toString() || '',
       carColor: selectedColor,
+      carBrandId: selectedBrand || undefined,
+      carModelId: selectedModel || undefined,
       finalPrice,
     });
 
     setCurrentStep(3);
     navigation.navigate('BookingLocation' as any);
+  };
+
+  const handleBrandSelect = (brandId: number) => {
+    setSelectedBrand(brandId);
+    // Reset model and year when brand changes
+    setSelectedModel(null);
+    setSelectedYear(null);
   };
 
   const handleBack = () => {
@@ -239,50 +292,82 @@ export default function BookingVehicleScreen() {
             </View>
           )}
           
-          <View style={[styles.brandGrid, { gap: isTablet ? 12 : 8 }]}>
-            {displayedBrands.map((brand) => {
-              const isSelected = selectedBrand === brand.id;
-              
-              return (
-                <Pressable
-                  key={brand.id}
-                  onPress={() => setSelectedBrand(brand.id)}
-                  style={[
-                    styles.brandCard,
-                    {
-                      backgroundColor: isSelected ? colors.accent : colors.surface,
-                      borderColor: isSelected ? colors.accent : colors.cardBorder,
-                      width: isTablet ? '15%' : '30%',
-                      minWidth: 80,
-                      shadowColor: colors.textPrimary,
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: isSelected ? 0.1 : 0.03,
-                      shadowRadius: 4,
-                      elevation: isSelected ? 2 : 1,
-                    }
-                  ]}
-                >
-                  {isSelected && (
-                    <View style={[styles.selectedBadge, { backgroundColor: '#ffffff', top: 4, right: 4 }]}>
-                      <Check size={10} color={colors.accent} />
+          {loadingBrands ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading brands...</Text>
+            </View>
+          ) : (
+            <View style={[styles.brandGrid, { gap: isTablet ? 12 : 8 }]}>
+              {displayedBrands.map((brand) => {
+                const isSelected = selectedBrand === brand.id;
+                
+                return (
+                  <Pressable
+                    key={brand.id}
+                    onPress={() => handleBrandSelect(brand.id)}
+                    style={[
+                      styles.brandCard,
+                      {
+                        backgroundColor: isSelected ? colors.accent : colors.surface,
+                        borderColor: isSelected ? colors.accent : colors.cardBorder,
+                        width: isTablet ? '15%' : '30%',
+                        minWidth: 80,
+                        shadowColor: colors.textPrimary,
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: isSelected ? 0.1 : 0.03,
+                        shadowRadius: 4,
+                        elevation: isSelected ? 2 : 1,
+                      }
+                    ]}
+                  >
+                    {isSelected && (
+                      <View style={[styles.selectedBadge, { backgroundColor: '#ffffff', top: 4, right: 4 }]}>
+                        <Check size={10} color={colors.accent} />
+                      </View>
+                    )}
+                    
+                    {/* Brand Logo - Circle Mode */}
+                    <View style={[
+                      styles.brandCircle,
+                      {
+                        backgroundColor: isSelected ? colors.accent : colors.surface,
+                        borderColor: isSelected ? colors.accent : colors.cardBorder,
+                      }
+                    ]}>
+                      {brand.logo ? (
+                        <Image
+                          source={{ uri: brand.logo }}
+                          style={styles.brandCircleLogo}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Text style={[
+                          styles.brandCircleInitial, 
+                          { color: isSelected ? '#ffffff' : colors.textSecondary }
+                        ]}>
+                          {brand.name.charAt(0)}
+                        </Text>
+                      )}
                     </View>
-                  )}
-                  <Text style={[
-                    styles.brandName,
-                    { 
-                      color: isSelected ? '#ffffff' : colors.textPrimary,
-                      fontSize: isTablet ? 13 : 12
-                    }
-                  ]}>
-                    {brand.name}
-                  </Text>
-                  {brand.popular && !showAllBrands && (
-                    <View style={styles.popularDot} />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
+                    
+                    <Text style={[
+                      styles.brandName,
+                      { 
+                        color: isSelected ? '#ffffff' : colors.textPrimary,
+                        fontSize: isTablet ? 13 : 12
+                      }
+                    ]}>
+                      {brand.name}
+                    </Text>
+                    {brand.popular && !showAllBrands && (
+                      <View style={styles.popularDot} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
           
           {!showAllBrands && filteredBrands.length === popularBrands.length && (
             <Pressable
@@ -290,7 +375,7 @@ export default function BookingVehicleScreen() {
               style={[styles.showMoreButton, { borderColor: colors.cardBorder }]}
             >
               <Text style={[styles.showMoreText, { color: colors.accent }]}>
-                Show All Brands ({carBrands.length - popularBrands.length} more)
+                Show All Brands ({brands.length - popularBrands.length} more)
               </Text>
             </Pressable>
           )}
@@ -304,38 +389,53 @@ export default function BookingVehicleScreen() {
           )}
         </Card>
 
-        {/* Additional Details */}
+        {/* Model and Year Selection */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Additional Details</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Vehicle Details</Text>
           
           <View style={styles.detailsRow}>
             <View style={styles.detailsItem}>
               <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>Model</Text>
-              <View style={[styles.modernInputContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-                <TextInput
-                  value={carModel}
-                  onChangeText={setCarModel}
-                  placeholder="e.g., Civic, Corolla"
-                  style={[styles.modernInput, { color: colors.textPrimary }]}
-                  placeholderTextColor={colors.textSecondary}
+              {loadingModels ? (
+                <View style={[styles.loadingComboBox, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+                  <ActivityIndicator size="small" color={colors.accent} />
+                  <Text style={[styles.loadingComboText, { color: colors.textSecondary }]}>Loading models...</Text>
+                </View>
+              ) : (
+                <ComboBox
+                  options={modelOptions}
+                  value={selectedModel}
+                  onSelect={(option) => setSelectedModel(option.value as number)}
+                  placeholder={selectedBrand ? "Select model" : "Select brand first"}
+                  disabled={!selectedBrand || models.length === 0}
+                  searchable={true}
                 />
-              </View>
+              )}
             </View>
             
             <View style={styles.detailsItem}>
               <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>Year</Text>
-              <View style={[styles.modernInputContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-                <TextInput
-                  value={carYear}
-                  onChangeText={setCarYear}
-                  placeholder="e.g., 2020"
-                  keyboardType="numeric"
-                  style={[styles.modernInput, { color: colors.textPrimary }]}
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
+              <ComboBox
+                options={yearOptions}
+                value={selectedYear}
+                onSelect={(option) => setSelectedYear(option.value as number)}
+                placeholder="Select year"
+                searchable={true}
+              />
             </View>
           </View>
+          
+          {/* Selected Vehicle Summary */}
+          {selectedBrandData && (
+            <View style={[styles.vehicleSummary, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+              <Text style={[styles.summaryTitle, { color: colors.textPrimary }]}>Selected Vehicle:</Text>
+              <Text style={[styles.summaryText, { color: colors.accent }]}>
+                {selectedYear ? `${selectedYear} ` : ''}
+                {selectedBrandData.name}
+                {selectedModelData ? ` ${selectedModelData.name}` : ''}
+              </Text>
+            </View>
+          )}
         </Card>
 
         {/* Car Color Selection */}
@@ -549,16 +649,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   brandCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
     marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 100,
   },
   brandName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
   },
   modernSearchContainer: {
     flexDirection: 'row',
@@ -628,12 +733,14 @@ const styles = StyleSheet.create({
   },
   popularDot: {
     position: 'absolute',
-    top: 4,
-    left: 4,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    top: 8,
+    left: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#10B981',
+    borderWidth: 1,
+    borderColor: '#ffffff',
   },
   noResultsContainer: {
     padding: 20,
@@ -801,5 +908,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  // New styles for API integration
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  loadingComboBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    minHeight: 48,
+    gap: 12,
+  },
+  loadingComboText: {
+    fontSize: 14,
+  },
+  vehicleSummary: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  summaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Circular brand styles
+  brandCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  brandCircleLogo: {
+    width: 32,
+    height: 32,
+  },
+  brandCircleInitial: {
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

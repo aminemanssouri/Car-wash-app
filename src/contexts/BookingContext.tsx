@@ -23,6 +23,8 @@ export interface BookingData {
   carModel?: string;
   carYear?: string;
   carColor?: string;
+  carBrandId?: number;
+  carModelId?: number;
   
   // Payment
   paymentMethod: string;
