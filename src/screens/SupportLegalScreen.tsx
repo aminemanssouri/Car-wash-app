@@ -10,10 +10,12 @@ import { Card } from '../components/ui/Card';
 import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function SupportLegalScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const theme = useThemeColors();
+  const { t } = useLanguage();
 
   const openLink = async (url: string) => {
     const supported = await Linking.canOpenURL(url);
@@ -27,7 +29,7 @@ export default function SupportLegalScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
       <Header 
-        title="Support & Legal" 
+        title={t('support_legal')} 
         onBack={() => navigation.goBack()} 
       />
 
@@ -39,8 +41,8 @@ export default function SupportLegalScreen() {
               <HelpCircle size={18} color={theme.accent} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>Help Center</Text>
-              <Text style={[styles.desc, { color: theme.textSecondary }]}>Get answers and contact support</Text>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{t('help_center')}</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>{t('get_help_with_your_account')}</Text>
             </View>
             <Pressable onPress={() => (navigation as any).navigate('Help')} style={styles.action}>
               <ExternalLink size={18} color={theme.textSecondary} />
@@ -55,10 +57,10 @@ export default function SupportLegalScreen() {
               <Shield size={18} color={theme.accent} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>Privacy Policy</Text>
-              <Text style={[styles.desc, { color: theme.textSecondary }]}>Understand how we handle your data</Text>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{t('privacy_policy')}</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>{t('read_our_privacy_policy')}</Text>
             </View>
-            <Pressable onPress={() => Alert.alert('Privacy Policy', 'Privacy policy content will be added soon.')} style={styles.action}>
+            <Pressable onPress={() => Alert.alert(t('privacy_policy'), 'Privacy policy content will be added soon.')} style={styles.action}>
               <FileText size={18} color={theme.textSecondary} />
             </Pressable>
           </View>
@@ -73,10 +75,10 @@ export default function SupportLegalScreen() {
               <FileText size={18} color={theme.accent} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>Terms of Service</Text>
-              <Text style={[styles.desc, { color: theme.textSecondary }]}>Your rights and obligations</Text>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{t('terms_of_service')}</Text>
+              <Text style={[styles.desc, { color: theme.textSecondary }]}>{t('view_terms_and_conditions')}</Text>
             </View>
-            <Pressable onPress={() => Alert.alert('Terms of Service', 'Terms content will be added soon.')} style={styles.action}>
+            <Pressable onPress={() => Alert.alert(t('terms_of_service'), 'Terms content will be added soon.')} style={styles.action}>
               <FileText size={18} color={theme.textSecondary} />
             </Pressable>
           </View>
@@ -91,12 +93,12 @@ export default function SupportLegalScreen() {
               <Smartphone size={18} color={theme.accent} />
             </View>
             <View style={styles.rowText}>
-              <Text style={[styles.title, { color: theme.textPrimary }]}>About</Text>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{t('about_app')}</Text>
               <Text style={[styles.desc, { color: theme.textSecondary }]}>CarWash Pro — Version 1.0.0</Text>
             </View>
           </View>
           <Separator />
-          <Text style={[styles.body, { color: theme.textSecondary }]}>CarWash Pro helps you book car wash services easily in Marrakech and beyond.</Text>
+          <Text style={[styles.body, { color: theme.textSecondary }]}>{t('learn_more_about_app')}</Text>
         </Card>
       </ScrollView>
     </SafeAreaView>

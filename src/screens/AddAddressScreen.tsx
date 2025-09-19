@@ -22,10 +22,10 @@ interface AddressForm {
   isDefault: boolean;
 }
 
-const ADDRESS_TYPES = [
-  { label: 'Home', value: 'home', icon: Home },
-  { label: 'Work', value: 'work', icon: Briefcase },
-  { label: 'Other', value: 'other', icon: MapPin },
+const getAddressTypes = (t: (key: string) => string) => [
+  { label: t('address_home'), value: 'home', icon: Home },
+  { label: t('address_work'), value: 'work', icon: Briefcase },
+  { label: t('address_other'), value: 'other', icon: MapPin },
 ] as const;
 
 export default function AddAddressScreen() {
@@ -157,14 +157,15 @@ export default function AddAddressScreen() {
   };
 
   const getTypeIcon = (type: string) => {
-    const typeData = ADDRESS_TYPES.find(t => t.value === type);
+    const addressTypes = getAddressTypes(t);
+    const typeData = addressTypes.find(t => t.value === type);
     return typeData?.icon || MapPin;
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <Header 
-        title={t('add address') || 'Add Address'} 
+        title={t('add_address')} 
         onBack={() => navigation.goBack()} 
       />
 
@@ -173,11 +174,11 @@ export default function AddAddressScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <MapPin size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address type') || 'Address Type'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address_type')}</Text>
           </View>
           
           <View style={styles.typeSelector}>
-            {ADDRESS_TYPES.map((type) => {
+            {getAddressTypes(t).map((type) => {
               const IconComponent = type.icon;
               const isSelected = form.type === type.value;
               return (
@@ -210,25 +211,25 @@ export default function AddAddressScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Home size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('address details') || 'Address Details'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('full_address')}</Text>
           </View>
           
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('address label') || 'Label'}</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('address_label')}</Text>
             <Input
               value={form.label}
               onChangeText={(v) => onChange('label', v)}
-              placeholder={t('address label placeholder') || 'e.g., Home, Office, Gym'}
+              placeholder={t('address_label_placeholder')}
               style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('street address') || 'Street Address'}</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('full_address')}</Text>
             <Input
               value={form.address}
               onChangeText={(v) => onChange('address', v)}
-              placeholder={t('street address placeholder') || 'Enter street address'}
+              placeholder={t('full_address_placeholder')}
               multiline
               numberOfLines={2}
               style={[styles.fieldInput, styles.multilineInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
@@ -237,20 +238,20 @@ export default function AddAddressScreen() {
 
           <View style={styles.fieldRow}>
             <View style={[styles.fieldGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('city') || 'City'}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('city')}</Text>
               <Input
                 value={form.city}
                 onChangeText={(v) => onChange('city', v)}
-                placeholder={t('city ') || 'Marrakech'}
+                placeholder="Marrakech"
                 style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
               />
             </View>
             <View style={[styles.fieldGroup, { flex: 1, marginLeft: 8 }]}>
-              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('postal code') || 'Postal Code'}</Text>
+              <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('postal_code')}</Text>
               <Input
                 value={form.postalCode}
                 onChangeText={(v) => onChange('postalCode', v)}
-                placeholder={t('postal code') || '40000'}
+                placeholder="40000"
                 keyboardType="numeric"
                 style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
               />
@@ -262,7 +263,7 @@ export default function AddAddressScreen() {
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
             <Navigation size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('location services') || 'Location Services'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('location_services')}</Text>
           </View>
           
           <Button 
@@ -274,7 +275,7 @@ export default function AddAddressScreen() {
             <View style={styles.locationButtonContent}>
               <Navigation size={18} color={loadingLocation ? theme.textSecondary : theme.accent} />
               <Text style={[styles.locationButtonText, { color: loadingLocation ? theme.textSecondary : theme.textPrimary }]}>
-                {loadingLocation ? (t('getting location') || 'Getting Location...') : (t('use current location') || 'Use Current Location')}
+                {loadingLocation ? t('getting_location') : t('use_current_location')}
               </Text>
             </View>
           </Button>
@@ -296,16 +297,34 @@ export default function AddAddressScreen() {
               </View>
               <View>
                 <Text style={[styles.defaultTitle, { color: theme.textPrimary }]}>
-                  {t('set as default') || 'Set as Default Address'}
+                  {t('set_as_default_address')}
                 </Text>
                 <Text style={[styles.defaultSubtitle, { color: theme.textSecondary }]}>
-                  {t('default address description') || 'Use this address for future bookings by default'}
+                  {t('default_address_description')}
                 </Text>
               </View>
             </View>
           </Pressable>
         </Card>
       </ScrollView>
+
+      {/* Save Button */}
+      <View style={[styles.saveButtonContainer, { backgroundColor: theme.bg }]}>
+        <Button
+          onPress={handleSave}
+          disabled={saving}
+          style={[styles.saveButtonMain, { backgroundColor: theme.accent }]}
+        >
+          {saving ? (
+            <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>{t('save')}...</Text>
+          ) : (
+            <>
+              <Check size={16} color="#ffffff" />
+              <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>{t('save')}</Text>
+            </>
+          )}
+        </Button>
+      </View>
     </View>
   );
 }
@@ -386,4 +405,24 @@ const styles = StyleSheet.create({
   },
   defaultTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   defaultSubtitle: { fontSize: 14, lineHeight: 20 },
+  
+  // Save Button
+  saveButtonContainer: {
+    padding: 16,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  saveButtonMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 52,
+    borderRadius: 12,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

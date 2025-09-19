@@ -8,6 +8,7 @@ import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Address {
   id: string;
@@ -39,6 +40,7 @@ export default function AddressesScreen() {
   const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
+  const { t } = useLanguage();
 
   const getTypeIcon = (type: Address['type']) => {
     switch (type) {
@@ -54,16 +56,16 @@ export default function AddressesScreen() {
   const handleAddressAction = (action: string, addressId: string, addressLabel: string) => {
     switch (action) {
       case 'edit':
-        Alert.alert('Edit Address', `Edit functionality for ${addressLabel} will be available soon.`);
+        Alert.alert(t('edit_address'), t('edit_functionality_coming_soon').replace('{label}', addressLabel));
         break;
       case 'delete':
         Alert.alert(
-          'Delete Address',
-          `Are you sure you want to delete ${addressLabel}?`,
+          t('delete_address'),
+          t('are_you_sure_delete_address').replace('{label}', addressLabel),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('cancel'), style: 'cancel' },
             { 
-              text: 'Delete', 
+              text: t('delete_address'), 
               style: 'destructive',
               onPress: () => setAddresses(prev => prev.filter(addr => addr.id !== addressId))
             }
@@ -93,19 +95,19 @@ export default function AddressesScreen() {
 
     Alert.alert(
       address.label,
-      'Choose an action',
+      t('choose_an_action'),
       [
-        { text: 'Edit Address', onPress: () => handleAddressAction('edit', address.id, address.label) },
+        { text: t('edit_address'), onPress: () => handleAddressAction('edit', address.id, address.label) },
         ...(address.isDefault ? [] : [{ 
-          text: 'Set as Default', 
+          text: t('set_as_default'), 
           onPress: () => handleAddressAction('setDefault', address.id, address.label) 
         }]),
         { 
-          text: 'Delete Address', 
+          text: t('delete_address'), 
           style: 'destructive',
           onPress: () => handleAddressAction('delete', address.id, address.label) 
         },
-        { text: 'Cancel', style: 'cancel' }
+        { text: t('cancel'), style: 'cancel' }
       ]
     );
   };
@@ -117,7 +119,7 @@ export default function AddressesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
       <Header 
-        title="Manage Addresses" 
+        title={t('manage_addresses')} 
         onBack={() => navigation.goBack()} 
       />
 
@@ -129,7 +131,7 @@ export default function AddressesScreen() {
         <Button style={styles.addButton} onPress={handleAddNewAddress}>
           <View style={styles.addButtonContent}>
             <Plus size={20} color="#ffffff" />
-            <Text style={styles.addButtonText}>Add New Address</Text>
+            <Text style={styles.addButtonText}>{t('add_new_address')}</Text>
           </View>
         </Button>
 
@@ -147,8 +149,8 @@ export default function AddressesScreen() {
                     <View style={styles.addressHeader}>
                       <Text style={[styles.addressLabel, { color: theme.textPrimary }]}>{address.label}</Text>
                       {address.isDefault && (
-                        <Badge variant="secondary" style={[styles.defaultBadge, { backgroundColor: theme.surface }] }>
-                          <Text style={[styles.defaultBadgeText, { color: theme.textPrimary }]}>Default</Text>
+                        <Badge variant="secondary" style={[styles.defaultBadge, { backgroundColor: theme.surface }]}>
+                          <Text style={[styles.defaultBadgeText, { color: theme.textPrimary }]}>{t('default')}</Text>
                         </Badge>
                       )}
                     </View>
@@ -169,12 +171,12 @@ export default function AddressesScreen() {
         {addresses.length === 0 && (
           <View style={styles.emptyState}>
             <MapPin size={48} color={theme.textSecondary} style={styles.emptyIcon} />
-            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No addresses saved</Text>
-            <Text style={[styles.emptyDescription, { color: theme.textSecondary }] }>
-              Add your frequently used addresses for faster booking
+            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('no_addresses_saved')}</Text>
+            <Text style={[styles.emptyDescription, { color: theme.textSecondary }]}>
+              {t('add_frequently_used_addresses')}
             </Text>
             <Button style={styles.emptyButton} onPress={handleAddNewAddress}>
-              <Text style={styles.emptyButtonText}>Add Your First Address</Text>
+              <Text style={styles.emptyButtonText}>{t('add_your_first_address')}</Text>
             </Button>
           </View>
         )}

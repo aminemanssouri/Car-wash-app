@@ -13,44 +13,44 @@ export default function HelpScreen() {
 
   const helpSections = [
     {
-      title: "Getting Started",
+      title: t('getting_started'),
       items: [
-        "How to book a car wash service",
-        "Finding the right car washer",
-        "Understanding pricing",
-        "Payment methods",
+        t('how_to_book_service'),
+        t('finding_right_washer'),
+        t('understanding_pricing'),
+        t('payment_methods_help'),
       ],
     },
     {
-      title: "Managing Bookings",
-      items: ["Canceling or rescheduling", "Tracking your booking", "Rating and reviews", "Booking history"],
+      title: t('managing_bookings'),
+      items: [t('canceling_rescheduling'), t('tracking_booking'), t('rating_reviews'), t('booking_history')],
     },
     {
-      title: "Account & Settings",
-      items: ["Creating an account", "Managing your profile", "Notification settings", "Privacy and security"],
+      title: t('account_settings'),
+      items: [t('creating_account'), t('managing_profile'), t('notification_settings'), t('privacy_security')],
     },
     {
-      title: "Troubleshooting",
-      items: ["App not working properly", "Payment issues", "Worker didn't show up", "Quality concerns"],
+      title: t('troubleshooting'),
+      items: [t('app_not_working'), t('payment_issues'), t('worker_no_show'), t('quality_concerns')],
     },
   ];
 
   const contactOptions = [
     {
       icon: MessageCircle,
-      title: "Live Chat",
-      description: "Chat with our support team",
-      action: () => Alert.alert("Live Chat", "Chat feature will be available soon"),
+      title: t('live_chat'),
+      description: t('chat_with_support'),
+      action: () => Alert.alert(t('live_chat'), t('chat_feature_soon')),
     },
     {
       icon: Phone,
-      title: "Call Us",
+      title: t('call_us'),
       description: "+212 5XX XXX XXX",
       action: () => Linking.openURL('tel:+2125XXXXXXX'),
     },
     {
       icon: Mail,
-      title: "Email Support",
+      title: t('email_support'),
       description: "support@carwash.ma",
       action: () => Linking.openURL('mailto:support@carwash.ma'),
     },
@@ -58,17 +58,17 @@ export default function HelpScreen() {
 
   const handleEmergencyCall = () => {
     Alert.alert(
-      "Emergency Contact",
-      "Call emergency hotline?",
+      t('emergency_contact'),
+      t('call_emergency_hotline'),
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Call", onPress: () => Linking.openURL('tel:+2125XXXXXXX') }
+        { text: t('cancel'), style: "cancel" },
+        { text: t('call_us'), onPress: () => Linking.openURL('tel:+2125XXXXXXX') }
       ]
     );
   };
 
   const handleFAQItem = (item: string) => {
-    Alert.alert("Help Topic", `Information about: ${item}\n\nThis feature will be available soon with detailed help content.`);
+    Alert.alert(t('help_topic'), `${t('information_about').replace('{item}', item)}\n\n${t('feature_available_soon')}`);
   };
 
   return (
@@ -84,7 +84,7 @@ export default function HelpScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Contact Support */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Support</Text>
+          <Text style={styles.sectionTitle}>{t('contact_support')}</Text>
           <Card style={styles.card}>
             {contactOptions.map((option, index) => (
               <View key={index}>
@@ -124,14 +124,14 @@ export default function HelpScreen() {
 
         {/* Emergency Contact */}
         <Card style={styles.emergencyCard}>
-          <Text style={styles.emergencyTitle}>Emergency Contact</Text>
+          <Text style={styles.emergencyTitle}>{t('emergency_contact')}</Text>
           <Text style={styles.emergencyDescription}>
-            If you have an urgent safety concern or emergency, please contact us immediately.
+            {t('urgent_safety_concern')}
           </Text>
           <Button style={styles.emergencyButton} onPress={handleEmergencyCall}>
             <View style={styles.emergencyButtonContent}>
               <Phone size={16} color="#ffffff" />
-              <Text style={styles.emergencyButtonText}>Emergency Hotline: +212 5XX XXX XXX</Text>
+              <Text style={styles.emergencyButtonText}>{t('emergency_hotline')}: +212 5XX XXX XXX</Text>
             </View>
           </Button>
         </Card>

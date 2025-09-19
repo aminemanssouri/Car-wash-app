@@ -259,11 +259,11 @@ export default function EditProfileScreen() {
           style={[styles.saveButton, { backgroundColor: theme.accent }]}
         >
           {saving ? (
-            <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>Saving...</Text>
+            <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>{t('save')}...</Text>
           ) : (
             <>
               <Check size={16} color="#ffffff" />
-              <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>Save Changes</Text>
+              <Text style={[styles.saveButtonText, { color: '#ffffff' }]}>{t('save_changes')}</Text>
             </>
           )}
         </Button>
