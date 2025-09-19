@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Platform } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Platform, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { ArrowLeft, Mail, User, Phone, Calendar as CalIcon, Globe, CreditCard, Camera, Edit3, Check } from 'lucide-react-native';
+import { ArrowLeft, Mail, User, Phone, Calendar as CalIcon, Globe, CreditCard, Camera, Edit3, Check, RefreshCw } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/ui/Header';
 import AnimatedModal from '../components/ui/AnimatedModal';
@@ -31,24 +31,79 @@ export default function EditProfileScreen() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
 
-  const initial = useMemo(() => ({
-    full_name: user?.profile?.full_name || '',
-    phone: user?.profile?.phone || '',
-    avatar_url: user?.profile?.avatar_url || '',
-    date_of_birth: user?.profile?.date_of_birth || '',
-    gender: user?.profile?.gender || '',
-    timezone: user?.profile?.timezone || '',
-    preferred_payment_method: user?.profile?.preferred_payment_method || '',
-    language_preference: user?.profile?.language_preference || language,
-  }), [user, language]);
-
-  const [form, setForm] = useState(initial);
+  const [form, setForm] = useState({
+    full_name: '',
+    phone: '',
+    avatar_url: '',
+    date_of_birth: '',
+    gender: '',
+    timezone: '',
+    preferred_payment_method: '',
+    language_preference: language,
+  });
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'success' | 'info' | 'warning'>('success');
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+
+  // Function to load fresh user data from database
+  const loadUserProfile = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (profile) {
+        // Handle avatar URL - only use Supabase Storage URLs
+        let avatarUrl = profile.avatar_url || '';
+        if (avatarUrl && !avatarUrl.startsWith('http')) {
+          // If it's just a filename, construct the full public URL from Supabase
+          const { data } = supabase.storage.from('profile-images').getPublicUrl(avatarUrl);
+          avatarUrl = data.publicUrl;
+        }
+        // Only use the avatar if it's a valid Supabase URL
+        if (avatarUrl && !avatarUrl.includes('supabase')) {
+          avatarUrl = ''; // Clear local URIs - force cloud storage only
+        }
+        
+        setForm({
+          full_name: profile.full_name || '',
+          phone: profile.phone || '',
+          avatar_url: avatarUrl,
+          date_of_birth: profile.date_of_birth || '',
+          gender: profile.gender || '',
+          timezone: profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+          preferred_payment_method: profile.preferred_payment_method || '',
+          language_preference: profile.language_preference || language,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load user data when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserProfile();
+    }, [user?.id, language])
+  );
 
   const onChange = (key: keyof typeof form, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -65,9 +120,34 @@ export default function EditProfileScreen() {
   };
 
   const handleAvatarUpload = async () => {
+    setImageModalVisible(true);
+  };
+
+  const openCamera = async () => {
+    setImageModalVisible(false);
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera permission is required to take photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      onChange('avatar_url', result.assets[0].uri);
+    }
+  };
+
+  const openGallery = async () => {
+    setImageModalVisible(false);
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('permission_required'), t('camera_permission_message'));
+      Alert.alert('Permission Required', 'Gallery permission is required to select photos');
       return;
     }
 
@@ -87,20 +167,42 @@ export default function EditProfileScreen() {
     if (!user?.id) return;
     setSaving(true);
     try {
-      // If avatar is a local file URI, upload to Supabase Storage and use its public URL
+      // If avatar is a local file URI, MUST upload to Supabase Storage
       let avatarUrlToSave = form.avatar_url;
       if (avatarUrlToSave && avatarUrlToSave.startsWith('file://')) {
         const ext = avatarUrlToSave.split('.').pop() || 'jpg';
-        const filePath = `${user.id}/${Date.now()}.${ext}`;
-        const res = await fetch(avatarUrlToSave);
-        const blob = await res.blob();
-        const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, blob, {
-          contentType: blob.type || 'image/jpeg',
-          upsert: true,
-        });
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        const fileName = `${user.id}_${Date.now()}.${ext}`;
+        
+        // Delete old profile image if it exists
+        if (user?.profile?.avatar_url && user.profile.avatar_url.includes('supabase')) {
+          const oldFileName = user.profile.avatar_url.split('/').pop();
+          if (oldFileName && oldFileName.includes(user.id)) {
+            await supabase.storage.from('profile-images').remove([oldFileName]);
+          }
+        }
+        
+        // Convert image to ArrayBuffer for upload
+        const response = await fetch(avatarUrlToSave);
+        const arrayBuffer = await response.arrayBuffer();
+        
+        // Upload MUST succeed - throw error if it fails
+        const { error: uploadError } = await supabase.storage
+          .from('profile-images')
+          .upload(fileName, arrayBuffer, {
+            contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+            upsert: true,
+          });
+          
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`Failed to upload image: ${uploadError.message}. Please create the 'profile-images' bucket in Supabase Storage first.`);
+        }
+        
+        // Get the public URL from Supabase
+        const { data } = supabase.storage.from('profile-images').getPublicUrl(fileName);
         avatarUrlToSave = data.publicUrl;
+        
+        console.log('Image successfully uploaded to Supabase:', avatarUrlToSave);
       }
       const { error } = await supabase
         .from('profiles')
@@ -110,7 +212,7 @@ export default function EditProfileScreen() {
           avatar_url: avatarUrlToSave,
           date_of_birth: form.date_of_birth || null,
           gender: form.gender || null,
-          timezone: form.timezone || null,
+          // timezone is read-only and should not be updated by user
           preferred_payment_method: (form.preferred_payment_method || null) as any,
           language_preference: form.language_preference,
           updated_at: new Date().toISOString(),
@@ -139,6 +241,21 @@ export default function EditProfileScreen() {
       />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Loading Indicator */}
+        {loading && (
+          <Card style={styles.loadingCard}>
+            <View style={styles.loadingContainer}>
+              <RefreshCw size={24} color={theme.accent} style={styles.loadingIcon} />
+              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                Loading profile...
+              </Text>
+            </View>
+          </Card>
+        )}
+
+        {!loading && (
+          <>
+        
         {/* Profile Header Card */}
         <Card style={styles.profileHeaderCard}>
           <View style={styles.profileHeader}>
@@ -240,15 +357,16 @@ export default function EditProfileScreen() {
           
           <View style={styles.fieldGroup}>
             <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('timezone')}</Text>
-            <Input 
-              value={form.timezone || ''} 
-              onChangeText={(v) => onChange('timezone', v)} 
-              placeholder={t('timezone_placeholder')} 
-              style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]} 
-            />
+            <View style={[styles.readonlyField, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+              <Globe size={16} color={theme.textSecondary} />
+              <Text style={[styles.readonlyText, { color: theme.textSecondary }]}>
+                {form.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'}
+              </Text>
+            </View>
           </View>
         </Card>
-
+          </>
+        )}
       </ScrollView>
 
       {/* Save Button */}
@@ -293,6 +411,57 @@ export default function EditProfileScreen() {
           }
         }}
       />
+
+      {/* Modern Image Selection Modal */}
+      <Modal
+        visible={imageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <View style={styles.imageModalOverlay}>
+          <View style={[styles.imageModalContent, { backgroundColor: theme.card }]}>
+            <View style={styles.imageModalHeader}>
+              <View style={[styles.imageModalIcon, { backgroundColor: theme.accent + '20' }]}>
+                <Camera size={24} color={theme.accent} />
+              </View>
+              <Pressable
+                style={styles.imageModalCloseButton}
+                onPress={() => setImageModalVisible(false)}
+              >
+                <Text style={[styles.imageModalCloseText, { color: theme.textSecondary }]}>✕</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.imageModalBody}>
+              <Text style={[styles.imageModalTitle, { color: theme.textPrimary }]}>
+                Select Profile Photo
+              </Text>
+              <Text style={[styles.imageModalMessage, { color: theme.textSecondary }]}>
+                Choose how you want to select your profile photo
+              </Text>
+            </View>
+
+            <View style={styles.imageModalActions}>
+              <Button
+                variant="outline"
+                style={[styles.imageModalButton, { borderColor: theme.cardBorder }]}
+                onPress={openCamera}
+              >
+                <Camera size={20} color={theme.accent} />
+                <Text style={[styles.imageModalButtonText, { color: theme.accent }]}>Camera</Text>
+              </Button>
+              <Button
+                style={[styles.imageModalButton, { backgroundColor: theme.accent }]}
+                onPress={openGallery}
+              >
+                <User size={20} color="#ffffff" />
+                <Text style={[styles.imageModalButtonText, { color: '#ffffff' }]}>Gallery</Text>
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -394,5 +563,100 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  
+  // Loading styles
+  loadingCard: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingIcon: {
+    marginBottom: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // Image Modal styles
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  imageModalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  imageModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  imageModalIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageModalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageModalCloseText: {
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  imageModalBody: {
+    marginBottom: 24,
+  },
+  imageModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  imageModalMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  imageModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  imageModalButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  imageModalButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
