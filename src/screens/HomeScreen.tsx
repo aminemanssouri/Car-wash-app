@@ -1,11 +1,13 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Dimensions, useWindowDimensions, Alert, FlatList, ViewToken, Modal } from 'react-native';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, Pressable, Dimensions, useWindowDimensions, Alert, FlatList, ViewToken, Modal, Animated, Image, Easing } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
 import { User, Bell, Search, Navigation as NavIcon, Menu, Home as HomeIcon, Wrench, Calendar, MessageCircle, Store, Settings, LogOut, AlertTriangle, X } from 'lucide-react-native';
-import LeafletMap from '../components/LeafletMap';
+import GoogleMap from '../components/GoogleMap';
 import { Button } from '../components/ui/Button';
 import { mockWorkers, Worker } from '../data/workers';
 import { useThemeColors } from '../lib/theme';
@@ -20,19 +22,24 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const theme = useThemeColors();
   const { t } = useLanguage();
-  const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight?.() || 56;
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { user, signOut } = useAuth();
   const { navigateWithAuth } = useAuthNavigation();
   const userRole = (user as any)?.profile?.role || 'customer';
   const [menuVisible, setMenuVisible] = useState(false);
   const [signOutModalVisible, setSignOutModalVisible] = useState(false);
-  // Leave room (≈56px) for the stacked top-right buttons and margins
-  const searchWidth = Math.min(Math.max(width - 24 - 56, 220), 640);
+  const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const [centerOn, setCenterOn] = useState<{ latitude: number; longitude: number; zoom?: number } | null>(null);
   const [myLocation, setMyLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locating, setLocating] = useState(false);
+  const [sideMenuVisible, setSideMenuVisible] = useState(false);
+  const [selectedWorkerData, setSelectedWorkerData] = useState<Worker | null>(null);
+  const slideAnim = useRef(new Animated.Value(screenHeight)).current; // Start fully off-screen
   const [query, setQuery] = useState('');
+  const isHidingCardRef = useRef(false);
+  const [locating, setLocating] = useState(false);
+  const searchWidth = width * 0.4;
 
   const filteredWorkers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -46,6 +53,67 @@ export default function HomeScreen() {
 
   const goToBooking = (id: string) => {
     navigateWithAuth('Booking', { workerId: id });
+  };
+
+  // Animation functions for sliding card
+  const showWorkerCard = (worker: Worker) => {
+    isHidingCardRef.current = false;
+    setSelectedWorkerData(worker);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
+  };
+
+  const hideWorkerCard = (after?: () => void) => {
+    if (isHidingCardRef.current) return; // prevent double-dismiss
+    isHidingCardRef.current = true;
+    Animated.timing(slideAnim, {
+      toValue: screenHeight, // move completely off-screen
+      duration: 240,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      setSelectedWorkerData(null);
+      setSelectedWorker(null);
+      isHidingCardRef.current = false;
+      after?.();
+    });
+  };
+
+  // Handle marker press to show sliding card
+  const handleMarkerPress = (id: string) => {
+    console.log('Marker pressed:', id);
+    
+    if (selectedWorker === id) {
+      // If same worker is clicked, hide the card
+      setSelectedWorker(null);
+      hideWorkerCard();
+      return;
+    }
+
+    const worker = mockWorkers.find(w => w.id === id);
+    console.log('Found worker:', worker);
+    
+    if (worker) {
+      // If another card is open, close first then open the new one to avoid overlap/half state
+      if (selectedWorkerData) {
+        hideWorkerCard(() => {
+          setSelectedWorker(id);
+          showWorkerCard(worker);
+        });
+      } else {
+        setSelectedWorker(id);
+        showWorkerCard(worker);
+      }
+      
+      // Center map on selected worker
+      setCenterOn(null);
+      const coords = { latitude: worker.location.latitude, longitude: worker.location.longitude, zoom: 15 };
+      setTimeout(() => setCenterOn(coords), 100);
+    }
   };
 
   const handleSignOut = () => {
@@ -120,29 +188,23 @@ export default function HomeScreen() {
   return (
     <>
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
-      {/* Interactive Map (Leaflet + OSM) */}
+      {/* Interactive Map (Google Maps) */}
       <View style={styles.mapContainer}>
-        <LeafletMap
+        <GoogleMap
           initialRegion={{ latitude: 31.6295, longitude: -7.9811, zoom: 13 }}
           markers={filteredWorkers.map((w) => ({
             id: w.id,
             latitude: w.location.latitude,
             longitude: w.location.longitude,
             title: w.name,
-            subtitle: w.services?.[0],
+            subtitle: `${w.services.join(', ')} - ${w.price} MAD`,
             price: w.price,
+            avatar: w.avatar,
+            services: w.services,
+            rating: w.rating,
           }))}
-          onMarkerPress={(id) => {
-            const next = selectedWorker === id ? null : id;
-            setSelectedWorker(next);
-            const w = mockWorkers.find(m => m.id === id);
-            if (w) {
-              setCenterOn(null);
-              const coords = { latitude: w.location.latitude, longitude: w.location.longitude, zoom: 15 };
-              setTimeout(() => setCenterOn(coords), 0);
-            }
-          }}
-          onBookNow={(id) => goToBooking(id)}
+          onMarkerPress={handleMarkerPress}
+          onBookNow={(id: string) => goToBooking(id)}
           centerOn={centerOn}
           myLocation={myLocation}
           selectedId={selectedWorker}
@@ -150,40 +212,73 @@ export default function HomeScreen() {
         />
       </View>
 
-      {/* Floating search bar - moved to right */}
-      <View style={[styles.searchContainer, { width: searchWidth, backgroundColor: theme.surface, borderColor: theme.cardBorder, right: 12, left: 'auto' }]}>
-        <Search color={theme.textSecondary} size={16} style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.textPrimary }]}
-          placeholder={t('search_placeholder')}
-          placeholderTextColor={theme.textSecondary}
-          value={query}
-          onChangeText={setQuery}
-          returnKeyType="search"
-          onSubmitEditing={() => {
-            const first = filteredWorkers[0];
-            if (first) {
-              setSelectedWorker(first.id);
-              const coords = { latitude: first.location.latitude, longitude: first.location.longitude, zoom: 15 };
-              setCenterOn(null);
-              setTimeout(() => setCenterOn(coords), 0);
-            }
-          }}
-        />
-        {query.length > 0 && (
-          <Pressable onPress={() => setQuery('')} style={{ paddingHorizontal: 6, paddingVertical: 2 }}>
-            <Text style={{ color: theme.textSecondary, fontSize: 16 }}>✕</Text>
-          </Pressable>
-        )}
+      {/* Top Bar with Search */}
+      <View style={[
+        styles.topBar,
+        { top: insets.top + 12, backgroundColor: theme.surface + 'E6', borderColor: theme.cardBorder }
+      ]}>
+        {/* Search Bar */}
+        <View style={[styles.searchBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <Search color={theme.textSecondary} size={18} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.textPrimary }]}
+            placeholder="Search workers or services..."
+            placeholderTextColor={theme.textSecondary}
+            value={query}
+            onChangeText={setQuery}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              const first = filteredWorkers[0];
+              if (first) {
+                handleMarkerPress(first.id);
+              }
+            }}
+          />
+          {query.length > 0 && (
+            <Pressable onPress={() => setQuery('')} style={styles.searchClearButton}>
+              <X size={16} color={theme.textSecondary} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
-      {/* Left side buttons - vertically stacked */}
-      <View style={styles.leftButtons}>
+      {/* Left side buttons - hamburger + 3 action buttons */}
+      <View style={[styles.leftButtons, { top: insets.top + 12 }]}>
+        {/* Hamburger Menu Button */}
         <Pressable style={[styles.hamburgerButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => setMenuVisible(true)}>
           <Menu color={theme.textPrimary} size={22} />
         </Pressable>
+        
+        {/* Action Buttons */}
         <Pressable style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]} onPress={() => navigation.navigate('ComingSoon', { feature: 'Notifications' }) }>
           <Bell color={theme.textPrimary} size={20} />
+        </Pressable>
+        <Pressable 
+          style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
+          onPress={async () => {
+            setLocating(true);
+            try {
+              let { status } = await Location.requestForegroundPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission denied', 'Location permission is required to show your location on the map.');
+                return;
+              }
+              let location = await Location.getCurrentPositionAsync({});
+              const newLocation = { latitude: location.coords.latitude, longitude: location.coords.longitude };
+              setMyLocation(newLocation);
+              setCenterOn({ ...newLocation, zoom: 15 });
+            } catch (error) {
+              Alert.alert('Error', 'Could not get your location. Please try again.');
+            } finally {
+              setLocating(false);
+            }
+          }}
+        >
+          {locating ? (
+            <View style={[styles.locationPulse, { backgroundColor: theme.accent }]} />
+          ) : (
+            <NavIcon color={theme.textPrimary} size={20} />
+          )}
         </Pressable>
         <Pressable 
           style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
@@ -191,39 +286,7 @@ export default function HomeScreen() {
         >
           <User color={theme.textPrimary} size={20} />
         </Pressable>
-        <Pressable 
-          style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
-          onPress={async () => {
-            if (locating) return;
-            try {
-              setLocating(true);
-              const { status } = await Location.requestForegroundPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert(t('location_permission'), t('permission_denied_msg'));
-                const fallback = { latitude: 31.6295, longitude: -7.9811, zoom: 13 };
-                setCenterOn(null);
-                setTimeout(() => setCenterOn(fallback), 0);
-                return;
-              }
-              const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-              const coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, zoom: 15 };
-              setMyLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-              setCenterOn(null);
-              setTimeout(() => setCenterOn(coords), 0);
-            } catch (e) {
-              const fallback = { latitude: 31.6295, longitude: -7.9811, zoom: 13 };
-              setCenterOn(null);
-              setTimeout(() => setCenterOn(fallback), 0);
-            } finally {
-              setLocating(false);
-            }
-          }}
-        >
-          <NavIcon color={theme.textPrimary} size={20} />
-        </Pressable>
       </View>
-
-      {/* GPS recenter button moved into topButtons above */}
 
       {/* Worker full-width horizontal pager */}
       <View style={styles.carouselContainer}>
@@ -419,6 +482,132 @@ export default function HomeScreen() {
         </View>
       </View>
     </Modal>
+
+    {/* Sliding Worker Card */}
+    {selectedWorkerData && (
+      <>
+        {/* Backdrop (tappable to dismiss) */}
+        <Pressable onPress={() => hideWorkerCard()} style={StyleSheet.absoluteFill} pointerEvents="auto">
+          <Animated.View
+            style={[
+              styles.cardBackdrop,
+              {
+                opacity: slideAnim.interpolate({
+                  inputRange: [0, screenHeight],
+                  outputRange: [0.35, 0],
+                  extrapolate: 'clamp',
+                }),
+              },
+            ]}
+          />
+        </Pressable>
+        
+        {/* Sliding Card */}
+        <Animated.View
+          style={[
+            styles.slideWorkerCard,
+            {
+              backgroundColor: theme.card,
+              // Force connection with navigation bar on all screens, especially small ones
+              bottom: 0, // Position directly at bottom to eliminate any gaps
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+        <View style={styles.slideCardHandle}>
+          <View style={[styles.slideCardHandleBar, { backgroundColor: theme.cardBorder }]} />
+        </View>
+
+        <View style={[styles.slideCardContent, { paddingBottom: insets.bottom + 12 }]}>
+          {/* Header Section */}
+          <View style={styles.slideCardHeader}>
+            <View style={styles.slideCardAvatarContainer}>
+              {selectedWorkerData.avatar ? (
+                <Image
+                  source={
+                    typeof selectedWorkerData.avatar === 'string'
+                      ? { uri: selectedWorkerData.avatar }
+                      : selectedWorkerData.avatar
+                  }
+                  style={styles.slideCardAvatar}
+                />
+              ) : (
+                <View style={[styles.slideCardAvatarFallback, { backgroundColor: theme.accent }]}>
+                  <Text style={styles.slideCardAvatarText}>
+                    {selectedWorkerData.name.charAt(0)}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.slideCardInfo}>
+              <Text style={[styles.slideCardName, { color: theme.textPrimary }]}>
+                {selectedWorkerData.name}
+              </Text>
+              <View style={styles.slideCardRating}>
+                <Text style={styles.slideCardRatingText}>⭐ {selectedWorkerData.rating}</Text>
+                <Text style={[styles.slideCardReviews, { color: theme.textSecondary }]}>
+                  ({selectedWorkerData.reviewCount} reviews)
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              style={styles.slideCardCloseButton}
+              onPress={() => hideWorkerCard()}
+            >
+              <X size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+
+          {/* Services Section - Enhanced */}
+          <View style={styles.slideCardServices}>
+            <Text style={[styles.slideCardServicesLabel, { color: theme.textSecondary }]}>
+              SERVICES OFFERED
+            </Text>
+            <View style={styles.servicesList}>
+              {selectedWorkerData.services.map((service, index) => (
+                <View key={index} style={[styles.serviceTag, { backgroundColor: theme.accent + '15', borderColor: theme.accent + '30' }]}>
+                  <Text style={[styles.serviceTagText, { color: theme.accent }]}>{service}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Availability Section */}
+          <View style={styles.availabilitySection}>
+            <View style={[styles.availabilityBadge, { backgroundColor: selectedWorkerData.isAvailable ? '#10b981' : '#ef4444' }]}>
+              <Text style={styles.availabilityText}>
+                {selectedWorkerData.isAvailable ? 'Available Now' : 'Busy'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Pricing and Book Section */}
+          <View style={styles.slideCardFooter}>
+            <View style={styles.slideCardPrice}>
+              <Text style={[styles.slideCardPriceLabel, { color: theme.textSecondary }]}>
+                Starting from
+              </Text>
+              <Text style={styles.slideCardPriceValue}>
+                {selectedWorkerData.price} MAD
+              </Text>
+            </View>
+
+            <Button
+              style={[styles.slideCardBookButton, { backgroundColor: theme.accent }]}
+              onPress={() => {
+                hideWorkerCard();
+                goToBooking(selectedWorkerData.id);
+              }}
+            >
+              <Text style={styles.slideCardBookButtonText}>Book Now</Text>
+            </Button>
+          </View>
+        </View>
+        </Animated.View>
+      </>
+    )}
     </>
   );
 }
@@ -431,6 +620,7 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
     position: 'relative',
+    overflow: 'visible', // Prevent marker clipping
   },
   map: {
     flex: 1,
@@ -651,24 +841,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563eb',
     opacity: 0.3,
   },
-  searchContainer: {
+  // Top bar with search only
+  topBar: {
     position: 'absolute',
-    top: 42,
-    right: 12,
+    top: 50,
+    left: 70, // Leave space for hamburger button
+    right: 16,
     zIndex: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
   },
   searchIcon: {
     marginRight: 8,
@@ -676,46 +874,49 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
+    fontWeight: '400',
   },
-  leftButtons: {
-    position: 'absolute',
-    top: 49,
-    left: 12,
-    flexDirection: 'column',
-    zIndex: 30,
+  searchClearButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
   },
   hamburgerButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 4,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  leftButtons: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    flexDirection: 'column',
+    zIndex: 30,
+    gap: 12,
   },
   floatingButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   carouselContainer: {
     position: 'absolute',
@@ -916,5 +1117,180 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 0,
+  },
+  
+  // Sliding Worker Card styles
+  slideWorkerCard: {
+    position: 'absolute',
+    bottom: 0, // base value; overridden at runtime with insets
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 20,
+    zIndex: 1000,
+  },
+  slideCardHandle: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  slideCardHandleBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  slideCardContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  slideCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  slideCardAvatarContainer: {
+    marginRight: 12,
+  },
+  slideCardAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  slideCardAvatarFallback: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slideCardAvatarText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  slideCardInfo: {
+    flex: 1,
+  },
+  slideCardName: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  slideCardRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  slideCardRatingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  slideCardReviews: {
+    fontSize: 12,
+  },
+  slideCardCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slideCardServices: {
+    marginBottom: 20,
+  },
+  slideCardServicesLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  slideCardServicesText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  slideCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+  },
+  slideCardPrice: {
+    flex: 1,
+  },
+  slideCardPriceLabel: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  slideCardPriceValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  slideCardBookButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    minHeight: 46,
+    borderRadius: 12,
+    marginLeft: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slideCardBookButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  
+  // Modern card enhancements
+  servicesList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  serviceTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  serviceTagText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  availabilitySection: {
+    marginBottom: 20,
+    alignItems: 'flex-start',
+  },
+  availabilityBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  availabilityText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Card backdrop
+  cardBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000000',
+    zIndex: 999,
   },
 });
