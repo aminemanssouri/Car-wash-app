@@ -273,6 +273,7 @@ export default function GoogleMap({
   return (
     <View style={styles.container}>
       <MapView
+        key={`map-${darkMode ? 'dark' : 'light'}`}
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
@@ -290,13 +291,21 @@ export default function GoogleMap({
         scrollEnabled={true}
         zoomEnabled={true}
         pitchEnabled={false}
-        customMapStyle={darkMode ? darkMapStyle : undefined}
+        // Explicitly clear the custom style when light mode to avoid persisting dark tiles
+        customMapStyle={darkMode ? darkMapStyle : []}
         mapType="standard"
         mapPadding={{
-          top: 120,  // Account for top search bar and buttons
-          right: 25,
-          bottom: 100, // Account for bottom navigation and card
-          left: 80,   // Account for left side buttons
+          top: 120,   // Account for top search bar and buttons
+          right: 20,
+          bottom: 110, // Push content up so the Google label/logo sits above bottom nav
+          left: 20,
+        }}
+        // Move the Google legal label/logo above the bottom navigation bar in the corner
+        legalLabelInsets={{
+          top: 0,
+          left: 0,
+          bottom: 110, // match mapPadding.bottom so it sits just above the nav/card area
+          right: 10,
         }}
         onPress={() => {
           // Deselect marker when pressing on empty map area
