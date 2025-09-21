@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MapPin, Plus, MoreVertical, Home, Briefcase } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -9,107 +9,67 @@ import { Badge } from '../components/ui/Badge';
 import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
-
-interface Address {
-  id: string;
-  label: string;
-  address: string;
-  type: 'home' | 'work' | 'other';
-  isDefault: boolean;
-}
-
-const mockAddresses: Address[] = [
-  {
-    id: "1",
-    label: "Home",
-    address: "123 Avenue Mohammed V, Marrakech, Morocco",
-    type: "home",
-    isDefault: true,
-  },
-  {
-    id: "2",
-    label: "Office",
-    address: "456 Boulevard Zerktouni, Marrakech, Morocco",
-    type: "work",
-    isDefault: false,
-  },
-];
+import { listAddresses, setDefaultAddress, deleteAddress } from '../services/addresses';
+import type { Address } from '../types/address';
 
 export default function AddressesScreen() {
   const navigation = useNavigation();
-  const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [activeAddress, setActiveAddress] = useState<Address | null>(null);
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
   const { t } = useLanguage();
 
-  const getTypeIcon = (type: Address['type']) => {
-    switch (type) {
-      case 'home':
-        return Home;
-      case 'work':
-        return Briefcase;
-      default:
-        return MapPin;
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const rows = await listAddresses();
+      setAddresses(rows);
+    } catch (e) {
+      // optional: show toast
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const handleAddressAction = (action: string, addressId: string, addressLabel: string) => {
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
+  const getTypeIcon = () => MapPin;
+
+  const handleAddressAction = async (action: string, addressId: string, displayTitle: string) => {
     switch (action) {
       case 'edit':
-        Alert.alert(t('edit_address'), t('edit_functionality_coming_soon').replace('{label}', addressLabel));
+        Alert.alert(t('edit_address'), t('edit_functionality_coming_soon').replace('{label}', displayTitle));
         break;
       case 'delete':
-        Alert.alert(
-          t('delete_address'),
-          t('are_you_sure_delete_address').replace('{label}', addressLabel),
-          [
-            { text: t('cancel'), style: 'cancel' },
-            { 
-              text: t('delete_address'), 
-              style: 'destructive',
-              onPress: () => setAddresses(prev => prev.filter(addr => addr.id !== addressId))
-            }
-          ]
-        );
+        try {
+          await deleteAddress(addressId);
+          await load();
+        } catch {}
         break;
       case 'setDefault':
-        setAddresses(prev =>
-          prev.map(addr => ({
-            ...addr,
-            isDefault: addr.id === addressId,
-          }))
-        );
+        try {
+          await setDefaultAddress(addressId);
+          await load();
+        } catch {}
         break;
     }
   };
 
   const showAddressOptions = (address: Address) => {
-    const options = ['Edit Address'];
-    
-    if (!address.isDefault) {
-      options.push('Set as Default');
-    }
-    
-    options.push('Delete Address');
-    options.push('Cancel');
+    setActiveAddress(address);
+    setActionSheetVisible(true);
+  };
 
-    Alert.alert(
-      address.label,
-      t('choose_an_action'),
-      [
-        { text: t('edit_address'), onPress: () => handleAddressAction('edit', address.id, address.label) },
-        ...(address.isDefault ? [] : [{ 
-          text: t('set_as_default'), 
-          onPress: () => handleAddressAction('setDefault', address.id, address.label) 
-        }]),
-        { 
-          text: t('delete_address'), 
-          style: 'destructive',
-          onPress: () => handleAddressAction('delete', address.id, address.label) 
-        },
-        { text: t('cancel'), style: 'cancel' }
-      ]
-    );
+  const closeActionSheet = () => {
+    setActionSheetVisible(false);
+    setActiveAddress(null);
   };
 
   const handleAddNewAddress = () => {
@@ -126,6 +86,7 @@ export default function AddressesScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 24) }]}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         {/* Add New Address Button */}
         <Button style={styles.addButton} onPress={handleAddNewAddress}>
@@ -138,7 +99,7 @@ export default function AddressesScreen() {
         {/* Addresses List */}
         <View style={styles.addressesList}>
           {addresses.map((address) => {
-            const IconComponent = getTypeIcon(address.type);
+            const IconComponent = getTypeIcon();
             return (
               <Card key={address.id} style={styles.addressCard}>
                 <View style={styles.addressContent}>
@@ -147,14 +108,14 @@ export default function AddressesScreen() {
                   </View>
                   <View style={styles.addressInfo}>
                     <View style={styles.addressHeader}>
-                      <Text style={[styles.addressLabel, { color: theme.textPrimary }]}>{address.label}</Text>
-                      {address.isDefault && (
-                        <Badge variant="secondary" style={[styles.defaultBadge, { backgroundColor: theme.surface }]}>
+                      <Text style={[styles.addressLabel, { color: theme.textPrimary }]}>{address.title || t('address')}</Text>
+                      {address.is_default && (
+                        <Badge variant="secondary" style={{ ...styles.defaultBadge, backgroundColor: theme.surface }}>
                           <Text style={[styles.defaultBadgeText, { color: theme.textPrimary }]}>{t('default')}</Text>
                         </Badge>
                       )}
                     </View>
-                    <Text style={[styles.addressText, { color: theme.textSecondary }]}>{address.address}</Text>
+                    <Text style={[styles.addressText, { color: theme.textSecondary }]}>{address.address_line_1 || ''}</Text>
                   </View>
                   <Pressable 
                     style={styles.moreButton} 
@@ -168,11 +129,12 @@ export default function AddressesScreen() {
           })}
         </View>
 
-        {addresses.length === 0 && (
+        {addresses.length === 0 && !loading && (
           <View style={styles.emptyState}>
             <MapPin size={48} color={theme.textSecondary} style={styles.emptyIcon} />
             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('no_addresses_saved')}</Text>
-            <Text style={[styles.emptyDescription, { color: theme.textSecondary }]}>
+            <Text style={[styles.emptyDescription, { color: theme.textSecondary }]}
+            >
               {t('add_frequently_used_addresses')}
             </Text>
             <Button style={styles.emptyButton} onPress={handleAddNewAddress}>
@@ -181,6 +143,58 @@ export default function AddressesScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Action Sheet Modal */}
+      <Modal
+        visible={actionSheetVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeActionSheet}
+      >
+        <Pressable style={[styles.sheetOverlay, { backgroundColor: 'rgba(0,0,0,0.45)' }]} onPress={closeActionSheet}>
+          <View />
+        </Pressable>
+        <View style={[styles.sheetContainer, { backgroundColor: theme.surface }]}> 
+          <View style={styles.sheetHandle}>
+            <View style={[styles.sheetHandleBar, { backgroundColor: theme.cardBorder }]} />
+          </View>
+          <Text style={[styles.sheetTitle, { color: theme.textPrimary }]}>
+            {activeAddress?.title || t('address')}
+          </Text>
+
+          <View style={styles.sheetItems}>
+            <Pressable
+              style={[styles.sheetItem, { borderColor: theme.cardBorder }]}
+              onPress={() => { if (activeAddress) { (navigation as any).navigate('EditAddress', { id: activeAddress.id }); } closeActionSheet(); }}
+            >
+              <Text style={[styles.sheetItemText, { color: theme.textPrimary }]}>{t('edit_address')}</Text>
+            </Pressable>
+
+            <Pressable
+              disabled={!!activeAddress?.is_default}
+              style={[
+                styles.sheetItem,
+                { borderColor: theme.cardBorder },
+                activeAddress?.is_default ? { opacity: 0.5 } : null,
+              ]}
+              onPress={async () => { if (activeAddress && !activeAddress.is_default) { await handleAddressAction('setDefault', activeAddress.id, activeAddress.title || t('address')); } closeActionSheet(); }}
+            >
+              <Text style={[styles.sheetItemText, { color: theme.textPrimary }]}>{t('set_as_default')}</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.sheetItem, { borderColor: theme.cardBorder }]}
+              onPress={async () => { if (activeAddress) { await handleAddressAction('delete', activeAddress.id, activeAddress.title || t('address')); } closeActionSheet(); }}
+            >
+              <Text style={[styles.sheetItemText, { color: '#EF4444' }]}>{t('delete_address')}</Text>
+            </Pressable>
+
+            <Pressable style={[styles.sheetCancel, { backgroundColor: theme.overlay }]} onPress={closeActionSheet}>
+              <Text style={[styles.sheetCancelText, { color: theme.textPrimary }]}>{t('cancel')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -279,6 +293,64 @@ const styles = StyleSheet.create({
   },
   moreButton: {
     padding: 8,
+  },
+  // Action Sheet Styles
+  sheetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  sheetHandle: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  sheetHandleBar: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+  },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  sheetItems: {
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  sheetItem: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  sheetItemText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  sheetCancel: {
+    marginTop: 6,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
