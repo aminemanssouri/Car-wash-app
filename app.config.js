@@ -39,7 +39,8 @@ export default {
       favicon: "./assets/favicon.png"
     },
     plugins: [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-audio"
     ],
     extra: {
       supabaseUrl: "https://prxsvouchiodqppqeamz.supabase.co",

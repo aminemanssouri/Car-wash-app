@@ -36,6 +36,7 @@ import ComingSoonScreen from '../screens/ComingSoonScreen';
 import SupportLegalScreen from '../screens/SupportLegalScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import AddAddressScreen from '../screens/AddAddressScreen';
+import EditAddressScreen from '../screens/EditAddressScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -165,6 +166,7 @@ function AppStack() {
       <Stack.Screen name="ManageBooking" component={ManageBookingScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="AddAddress" component={AddAddressScreen} />
+      <Stack.Screen name="EditAddress" component={EditAddressScreen} />
     </Stack.Navigator>
   );
 }

@@ -44,15 +44,20 @@ export default function SplashAnimation({ onFinish }: Props) {
       // Start bubble sound that plays during entire splash animation
       try {
         const { Audio } = await import('expo-av');
+        try {
+          // Ensure audio can play even if the device is in silent mode (iOS)
+          await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        } catch {}
         const { sound } = await Audio.Sound.createAsync(
           require('../../assets/audio/bubble-fx-343684.mp3'),
           { 
-            shouldPlay: true, 
+            shouldPlay: false, 
             volume: 0.4,
             isLooping: true // Loop the sound continuously
           }
         );
         bubbleSoundRef = sound;
+        try { await sound.playAsync(); } catch {}
       } catch (error) {
         // Silently ignore if audio fails
       }
@@ -236,12 +241,15 @@ export default function SplashAnimation({ onFinish }: Props) {
     try {
       // Dynamically import expo-av so the app bundles even if it's not installed
       const { Audio } = await import('expo-av');
+      try {
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      } catch {}
       // Put your sound at assets/impact.mp3
       const { sound } = await Audio.Sound.createAsync(
         // @ts-ignore - optional asset, ok if missing in dev
         require('../../assets/impact.mp3')
       );
-      await sound.playAsync();
+      try { await sound.playAsync(); } catch {}
     } catch (error) {
       // Silently ignore if asset missing
       // console.log('Sound error:', error);
@@ -253,11 +261,14 @@ export default function SplashAnimation({ onFinish }: Props) {
     try {
       // Dynamically import expo-av so the app bundles even if it's not installed
       const { Audio } = await import('expo-av');
+      try {
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      } catch {}
       const { sound } = await Audio.Sound.createAsync(
         require('../../assets/audio/bubble-fx-343684.mp3'),
         { shouldPlay: false, volume: 0.5 } // Medium volume for startup sound
       );
-      await sound.playAsync();
+      try { await sound.playAsync(); } catch {}
       
       // Unload sound after playing to free memory
       setTimeout(async () => {
