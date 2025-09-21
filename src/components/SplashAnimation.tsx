@@ -80,90 +80,99 @@ export default function SplashAnimation({ onFinish }: Props) {
       });
 
       // Start floating bubble animations
-      bubbles.forEach((bubble, i) => {
-        Animated.loop(
-          Animated.sequence([
-            Animated.delay(bubble.delay),
-            // Fade in and scale up
-            Animated.parallel([
-              Animated.timing(bubble.opacity, { 
-                toValue: 0.8, 
-                duration: 800, 
-                useNativeDriver: true 
-              }),
-              Animated.timing(bubble.scale, { 
-                toValue: 1, 
-                duration: 800, 
-                useNativeDriver: true 
-              }),
-            ]),
-            // Float up with gentle movement
-            Animated.parallel([
-              // Main upward movement
-              Animated.timing(bubble.translateY, {
-                toValue: -100,
-                duration: bubble.duration,
+      // First pass: boosted speed right when audio starts, then normal loop
+      const makeBubbleSequence = (bubble: typeof bubbles[number], speedFactor: number) => (
+        Animated.sequence([
+          Animated.delay(bubble.delay),
+          // Fade in and scale up
+          Animated.parallel([
+            Animated.timing(bubble.opacity, { 
+              toValue: 0.8, 
+              duration: 800 * speedFactor, 
+              useNativeDriver: true 
+            }),
+            Animated.timing(bubble.scale, { 
+              toValue: 1, 
+              duration: 800 * speedFactor, 
+              useNativeDriver: true 
+            }),
+          ]),
+          // Float up with gentle movement
+          Animated.parallel([
+            // Main upward movement
+            Animated.timing(bubble.translateY, {
+              toValue: -100,
+              duration: bubble.duration * speedFactor,
+              useNativeDriver: true,
+            }),
+            // Gentle horizontal sway
+            Animated.sequence([
+              Animated.timing(bubble.translateX, {
+                toValue: bubble.initialX + (Math.random() - 0.5) * 80,
+                duration: (bubble.duration / 3) * speedFactor,
                 useNativeDriver: true,
               }),
-              // Gentle horizontal sway
-              Animated.sequence([
-                Animated.timing(bubble.translateX, {
-                  toValue: bubble.initialX + (Math.random() - 0.5) * 80,
-                  duration: bubble.duration / 3,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(bubble.translateX, {
-                  toValue: bubble.initialX + (Math.random() - 0.5) * 80,
-                  duration: bubble.duration / 3,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(bubble.translateX, {
-                  toValue: bubble.initialX + (Math.random() - 0.5) * 80,
-                  duration: bubble.duration / 3,
-                  useNativeDriver: true,
-                }),
-              ]),
-              // Gentle rotation
-              Animated.timing(bubble.rotate, {
-                toValue: 360,
-                duration: bubble.duration,
+              Animated.timing(bubble.translateX, {
+                toValue: bubble.initialX + (Math.random() - 0.5) * 80,
+                duration: (bubble.duration / 3) * speedFactor,
                 useNativeDriver: true,
               }),
-              // Fade out near the top
-              Animated.sequence([
-                Animated.delay(bubble.duration * 0.7),
-                Animated.timing(bubble.opacity, {
-                  toValue: 0,
-                  duration: bubble.duration * 0.3,
-                  useNativeDriver: true,
-                }),
-              ]),
-            ]),
-            // Reset for next loop
-            Animated.parallel([
-              Animated.timing(bubble.translateY, { 
-                toValue: height + 50, 
-                duration: 0, 
-                useNativeDriver: true 
-              }),
-              Animated.timing(bubble.scale, { 
-                toValue: 0, 
-                duration: 0, 
-                useNativeDriver: true 
-              }),
-              Animated.timing(bubble.opacity, { 
-                toValue: 0, 
-                duration: 0, 
-                useNativeDriver: true 
-              }),
-              Animated.timing(bubble.rotate, { 
-                toValue: 0, 
-                duration: 0, 
-                useNativeDriver: true 
+              Animated.timing(bubble.translateX, {
+                toValue: bubble.initialX + (Math.random() - 0.5) * 80,
+                duration: (bubble.duration / 3) * speedFactor,
+                useNativeDriver: true,
               }),
             ]),
-          ])
-        ).start();
+            // Gentle rotation
+            Animated.timing(bubble.rotate, {
+              toValue: 360,
+              duration: bubble.duration * speedFactor,
+              useNativeDriver: true,
+            }),
+            // Fade out near the top
+            Animated.sequence([
+              Animated.delay(bubble.duration * 0.7 * speedFactor),
+              Animated.timing(bubble.opacity, {
+                toValue: 0,
+                duration: bubble.duration * 0.3 * speedFactor,
+                useNativeDriver: true,
+              }),
+            ]),
+          ]),
+          // Reset for next loop
+          Animated.parallel([
+            Animated.timing(bubble.translateY, { 
+              toValue: height + 50, 
+              duration: 0, 
+              useNativeDriver: true 
+            }),
+            Animated.timing(bubble.scale, { 
+              toValue: 0, 
+              duration: 0, 
+              useNativeDriver: true 
+            }),
+            Animated.timing(bubble.opacity, { 
+              toValue: 0, 
+              duration: 0, 
+              useNativeDriver: true 
+            }),
+            Animated.timing(bubble.rotate, { 
+              toValue: 0, 
+              duration: 0, 
+              useNativeDriver: true 
+            }),
+          ]),
+        ])
+      );
+
+      const fastFactor = 0.5; // 0.5x duration => 2x speed for the initial pass
+
+      bubbles.forEach((bubble) => {
+        // Run a faster first pass synced with audio start
+        makeBubbleSequence(bubble, fastFactor).start(() => {
+          // Then continue looping at normal speed
+          Animated.loop(makeBubbleSequence(bubble, 1)).start();
+        });
       });
 
       Animated.sequence([
