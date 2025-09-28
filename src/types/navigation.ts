@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Booking: { workerId: string };
   BookingDateTime: undefined;
   BookingVehicle: undefined;
+  BookingServices: undefined;
   BookingLocation: undefined;
   BookingPayment: undefined;
   BookingReview: undefined;

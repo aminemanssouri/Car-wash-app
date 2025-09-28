@@ -223,19 +223,19 @@ export default function BookingScreen() {
               <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
                 <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>3</Text>
               </View>
-              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Provide service location</Text>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Select services you want</Text>
             </View>
             <View style={styles.stepItem}>
               <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
                 <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>4</Text>
               </View>
-              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Select payment method</Text>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Provide service location</Text>
             </View>
             <View style={styles.stepItem}>
               <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
                 <Text style={[styles.stepNumberText, { color: '#ffffff' }]}>5</Text>
               </View>
-              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Review and confirm</Text>
+              <Text style={[styles.stepText, { color: theme.textSecondary }]}>Select payment and confirm</Text>
             </View>
           </View>
         </Card>

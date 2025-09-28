@@ -22,9 +22,12 @@ export interface BookingData {
   carBrand: string;
   carModel?: string;
   carYear?: string;
-  carColor?: string;
   carBrandId?: number;
   carModelId?: number;
+  
+  // Services
+  selectedServices: string[];
+  servicesTotal: number;
   
   // Payment
   paymentMethod: string;
@@ -56,7 +59,8 @@ const defaultBookingData: BookingData = {
   carBrand: '',
   carModel: '',
   carYear: '',
-  carColor: '',
+  selectedServices: [],
+  servicesTotal: 0,
   paymentMethod: 'cash',
   notes: '',
   finalPrice: 0,
@@ -67,7 +71,7 @@ const BookingContext = createContext<BookingContextType | undefined>(undefined);
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [bookingData, setBookingData] = useState<BookingData>(defaultBookingData);
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5; // DateTime, Vehicle, Location, Payment, Review
+  const totalSteps = 5; // DateTime, Vehicle, Services, Location, Payment
 
   const updateBookingData = (data: Partial<BookingData>) => {
     setBookingData(prev => ({ ...prev, ...data }));

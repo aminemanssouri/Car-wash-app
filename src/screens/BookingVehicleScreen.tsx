@@ -14,29 +14,17 @@ import { useBooking } from '../contexts/BookingContext';
 import { NaqiagoVehicleAPI, CarBrand, CarModel } from '../services/NaqiagoVehicleAPI';
 import type { RootStackParamList } from '../types/navigation';
 
-const carTypes = [
-  { id: "sedan", name: "Sedan", multiplier: 1, icon: "🚗" },
-  { id: "suv", name: "SUV", multiplier: 1.3, icon: "🚙" },
-  { id: "hatchback", name: "Hatchback", multiplier: 0.9, icon: "🚗" },
-  { id: "truck", name: "Truck", multiplier: 1.5, icon: "🚚" },
-  { id: "van", name: "Van", multiplier: 1.4, icon: "🚐" },
-  { id: "coupe", name: "Coupe", multiplier: 1.1, icon: "🏎️" },
-  { id: "convertible", name: "Convertible", multiplier: 1.2, icon: "🏎️" },
+const vehicleTypes = [
+  { id: "car", name: "Car", icon: "🚗" },
+  { id: "motor", name: "Motor", icon: "🏍️" },
+];
+
+const motorTypes = [
+  { id: "motor_49cc", name: "49cc Motor", icon: "🛵" },
+  { id: "motor_plus49cc", name: "+49cc Motor", icon: "🏍️" },
 ];
 
 
-const carColors = [
-  { id: "white", name: "White", color: "#FFFFFF", border: "#E5E7EB" },
-  { id: "black", name: "Black", color: "#000000", border: "#000000" },
-  { id: "silver", name: "Silver", color: "#C0C0C0", border: "#9CA3AF" },
-  { id: "gray", name: "Gray", color: "#6B7280", border: "#6B7280" },
-  { id: "red", name: "Red", color: "#EF4444", border: "#EF4444" },
-  { id: "blue", name: "Blue", color: "#3B82F6", border: "#3B82F6" },
-  { id: "green", name: "Green", color: "#10B981", border: "#10B981" },
-  { id: "yellow", name: "Yellow", color: "#F59E0B", border: "#F59E0B" },
-  { id: "brown", name: "Brown", color: "#92400E", border: "#92400E" },
-  { id: "other", name: "Other", color: "#8B5CF6", border: "#8B5CF6" },
-];
 
 export default function BookingVehicleScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -45,9 +33,9 @@ export default function BookingVehicleScreen() {
   const { t } = useLanguage();
   const { bookingData, updateBookingData, setCurrentStep } = useBooking();
 
-  const [selectedCarType, setSelectedCarType] = useState(bookingData.carType);
+  const [selectedVehicleType, setSelectedVehicleType] = useState(bookingData.carType);
+  const [selectedMotorType, setSelectedMotorType] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<number | null>(bookingData.carBrandId || null);
-  const [selectedColor, setSelectedColor] = useState(bookingData.carColor || '');
   const [selectedModel, setSelectedModel] = useState<number | null>(bookingData.carModelId || null);
   const [selectedYear, setSelectedYear] = useState<number | null>(bookingData.carYear ? parseInt(bookingData.carYear) : null);
   const [showAllBrands, setShowAllBrands] = useState(false);
@@ -130,31 +118,38 @@ export default function BookingVehicleScreen() {
   const selectedBrandData = brands.find(brand => brand.id === selectedBrand);
   const selectedModelData = models.find(model => model.id === selectedModel);
 
-  const selectedCarTypeData = carTypes.find(type => type.id === selectedCarType);
-  const basePrice = bookingData.basePrice || 80;
-  const adjustedPrice = selectedCarTypeData ? Math.round(basePrice * selectedCarTypeData.multiplier) : basePrice;
+  const selectedVehicleTypeData = vehicleTypes.find(type => type.id === selectedVehicleType);
+  const selectedMotorTypeData = motorTypes.find(type => type.id === selectedMotorType);
 
   const handleContinue = () => {
-    if (!selectedCarType || !selectedBrand) {
-      Alert.alert('Missing Fields', 'Please select car type and brand');
+    if (!selectedVehicleType) {
+      Alert.alert('Missing Fields', 'Please select vehicle type');
       return;
     }
-
-    const finalPrice = adjustedPrice;
+    
+    if (selectedVehicleType === 'motor' && !selectedMotorType) {
+      Alert.alert('Missing Fields', 'Please select motor type');
+      return;
+    }
+    
+    if (selectedVehicleType === 'car' && !selectedBrand) {
+      Alert.alert('Missing Fields', 'Please select car brand');
+      return;
+    }
+    
+    const finalVehicleType = selectedVehicleType === 'motor' ? selectedMotorType : selectedVehicleType;
     
     updateBookingData({
-      carType: selectedCarType,
-      carBrand: selectedBrandData?.name || '',
-      carModel: selectedModelData?.name || '',
-      carYear: selectedYear?.toString() || '',
-      carColor: selectedColor,
-      carBrandId: selectedBrand || undefined,
-      carModelId: selectedModel || undefined,
-      finalPrice,
+      carType: finalVehicleType || selectedVehicleType,
+      carBrand: selectedVehicleType === 'car' ? (selectedBrandData?.name || '') : '',
+      carModel: selectedVehicleType === 'car' ? (selectedModelData?.name || '') : '',
+      carYear: selectedVehicleType === 'car' ? (selectedYear?.toString() || '') : '',
+      carBrandId: selectedVehicleType === 'car' ? selectedBrand || undefined : undefined,
+      carModelId: selectedVehicleType === 'car' ? selectedModel || undefined : undefined,
     });
 
     setCurrentStep(3);
-    navigation.navigate('BookingLocation' as any);
+    navigation.navigate('BookingServices' as any);
   };
 
   const handleBrandSelect = (brandId: number) => {
@@ -165,13 +160,12 @@ export default function BookingVehicleScreen() {
   };
 
   const handleBack = () => {
-    setCurrentStep(1);
     navigation.goBack();
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['bottom']}>
-      <Header 
+        <Header 
         title="Vehicle Details" 
         onBack={handleBack}
         subtitle="Step 2 of 5"
@@ -195,77 +189,112 @@ export default function BookingVehicleScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Vehicle Type *</Text>
           </View>
           
-          <View style={[styles.carTypeGrid, { gap: isTablet ? 16 : 12 }]}>
-            {carTypes.map((type) => {
-              const isSelected = selectedCarType === type.id;
-              const price = Math.round(basePrice * type.multiplier);
+          <View style={[styles.vehicleTypeGrid, { gap: isTablet ? 12 : 8 }]}>
+            {vehicleTypes.map((type) => {
+              const isSelected = selectedVehicleType === type.id;
               
               return (
                 <Pressable
                   key={type.id}
-                  onPress={() => setSelectedCarType(type.id)}
+                  onPress={() => {
+                    setSelectedVehicleType(type.id);
+                    // Reset motor type and car details when switching vehicle types
+                    if (type.id === 'motor') {
+                      setSelectedBrand(null);
+                      setSelectedModel(null);
+                      setSelectedYear(null);
+                    } else {
+                      setSelectedMotorType(null);
+                    }
+                  }}
                   style={[
                     styles.carTypeCard,
                     {
                       backgroundColor: isSelected ? colors.accent : colors.surface,
                       borderColor: isSelected ? colors.accent : colors.cardBorder,
-                      width: screenWidth < 400 ? '100%' : screenWidth < 600 ? '48%' : '31%',
-                      marginBottom: 12,
+                      width: screenWidth < 400 ? '48%' : screenWidth < 600 ? '31%' : '23%',
                       shadowColor: colors.textPrimary,
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: isSelected ? 0.15 : 0.05,
-                      shadowRadius: 8,
-                      elevation: isSelected ? 4 : 2,
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: isSelected ? 0.1 : 0.03,
+                      shadowRadius: 4,
+                      elevation: isSelected ? 2 : 1,
                     }
                   ]}
                 >
                   {isSelected && (
                     <View style={[styles.selectedBadge, { backgroundColor: '#ffffff' }]}>
-                      <Check size={12} color={colors.accent} />
+                      <Check size={10} color={colors.accent} />
                     </View>
                   )}
-                  <Text style={[styles.carTypeIcon, { fontSize: isTablet ? 32 : 24 }]}>{type.icon}</Text>
+                  <Text style={[styles.carTypeIcon, { fontSize: isTablet ? 20 : 16 }]}>{type.icon}</Text>
                   <Text style={[
                     styles.carTypeName,
                     { 
                       color: isSelected ? '#ffffff' : colors.textPrimary,
-                      fontSize: isTablet ? 16 : 14
+                      fontSize: isTablet ? 14 : 12
                     }
                   ]}>
                     {type.name}
                   </Text>
-                  <Text style={[
-                    styles.carTypePrice,
-                    { 
-                      color: isSelected ? '#ffffff' : colors.accent,
-                      fontSize: isTablet ? 14 : 12,
-                      fontWeight: '600'
-                    }
-                  ]}>
-                    {price} MAD
-                  </Text>
-                  {type.multiplier !== 1 && (
-                    <View style={[styles.multiplierBadge, { 
-                      backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : colors.accent + '20' 
-                    }]}>
-                      <Text style={[
-                        styles.carTypeMultiplier,
-                        { 
-                          color: isSelected ? '#ffffff' : colors.accent,
-                          fontSize: 10
-                        }
-                      ]}>
-                        ×{type.multiplier}
-                      </Text>
-                    </View>
-                  )}
                 </Pressable>
               );
             })}
           </View>
         </Card>
 
-        {/* Car Brand Selection */}
+        {/* Motor Type Selection - Only show when motor is selected */}
+        {selectedVehicleType === 'motor' && (
+          <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Motor Type *</Text>
+            </View>
+            
+            <View style={[styles.vehicleTypeGrid, { gap: isTablet ? 12 : 8 }]}>
+              {motorTypes.map((type) => {
+                const isSelected = selectedMotorType === type.id;
+                
+                return (
+                  <Pressable
+                    key={type.id}
+                    onPress={() => setSelectedMotorType(type.id)}
+                    style={[
+                      styles.carTypeCard,
+                      {
+                        backgroundColor: isSelected ? colors.accent : colors.surface,
+                        borderColor: isSelected ? colors.accent : colors.cardBorder,
+                        width: screenWidth < 400 ? '48%' : screenWidth < 600 ? '48%' : '48%',
+                        shadowColor: colors.textPrimary,
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: isSelected ? 0.1 : 0.03,
+                        shadowRadius: 4,
+                        elevation: isSelected ? 2 : 1,
+                      }
+                    ]}
+                  >
+                    {isSelected && (
+                      <View style={[styles.selectedBadge, { backgroundColor: '#ffffff' }]}>
+                        <Check size={10} color={colors.accent} />
+                      </View>
+                    )}
+                    <Text style={[styles.carTypeIcon, { fontSize: isTablet ? 20 : 16 }]}>{type.icon}</Text>
+                    <Text style={[
+                      styles.carTypeName,
+                      { 
+                        color: isSelected ? '#ffffff' : colors.textPrimary,
+                        fontSize: isTablet ? 14 : 12
+                      }
+                    ]}>
+                      {type.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Card>
+        )}
+
+        {/* Car Brand Selection - Only show when car is selected */}
+        {selectedVehicleType === 'car' && (
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Car Brand *</Text>
@@ -388,8 +417,10 @@ export default function BookingVehicleScreen() {
             </View>
           )}
         </Card>
+        )}
 
-        {/* Model and Year Selection */}
+        {/* Model and Year Selection - Only show when car is selected */}
+        {selectedVehicleType === 'car' && (
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Vehicle Details</Text>
           
@@ -437,88 +468,8 @@ export default function BookingVehicleScreen() {
             </View>
           )}
         </Card>
-
-        {/* Car Color Selection */}
-        <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Car Color</Text>
-          
-          <View style={[styles.colorGrid, { gap: isTablet ? 16 : 12 }]}>
-            {carColors.map((color) => {
-              const isSelected = selectedColor === color.id;
-              
-              return (
-                <Pressable
-                  key={color.id}
-                  onPress={() => setSelectedColor(color.id)}
-                  style={[
-                    styles.colorCard,
-                    {
-                      backgroundColor: isSelected ? colors.surface : colors.card,
-                      borderColor: isSelected ? colors.accent : colors.cardBorder,
-                      borderWidth: isSelected ? 2 : 1,
-                      width: isTablet ? '18%' : '28%',
-                      shadowColor: colors.textPrimary,
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: isSelected ? 0.1 : 0.03,
-                      shadowRadius: 4,
-                      elevation: isSelected ? 2 : 1,
-                    }
-                  ]}
-                >
-                  {isSelected && (
-                    <View style={[styles.selectedBadge, { backgroundColor: colors.accent, top: 4, right: 4 }]}>
-                      <Check size={10} color="#ffffff" />
-                    </View>
-                  )}
-                  <View 
-                    style={[
-                      styles.colorCircle,
-                      { 
-                        backgroundColor: color.color,
-                        borderColor: color.border,
-                        width: isTablet ? 32 : 24,
-                        height: isTablet ? 32 : 24,
-                        borderRadius: isTablet ? 16 : 12,
-                      }
-                    ]} 
-                  />
-                  <Text style={[
-                    styles.colorName,
-                    { 
-                      color: colors.textPrimary,
-                      fontSize: isTablet ? 12 : 10
-                    }
-                  ]}>
-                    {color.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Card>
-
-        {/* Price Summary */}
-        {selectedCarTypeData && (
-          <Card style={[styles.priceCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-            <View style={styles.priceRow}>
-              <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Base Price:</Text>
-              <Text style={[styles.priceValue, { color: colors.textPrimary }]}>{basePrice} MAD</Text>
-            </View>
-            {selectedCarTypeData.multiplier !== 1 && (
-              <View style={styles.priceRow}>
-                <Text style={[styles.priceAdjustment, { color: colors.textSecondary }]}>
-                  {selectedCarTypeData.name} adjustment:
-                </Text>
-                <Text style={[styles.priceAdjustment, { color: colors.textSecondary }]}>×{selectedCarTypeData.multiplier}</Text>
-              </View>
-            )}
-            <View style={[styles.priceDivider, { backgroundColor: colors.cardBorder }]} />
-            <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>Total:</Text>
-              <Text style={[styles.totalValue, { color: colors.accent }]}>{adjustedPrice} MAD</Text>
-            </View>
-          </Card>
         )}
+
       </ScrollView>
 
       {/* Bottom Navigation */}
@@ -534,9 +485,14 @@ export default function BookingVehicleScreen() {
           </Button>
           
           <Button 
-            style={[styles.continueButton, { opacity: selectedCarType && selectedBrand ? 1 : 0.5 }]}
+            style={[styles.continueButton, { 
+              opacity: (selectedVehicleType === 'car' && selectedBrand) || 
+                       (selectedVehicleType === 'motor' && selectedMotorType) ? 1 : 0.5 
+            }]}
             onPress={handleContinue}
-            disabled={!selectedCarType || !selectedBrand}
+            disabled={!selectedVehicleType || 
+                     (selectedVehicleType === 'car' && !selectedBrand) ||
+                     (selectedVehicleType === 'motor' && !selectedMotorType)}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
             <ChevronRight size={16} color="#ffffff" />
@@ -593,28 +549,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
+  vehicleTypeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   carTypeCard: {
-    padding: 20,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1.5,
     alignItems: 'center',
-    minHeight: 120,
+    minHeight: 80,
     position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 3,
   },
   carTypeIcon: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 20,
+    marginBottom: 6,
   },
   carTypeName: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   carTypePrice: {
     fontSize: 12,
