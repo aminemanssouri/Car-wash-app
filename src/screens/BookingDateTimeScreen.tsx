@@ -182,7 +182,7 @@ export default function BookingDateTimeScreen() {
       <Header 
         title="Select Date & Time" 
         onBack={() => navigation.goBack()}
-        subtitle="Step 1 of 5"
+        subtitle="Step 1 of 6"
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -192,7 +192,7 @@ export default function BookingDateTimeScreen() {
             <View style={[styles.progressFill, { width: '20%', backgroundColor: colors.accent }]} />
           </View>
           <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-            Step 1 of 5: Select Date & Time
+            Step 1 of 6: Select Date & Time
           </Text>
         </View>
 
@@ -330,10 +330,9 @@ export default function BookingDateTimeScreen() {
         <Button
           onPress={handleContinue}
           style={[styles.continueButton, { backgroundColor: colors.accent }]}
-          textStyle={[styles.continueButtonText, { color: '#ffffff' }]}
           disabled={!selectedDate || !selectedTime}
         >
-          Continue
+          <Text style={[styles.continueButtonText, { color: '#ffffff' }]}>Continue</Text>
         </Button>
       </View>
 

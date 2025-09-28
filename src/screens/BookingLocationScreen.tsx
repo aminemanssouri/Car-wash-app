@@ -38,14 +38,6 @@ const quickAddresses = [
   },
 ];
 
-const popularAreas = [
-  'Gueliz, Marrakech',
-  'Medina, Marrakech',
-  'Hivernage, Marrakech',
-  'Agdal, Marrakech',
-  'Targa, Marrakech',
-  'Semlalia, Marrakech',
-];
 
 export default function BookingLocationScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -55,7 +47,6 @@ export default function BookingLocationScreen() {
   const { bookingData, updateBookingData, setCurrentStep } = useBooking();
 
   const [address, setAddress] = useState(bookingData.address || '');
-  const [addressDetails, setAddressDetails] = useState('');
   const [selectedQuickAddress, setSelectedQuickAddress] = useState<string | null>(null);
 
   const handleQuickAddressSelect = (quickAddr: typeof quickAddresses[0]) => {
@@ -63,10 +54,6 @@ export default function BookingLocationScreen() {
     setAddress(quickAddr.address);
   };
 
-  const handlePopularAreaSelect = (area: string) => {
-    setAddress(area);
-    setSelectedQuickAddress(null);
-  };
 
   const handleContinue = () => {
     if (!address.trim()) {
@@ -76,15 +63,14 @@ export default function BookingLocationScreen() {
 
     updateBookingData({
       address: address.trim(),
-      notes: addressDetails.trim(),
     });
 
-    setCurrentStep(4);
+    setCurrentStep(5);
     navigation.navigate('BookingPayment' as any);
   };
 
   const handleBack = () => {
-    setCurrentStep(2);
+    setCurrentStep(3);
     navigation.goBack();
   };
 
@@ -93,17 +79,17 @@ export default function BookingLocationScreen() {
       <Header 
         title="Service Location" 
         onBack={handleBack}
-        subtitle="Step 3 of 5"
+        subtitle="Step 4 of 5"
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '60%', backgroundColor: colors.accent }]} />
+            <View style={[styles.progressFill, { width: '80%', backgroundColor: colors.accent }]} />
           </View>
           <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-            Step 3 of 5: Service Location
+            Step 4 of 5: Service Location
           </Text>
         </View>
 
@@ -176,47 +162,6 @@ export default function BookingLocationScreen() {
           </Text>
         </Card>
 
-        {/* Popular Areas */}
-        <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Popular Areas</Text>
-          
-          <View style={styles.popularAreasGrid}>
-            {popularAreas.map((area) => (
-              <Pressable
-                key={area}
-                onPress={() => handlePopularAreaSelect(area)}
-                style={[
-                  styles.popularAreaChip,
-                  { 
-                    backgroundColor: colors.surface,
-                    borderColor: colors.cardBorder,
-                  }
-                ]}
-              >
-                <Text style={[styles.popularAreaText, { color: colors.textPrimary }]}>
-                  {area}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
-
-        {/* Additional Details */}
-        <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Additional Notes</Text>
-          
-          <Textarea
-            value={addressDetails}
-            onChangeText={setAddressDetails}
-            placeholder="Any special instructions or landmarks..."
-            rows={3}
-            style={styles.textarea}
-          />
-          
-          <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-            Help the worker find your location easily
-          </Text>
-        </Card>
 
         {/* Location Info */}
         <Card style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>

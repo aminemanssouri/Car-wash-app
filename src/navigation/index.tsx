@@ -20,6 +20,7 @@ import BookingScreen from '../screens/BookingScreen';
 import BookingConfirmationScreen from '../screens/BookingConfirmationScreen';
 import BookingDateTimeScreen from '../screens/BookingDateTimeScreen';
 import BookingVehicleScreen from '../screens/BookingVehicleScreen';
+import BookingServicesScreen from '../screens/BookingServicesScreen';
 import BookingLocationScreen from '../screens/BookingLocationScreen';
 import BookingPaymentScreen from '../screens/BookingPaymentScreen';
 import BookingReviewScreen from '../screens/BookingReviewScreen';
@@ -150,6 +151,7 @@ function AppStack() {
       <Stack.Screen name="Booking" component={BookingScreen} />
       <Stack.Screen name="BookingDateTime" component={BookingDateTimeScreen} />
       <Stack.Screen name="BookingVehicle" component={BookingVehicleScreen} />
+      <Stack.Screen name="BookingServices" component={BookingServicesScreen} />
       <Stack.Screen name="BookingLocation" component={BookingLocationScreen} />
       <Stack.Screen name="BookingPayment" component={BookingPaymentScreen} />
       <Stack.Screen name="BookingReview" component={BookingReviewScreen} />

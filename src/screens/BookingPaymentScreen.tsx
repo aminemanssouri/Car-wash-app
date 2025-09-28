@@ -52,7 +52,7 @@ export default function BookingPaymentScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { t } = useLanguage();
-  const { bookingData, updateBookingData, setCurrentStep } = useBooking();
+  const { bookingData, updateBookingData, setCurrentStep, resetBookingData } = useBooking();
 
   const [selectedPayment, setSelectedPayment] = useState(bookingData.paymentMethod || 'cash');
 
@@ -66,12 +66,16 @@ export default function BookingPaymentScreen() {
       paymentMethod: selectedPayment,
     });
 
-    setCurrentStep(5);
-    navigation.navigate('BookingReview' as any);
+    // Generate booking ID and navigate directly to confirmation
+    const bookingId = `CW${Date.now().toString().slice(-6)}`;
+    
+    // Reset booking data and navigate to confirmation
+    resetBookingData();
+    navigation.navigate('BookingConfirmation', { bookingId } as any);
   };
 
   const handleBack = () => {
-    setCurrentStep(3);
+    setCurrentStep(4);
     navigation.goBack();
   };
 
@@ -80,17 +84,17 @@ export default function BookingPaymentScreen() {
       <Header 
         title="Payment Method" 
         onBack={handleBack}
-        subtitle="Step 4 of 5"
+        subtitle="Step 5 of 5"
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '80%', backgroundColor: colors.accent }]} />
+            <View style={[styles.progressFill, { width: '100%', backgroundColor: colors.accent }]} />
           </View>
           <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-            Step 4 of 5: Payment Method
+            Step 5 of 5: Payment Method
           </Text>
         </View>
 

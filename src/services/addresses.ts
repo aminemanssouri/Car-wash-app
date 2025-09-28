@@ -9,9 +9,11 @@ export async function getCurrentUserId(): Promise<string> {
 }
 
 export async function listAddresses(): Promise<Address[]> {
+  const userId = await getCurrentUserId();
   const { data, error } = await supabase
     .from('addresses')
     .select('*')
+    .eq('user_id', userId)
     .order('is_default', { ascending: false })
     .order('updated_at', { ascending: false });
   if (error) throw error;

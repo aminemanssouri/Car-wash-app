@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { Calendar, Clock, MapPin, Car, CreditCard, User, ChevronLeft, Check } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, Car, CreditCard, User, ChevronLeft, Check, Wrench } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
@@ -13,6 +13,7 @@ import { Separator } from '../components/ui/Separator';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
+import { SERVICES, iconFor } from '../data/services';
 import type { RootStackParamList } from '../types/navigation';
 
 // Mock worker data - should match the data from BookingScreen
@@ -90,9 +91,12 @@ export default function BookingReviewScreen() {
         navigation.navigate('BookingVehicle' as any);
         break;
       case 3:
-        navigation.navigate('BookingLocation' as any);
+        navigation.navigate('BookingServices' as any);
         break;
       case 4:
+        navigation.navigate('BookingLocation' as any);
+        break;
+      case 5:
         navigation.navigate('BookingPayment' as any);
         break;
     }
@@ -103,7 +107,7 @@ export default function BookingReviewScreen() {
       <Header 
         title="Review Booking" 
         onBack={handleBack}
-        subtitle="Step 5 of 5"
+        subtitle="Step 6 of 6"
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -113,7 +117,7 @@ export default function BookingReviewScreen() {
             <View style={[styles.progressFill, { width: '100%', backgroundColor: colors.accent }]} />
           </View>
           <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-            Step 5 of 5: Review Booking
+            Step 6 of 6: Review Booking
           </Text>
         </View>
 
@@ -228,6 +232,60 @@ export default function BookingReviewScreen() {
           </View>
         </Card>
 
+        {/* Selected Services */}
+        <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <View style={styles.sectionHeaderWithEdit}>
+            <View style={styles.sectionHeader}>
+              <Wrench size={20} color={colors.accent} />
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Selected Services</Text>
+            </View>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onPress={() => handleEdit(3)}
+              style={styles.editButton}
+            >
+              <Text style={[styles.editButtonText, { color: colors.accent }]}>Edit</Text>
+            </Button>
+          </View>
+          
+          <View style={styles.servicesContainer}>
+            {bookingData.selectedServices && bookingData.selectedServices.length > 0 ? (
+              bookingData.selectedServices.map((serviceKey) => {
+                const service = SERVICES.find(s => s.key === serviceKey);
+                if (!service) return null;
+                
+                const IconComponent = iconFor(service.icon);
+                
+                return (
+                  <View key={serviceKey} style={[styles.serviceItem, { borderBottomColor: colors.cardBorder }]}>
+                    <View style={styles.serviceLeft}>
+                      <View style={[styles.serviceIcon, { backgroundColor: colors.accent + '20' }]}>
+                        <IconComponent size={16} color={colors.accent} />
+                      </View>
+                      <View style={styles.serviceInfo}>
+                        <Text style={[styles.serviceName, { color: colors.textPrimary }]}>
+                          {service.title}
+                        </Text>
+                        <Text style={[styles.serviceDesc, { color: colors.textSecondary }]}>
+                          {service.desc}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.servicePrice, { color: colors.accent }]}>
+                      {service.price} MAD
+                    </Text>
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={[styles.noServicesText, { color: colors.textSecondary }]}>
+                No services selected
+              </Text>
+            )}
+          </View>
+        </Card>
+
         {/* Location */}
         <Card style={[styles.sectionCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={styles.sectionHeaderWithEdit}>
@@ -238,7 +296,7 @@ export default function BookingReviewScreen() {
             <Button 
               variant="outline" 
               size="sm" 
-              onPress={() => handleEdit(3)}
+              onPress={() => handleEdit(4)}
               style={styles.editButton}
             >
               <Text style={[styles.editButtonText, { color: colors.accent }]}>Edit</Text>
@@ -272,7 +330,7 @@ export default function BookingReviewScreen() {
             <Button 
               variant="outline" 
               size="sm" 
-              onPress={() => handleEdit(4)}
+              onPress={() => handleEdit(5)}
               style={styles.editButton}
             >
               <Text style={[styles.editButtonText, { color: colors.accent }]}>Edit</Text>
@@ -294,29 +352,42 @@ export default function BookingReviewScreen() {
           <Text style={[styles.priceTitle, { color: colors.textPrimary }]}>Booking Summary</Text>
           
           <View style={styles.priceBreakdown}>
-            <View style={styles.priceRow}>
-              <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Service Fee:</Text>
-              <Text style={[styles.priceValue, { color: colors.textPrimary }]}>{bookingData.basePrice} MAD</Text>
-            </View>
-            
-            {bookingData.finalPrice !== bookingData.basePrice && (
-              <View style={styles.priceRow}>
-                <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>
-                  Vehicle adjustment:
-                </Text>
-                <Text style={[styles.priceValue, { color: colors.textPrimary }]}>
-                  {bookingData.finalPrice - bookingData.basePrice >= 0 ? '+' : ''}
-                  {bookingData.finalPrice - bookingData.basePrice} MAD
-                </Text>
-              </View>
+            {bookingData.selectedServices && bookingData.selectedServices.length > 0 ? (
+              <>
+                {bookingData.selectedServices.map((serviceKey) => {
+                  const service = SERVICES.find(s => s.key === serviceKey);
+                  if (!service) return null;
+                  
+                  return (
+                    <View key={serviceKey} style={styles.priceRow}>
+                      <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>{service.title}:</Text>
+                      <Text style={[styles.priceValue, { color: colors.textPrimary }]}>{service.price} MAD</Text>
+                    </View>
+                  );
+                })}
+                
+                <View style={[styles.priceDivider, { backgroundColor: colors.cardBorder }]} />
+                
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>Total Amount:</Text>
+                  <Text style={[styles.totalValue, { color: colors.accent }]}>{bookingData.servicesTotal || bookingData.finalPrice} MAD</Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.priceRow}>
+                  <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Service Fee:</Text>
+                  <Text style={[styles.priceValue, { color: colors.textPrimary }]}>{bookingData.basePrice || 0} MAD</Text>
+                </View>
+                
+                <View style={[styles.priceDivider, { backgroundColor: colors.cardBorder }]} />
+                
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>Total Amount:</Text>
+                  <Text style={[styles.totalValue, { color: colors.accent }]}>{bookingData.finalPrice || bookingData.basePrice || 0} MAD</Text>
+                </View>
+              </>
             )}
-            
-            <View style={[styles.priceDivider, { backgroundColor: colors.cardBorder }]} />
-            
-            <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>Total Amount:</Text>
-              <Text style={[styles.totalValue, { color: colors.accent }]}>{bookingData.finalPrice} MAD</Text>
-            </View>
           </View>
         </Card>
       </ScrollView>
@@ -538,5 +609,50 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  // Services section styles
+  servicesContainer: {
+    gap: 12,
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  serviceLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  serviceIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  serviceDesc: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  servicePrice: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  noServicesText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 20,
   },
 });
