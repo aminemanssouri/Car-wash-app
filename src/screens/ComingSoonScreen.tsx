@@ -27,12 +27,31 @@ export default function ComingSoonScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['top','bottom']}>
       <View style={[styles.header, { borderBottomColor: theme.cardBorder, backgroundColor: theme.card }]}> 
-        <Button variant="ghost" size="sm" style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={18} color={theme.textSecondary} />
-          <Text style={[styles.backText, { color: theme.textSecondary }]}>{t('back')}</Text>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          style={[styles.backButton, {
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: theme.cardBorder,
+            borderRadius: 12,
+            width: 40,
+            height: 40,
+            marginTop: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 3,
+            elevation: 1,
+          }]}
+          onPress={() => navigation.goBack()}
+        >
+          <ArrowLeft size={20} color={theme.textPrimary} strokeWidth={2.5} />
         </Button>
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t(feature)}</Text>
-        <View style={{ width: 64 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.content}>

@@ -45,8 +45,8 @@ export default function ForgotPasswordScreen() {
       
       show({
         type: 'success',
-        title: t('reset_sent') || 'Reset Instructions Sent',
-        message: `${t('reset_instructions_sent') || 'Password reset instructions have been sent to'} ${value}`,
+        title: t('reset sent') || 'Reset Instructions Sent',
+        message: `${t('reset instructions sent') || 'Password reset instructions have been sent to'} ${value}`,
       });
       
       setTimeout(() => navigation.goBack(), 2000);
@@ -54,7 +54,7 @@ export default function ForgotPasswordScreen() {
       show({
         type: 'warning',
         title: t('error') || 'Error',
-        message: t('reset_failed') || 'Failed to send reset instructions. Please try again.',
+        message: t('reset failed') || 'Failed to send reset instructions. Please try again.',
       });
     } finally {
       setIsLoading(false);
@@ -67,10 +67,30 @@ export default function ForgotPasswordScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder, paddingTop: insets.top + 12 }]}>
-        <Button variant="ghost" size="icon" onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={20} color={theme.textPrimary} />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          style={[styles.backButton, {
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: theme.cardBorder,
+            borderRadius: 12,
+            width: 40,
+            height: 40,
+            marginTop: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 3,
+            elevation: 1,
+          }]}
+          onPress={() => navigation.goBack()}
+        >
+          <ArrowLeft size={20} color={theme.textPrimary} strokeWidth={2.5} />
         </Button>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('reset_password') || 'Reset Password'}</Text>
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('reset password') || 'Reset Password'}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -81,9 +101,9 @@ export default function ForgotPasswordScreen() {
             <View style={[styles.iconContainer, { backgroundColor: theme.surface }]}>
               <Key size={24} color={theme.accent} />
             </View>
-            <Text style={[styles.headerTitleCard, { color: theme.textPrimary }]}>{t('forgot_password') || 'Forgot Password?'}</Text>
+            <Text style={[styles.headerTitleCard, { color: theme.textPrimary }]}>{t('forgot password') || 'Forgot Password?'}</Text>
             <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-              {t('reset_instructions') || 'Enter your email and we\'ll send you instructions to reset your password'}
+              {t('reset instructions') || 'Enter your email and we\'ll send you instructions to reset your password'}
             </Text>
           </View>
         </Card>
@@ -92,15 +112,15 @@ export default function ForgotPasswordScreen() {
         <Card style={styles.formCard}>
           <View style={styles.sectionHeader}>
             <Mail size={20} color={theme.accent} />
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reset_method') || 'Reset Method'}</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reset method') || 'Reset Method'}</Text>
           </View>
           
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('email_address') || 'Email Address'}</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>{t('email address') || 'Email Address'}</Text>
             <Input
               value={watch('email')}
               onChangeText={(value) => setValue('email', value)}
-              placeholder={t('enter_email') || 'Enter your email address'}
+              placeholder={t('enter email') || 'Enter your email address'}
               keyboardType="email-address"
               autoCapitalize="none"
               style={[styles.fieldInput, { borderColor: theme.cardBorder, backgroundColor: theme.bg }]}
@@ -116,7 +136,7 @@ export default function ForgotPasswordScreen() {
             disabled={isLoading}
           >
             <Text style={[styles.submitButtonText, { color: '#ffffff' }]}>
-              {isLoading ? (t('sending') || 'Sending...') : (t('send_reset_instructions') || 'Send Reset Instructions')}
+              {isLoading ? (t('sending') || 'Sending...') : (t('send reset instructions') || 'Send Reset Instructions')}
             </Text>
           </Button>
         </Card>
@@ -124,7 +144,7 @@ export default function ForgotPasswordScreen() {
         {/* Back to Login */}
         <Card style={styles.backCard}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backToLogin}>
-            <Text style={[styles.backToLoginText, { color: theme.accent }]}>{t('back_to_sign_in') || 'Back to Sign In'}</Text>
+            <Text style={[styles.backToLoginText, { color: theme.accent }]}>{t('back to sign in') || 'Back to Sign In'}</Text>
           </Pressable>
         </Card>
       </ScrollView>

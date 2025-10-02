@@ -11,7 +11,6 @@ import { useLanguage, type AppLanguage } from '../contexts/LanguageContext';
 const LANGS: { key: AppLanguage; labelKey: string; sub?: string }[] = [
   { key: 'en', labelKey: 'english' },
   { key: 'fr', labelKey: 'french' },
-  { key: 'ar', labelKey: 'arabic' },
 ];
 
 export default function LanguageScreen() {
@@ -24,8 +23,28 @@ export default function LanguageScreen() {
     <View style={[styles.container, { backgroundColor: theme.bg }] }>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder, paddingTop: insets.top + 12 }]}>
-        <Button variant="ghost" size="icon" onPress={() => navigation.goBack()} style={styles.backButton}>
-          <ArrowLeft size={20} color={theme.textPrimary} />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          style={[styles.backButton, {
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: theme.cardBorder,
+            borderRadius: 12,
+            width: 40,
+            height: 40,
+            marginTop: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 3,
+            elevation: 1,
+          }]}
+          onPress={() => navigation.goBack()}
+        >
+          <ArrowLeft size={20} color={theme.textPrimary} strokeWidth={2.5} />
         </Button>
         <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('language')}</Text>
         <View style={{ width: 40 }} />

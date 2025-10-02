@@ -114,6 +114,22 @@ export default function ServiceDetailScreen() {
           onBack={() => navigation.goBack()} 
         />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={{ fontSize: 16, color: theme.textSecondary, marginTop: 16 }}>Loading service details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state or service not found
+  if (error || !service) {
+    return (
+      <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
+        <Header 
+          title={t('service details')} 
+          onBack={() => navigation.goBack()} 
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>
             {error || t('service_not_found')}
           </Text>
@@ -127,7 +143,7 @@ export default function ServiceDetailScreen() {
   return (
     <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
       <Header 
-        title={t('service_details')} 
+        title={t('service details')} 
         onBack={() => navigation.goBack()} 
       />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>

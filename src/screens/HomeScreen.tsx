@@ -47,13 +47,30 @@ export default function HomeScreen() {
     return mockWorkers.filter((w) => {
       const nameMatch = w.name.toLowerCase().includes(q);
       const serviceMatch = (w.services || []).some((s) => s.toLowerCase().includes(q));
-      return nameMatch || serviceMatch;
+      const areaMatch = w.area?.toLowerCase().includes(q);
+      const cityMatch = w.city?.toLowerCase().includes(q);
+      const countryMatch = w.country?.toLowerCase().includes(q);
+      return nameMatch || serviceMatch || areaMatch || cityMatch || countryMatch;
     });
   }, [query]);
 
   const goToBooking = (id: string) => {
     navigateWithAuth('Booking', { workerId: id });
   };
+
+  // Auto-center map when search results change
+  useEffect(() => {
+    if (query.trim() && filteredWorkers.length > 0) {
+      const firstWorker = filteredWorkers[0];
+      setCenterOn({
+        latitude: firstWorker.location.latitude,
+        longitude: firstWorker.location.longitude,
+        zoom: 14,
+      });
+      // Optionally select the first worker
+      setSelectedWorker(firstWorker.id);
+    }
+  }, [filteredWorkers, query]);
 
   // Animation functions for sliding card
   const showWorkerCard = (worker: Worker) => {
@@ -86,7 +103,8 @@ export default function HomeScreen() {
   // Handle marker press to show sliding card
   const handleMarkerPress = (id: string) => {
     console.log('Marker pressed:', id);
-    
+    console.log('Available worker IDs:', mockWorkers.map(w => w.id));
+
     if (selectedWorker === id) {
       // If same worker is clicked, hide the card
       setSelectedWorker(null);
@@ -96,7 +114,7 @@ export default function HomeScreen() {
 
     const worker = mockWorkers.find(w => w.id === id);
     console.log('Found worker:', worker);
-    
+
     if (worker) {
       // If another card is open, close first then open the new one to avoid overlap/half state
       if (selectedWorkerData) {
@@ -108,11 +126,13 @@ export default function HomeScreen() {
         setSelectedWorker(id);
         showWorkerCard(worker);
       }
-      
+
       // Center map on selected worker
       setCenterOn(null);
       const coords = { latitude: worker.location.latitude, longitude: worker.location.longitude, zoom: 15 };
       setTimeout(() => setCenterOn(coords), 100);
+    } else {
+      console.error('Worker not found for ID:', id);
     }
   };
 
@@ -192,17 +212,20 @@ export default function HomeScreen() {
       <View style={styles.mapContainer}>
         <GoogleMap
           initialRegion={{ latitude: 31.6295, longitude: -7.9811, zoom: 13 }}
-          markers={filteredWorkers.map((w) => ({
-            id: w.id,
-            latitude: w.location.latitude,
-            longitude: w.location.longitude,
-            title: w.name,
-            subtitle: `${w.services.join(', ')} - ${w.price} MAD`,
-            price: w.price,
-            avatar: w.avatar,
-            services: w.services,
-            rating: w.rating,
-          }))}
+          markers={filteredWorkers.map((w) => {
+            console.log('Mapping worker to marker:', w.id, w.name);
+            return {
+              id: w.id,
+              latitude: w.location.latitude,
+              longitude: w.location.longitude,
+              title: w.name,
+              subtitle: `${w.services.join(', ')} - ${w.price} MAD`,
+              price: w.price,
+              avatar: w.avatar,
+              services: w.services,
+              rating: w.rating,
+            };
+          })}
           onMarkerPress={handleMarkerPress}
           onBookNow={(id: string) => goToBooking(id)}
           centerOn={centerOn}
@@ -222,7 +245,7 @@ export default function HomeScreen() {
           <Search color={theme.textSecondary} size={18} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: theme.textPrimary }]}
-            placeholder="Search workers or services..."
+            placeholder="Search workers, services, or areas..."
             placeholderTextColor={theme.textSecondary}
             value={query}
             onChangeText={setQuery}
@@ -850,7 +873,7 @@ const styles = StyleSheet.create({
     zIndex: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 22,
     paddingHorizontal: 16,
     paddingVertical: 12,
     shadowColor: '#000',
@@ -887,7 +910,7 @@ const styles = StyleSheet.create({
   hamburgerButton: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

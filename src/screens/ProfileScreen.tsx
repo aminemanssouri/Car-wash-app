@@ -6,7 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,7 @@ export const ProfileScreen: React.FC = () => {
   const theme = useThemeColors();
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   const handleLogin = () => {
     navigation.navigate('Login' as never);
@@ -103,7 +104,11 @@ export const ProfileScreen: React.FC = () => {
         onBack={() => safeGoBack(navigation)}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      >
         {/* Profile Header */}
         <Card style={styles.profileCard}>
           <View style={styles.profileHeader}>
@@ -246,15 +251,16 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   // Guest state styles
   guestCard: {
-    padding: 24,
+    padding: 32,
     alignItems: 'center',
-    maxWidth: 320,
+    maxWidth: 360,
     alignSelf: 'center',
-    marginTop: 32,
+    marginTop: 40,
+    borderRadius: 20,
   },
   guestIcon: {
     width: 64,
@@ -266,17 +272,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   guestTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: 12,
+    letterSpacing: 0.3,
   },
   guestSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#6b7280',
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 20,
+    marginBottom: 28,
+    lineHeight: 22,
   },
   guestButtons: {
     gap: 12,
@@ -302,7 +309,8 @@ const styles = StyleSheet.create({
   // Authenticated user styles
   profileCard: {
     padding: 24,
-    marginBottom: 24,
+    marginBottom: 20,
+    borderRadius: 16,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -313,24 +321,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#111827',
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: 0.3,
   },
   memberSince: {
     fontSize: 14,
     color: '#6b7280',
+    marginTop: 2,
   },
   contactCard: {
     padding: 24,
-    marginBottom: 24,
+    marginBottom: 20,
+    borderRadius: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 16,
+    marginBottom: 20,
+    letterSpacing: 0.2,
   },
   contactList: {
     gap: 16,
@@ -339,42 +351,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    padding: 16,
+    borderRadius: 12,
   },
   contactDetails: {
     flex: 1,
   },
   contactLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#111827',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   contactValue: {
     fontSize: 14,
     color: '#6b7280',
+    lineHeight: 20,
   },
   contactSeparator: {
     marginVertical: 0,
   },
   actionsCard: {
     padding: 24,
+    borderRadius: 16,
+    marginBottom: 20,
   },
   actionsList: {
     gap: 8,
   },
   actionButton: {
-    height: 48,
+    height: 52,
     justifyContent: 'flex-start',
-    paddingHorizontal: 0,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    borderRadius: 12,
+    marginBottom: 8,
   },
   actionIcon: {
     marginRight: 0,
   },
   actionButtonText: {
     fontSize: 16,
+    fontWeight: '500',
     color: '#374151',
   },
   destructiveText: {
@@ -384,15 +404,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 4,
+    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
   roleText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   statsCard: {
     padding: 24,
-    marginBottom: 24,
+    marginBottom: 20,
+    borderRadius: 16,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -402,14 +428,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 8,
+    padding: 16,
+    borderRadius: 12,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
 

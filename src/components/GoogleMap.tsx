@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, Platform, Text, Image, Pressable } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Region, Callout } from 'react-native-maps';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import CustomMapMarkers from './CustomMapMarkers';
 
 export type GoogleMapMarker = {
   id: string;
@@ -68,86 +69,19 @@ export default function GoogleMap({
     }
   }, [centerOn]);
 
-  // Custom marker component for workers
-  const renderWorkerMarker = (marker: GoogleMapMarker) => {
-    const isSelected = selectedId === marker.id;
-    
-    return (
-      <Marker
-        key={marker.id}
-        coordinate={{
-          latitude: marker.latitude,
-          longitude: marker.longitude,
-        }}
-        onPress={() => onMarkerPress?.(marker.id)}
-        anchor={{ x: 0.5, y: 0.5 }}
-        centerOffset={{ x: 0, y: 0 }}
-      >
-        {/* Custom circular worker image marker */}
-        <View style={[
-          styles.workerMarker,
-          isSelected && styles.workerMarkerSelected
-        ]}>
-          {marker.avatar ? (
-            <Image 
-              source={
-                typeof marker.avatar === 'string' 
-                  ? { uri: marker.avatar }  // Remote URL
-                  : marker.avatar           // Local require()
-              }
-              style={styles.workerAvatar}
-              onError={() => {
-                // Handle image load error by showing fallback
-              }}
-            />
-          ) : (
-            <View style={styles.workerAvatarFallback}>
-              <Text style={styles.workerAvatarText}>
-                {marker.title?.charAt(0) || 'W'}
-              </Text>
-            </View>
-          )}
-          {isSelected && <View style={styles.selectedIndicator} />}
-        </View>
+  // Track region changes to recompute overlay positions
+  const [visibleRegion, setVisibleRegion] = useState<Region>({ ...region });
+  const [mapSize, setMapSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
-        {/* Custom callout with service details and book now */}
-        <Callout 
-          tooltip={true}
-          onPress={() => onBookNow?.(marker.id)}
-        >
-          <View style={styles.calloutContainer}>
-            <View style={styles.calloutHeader}>
-              <Text style={styles.calloutTitle}>{marker.title}</Text>
-              {marker.rating && (
-                <View style={styles.ratingContainer}>
-                  <Text style={styles.ratingText}>⭐ {marker.rating}</Text>
-                </View>
-              )}
-            </View>
-            
-            {marker.services && marker.services.length > 0 && (
-              <View style={styles.servicesContainer}>
-                <Text style={styles.servicesLabel}>Services:</Text>
-                <Text style={styles.servicesText}>
-                  {marker.services.slice(0, 2).join(', ')}
-                  {marker.services.length > 2 ? '...' : ''}
-                </Text>
-              </View>
-            )}
-            
-            <View style={styles.calloutFooter}>
-              <Text style={styles.priceText}>{marker.price} MAD</Text>
-              <View style={styles.bookNowButton}>
-                <Text style={styles.bookNowText}>Book Now</Text>
-              </View>
-            </View>
-            
-            {/* Callout arrow */}
-            <View style={styles.calloutArrow} />
-          </View>
-        </Callout>
-      </Marker>
-    );
+  // Throttle region updates to ~60fps so overlays follow map smoothly
+  const rafId = useRef<number | null>(null);
+  const pendingRegion = useRef<Region | null>(null);
+
+  const onMapLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (width !== mapSize.width || height !== mapSize.height) {
+      setMapSize({ width, height });
+    }
   };
 
   // Render user location marker
@@ -276,6 +210,7 @@ export default function GoogleMap({
         key={`map-${darkMode ? 'dark' : 'light'}`}
         ref={mapRef}
         style={styles.map}
+        onLayout={onMapLayout}
         provider={PROVIDER_GOOGLE}
         initialRegion={region}
         showsUserLocation={false}
@@ -307,6 +242,19 @@ export default function GoogleMap({
           bottom: 110, // match mapPadding.bottom so it sits just above the nav/card area
           right: 10,
         }}
+        onRegionChange={(r) => {
+          pendingRegion.current = r as Region;
+          if (rafId.current == null) {
+            rafId.current = requestAnimationFrame(() => {
+              if (pendingRegion.current) setVisibleRegion(pendingRegion.current);
+              rafId.current = null;
+            });
+          }
+        }}
+        onRegionChangeComplete={(r) => {
+          // Final snap to exact region at gesture end
+          setVisibleRegion(r as Region);
+        }}
         onPress={() => {
           // Deselect marker when pressing on empty map area
           if (selectedId && onMarkerPress) {
@@ -314,12 +262,23 @@ export default function GoogleMap({
           }
         }}
       >
-        {/* Render worker markers */}
-        {markers.map(renderWorkerMarker)}
-        
+        {/* Only render the user location pin using MapView.Marker */}
         {/* Render user location marker */}
         {renderUserLocationMarker()}
       </MapView>
+
+      {/* Overlay worker markers without using MapView.Marker */}
+      <CustomMapMarkers
+        markers={markers}
+        selectedId={selectedId}
+        region={visibleRegion}
+        mapSize={mapSize}
+        insets={{ top: 120, right: 20, bottom: 110, left: 20 }}
+        onPress={(id) => {
+          console.log('CustomMapMarkers onPress called with id:', id);
+          onMarkerPress?.(id);
+        }}
+      />
     </View>
   );
 }
@@ -333,58 +292,7 @@ const styles = StyleSheet.create({
     overflow: 'visible', // Ensure markers aren't clipped
   },
   
-  // Worker marker styles
-  workerMarker: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#ffffff',
-    borderWidth: 3,
-    borderColor: '#ef4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  workerMarkerSelected: {
-    borderColor: '#3b82f6',
-    borderWidth: 4,
-  },
-  workerAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  workerAvatarFallback: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#3b82f6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  workerAvatarText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  selectedIndicator: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#10b981',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
+  // Removed workerMarker style block as worker markers are now overlayed
   
   // Callout styles
   calloutContainer: {

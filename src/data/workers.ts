@@ -9,6 +9,9 @@ export interface Worker {
   services: string[];
   price: number;
   isAvailable: boolean;
+  area?: string;
+  city?: string;
+  country?: string;
 }
 
 // Generate random locations around Marrakech city center
@@ -30,6 +33,9 @@ const generateRandomLocation = (centerLat: number, centerLng: number, radiusKm: 
 // Marrakech city center coordinates
 const MARRAKECH_CENTER = { lat: 31.6295, lng: -7.9811 };
 
+// Casablanca city center coordinates
+const CASABLANCA_CENTER = { lat: 33.5731, lng: -7.5898 };
+
 export const mockWorkers: Worker[] = [
   {
     id: "1",
@@ -41,6 +47,9 @@ export const mockWorkers: Worker[] = [
     avatar: require('../../assets/images/professional-car-washer-ahmed.png'),
     location: generateRandomLocation(MARRAKECH_CENTER.lat, MARRAKECH_CENTER.lng, 5),
     isAvailable: true,
+    area: "Gueliz",
+    city: "Marrakech",
+    country: "Morocco",
   },
   {
     id: "2",
@@ -52,6 +61,9 @@ export const mockWorkers: Worker[] = [
     avatar: require('../../assets/images/professional-car-washer-omar.png'),
     location: generateRandomLocation(MARRAKECH_CENTER.lat, MARRAKECH_CENTER.lng, 5),
     isAvailable: true,
+    area: "Medina",
+    city: "Marrakech",
+    country: "Morocco",
   },
   {
     id: "3",
@@ -63,6 +75,9 @@ export const mockWorkers: Worker[] = [
     avatar: require('../../assets/images/professional-car-washer-hassan.png'),
     location: generateRandomLocation(MARRAKECH_CENTER.lat, MARRAKECH_CENTER.lng, 5),
     isAvailable: true,
+    area: "Hivernage",
+    city: "Marrakech",
+    country: "Morocco",
   },
   {
     id: "4",
@@ -74,6 +89,9 @@ export const mockWorkers: Worker[] = [
     avatar: require('../../assets/images/professional-car-washer-youssef.png'),
     location: generateRandomLocation(MARRAKECH_CENTER.lat, MARRAKECH_CENTER.lng, 5),
     isAvailable: false,
+    area: "Agdal",
+    city: "Marrakech",
+    country: "Morocco",
   },
   {
     id: "5",
@@ -85,6 +103,9 @@ export const mockWorkers: Worker[] = [
     avatar: require('../../assets/images/professional-car-washer-ahmed.png'),
     location: generateRandomLocation(MARRAKECH_CENTER.lat, MARRAKECH_CENTER.lng, 5),
     isAvailable: true,
+    area: "Palmeraie",
+    city: "Marrakech",
+    country: "Morocco",
   },
   {
     id: "6",
@@ -96,5 +117,50 @@ export const mockWorkers: Worker[] = [
     avatar: require('../../assets/images/professional-car-washer-hassan.png'),
     location: generateRandomLocation(MARRAKECH_CENTER.lat, MARRAKECH_CENTER.lng, 5),
     isAvailable: true,
+    area: "Gueliz",
+    city: "Marrakech",
+    country: "Morocco",
+  },
+  {
+    id: "7",
+    name: "Rachid El Fassi",
+    rating: 4.7,
+    reviewCount: 145,
+    services: ["Premium Wash", "Interior Detailing"],
+    price: 90,
+    avatar: require('../../assets/images/professional-car-washer-ahmed.png'),
+    location: generateRandomLocation(CASABLANCA_CENTER.lat, CASABLANCA_CENTER.lng, 5),
+    isAvailable: true,
+    area: "Maarif",
+    city: "Casablanca",
+    country: "Morocco",
+  },
+  {
+    id: "8",
+    name: "Karim Benjelloun",
+    rating: 4.8,
+    reviewCount: 167,
+    services: ["Full Service", "Wax & Polish"],
+    price: 110,
+    avatar: require('../../assets/images/professional-car-washer-omar.png'),
+    location: generateRandomLocation(CASABLANCA_CENTER.lat, CASABLANCA_CENTER.lng, 5),
+    isAvailable: true,
+    area: "Anfa",
+    city: "Casablanca",
+    country: "Morocco",
+  },
+  {
+    id: "9",
+    name: "Said Alaoui",
+    rating: 4.6,
+    reviewCount: 132,
+    services: ["Quick Wash", "Engine Cleaning"],
+    price: 75,
+    avatar: require('../../assets/images/professional-car-washer-hassan.png'),
+    location: generateRandomLocation(CASABLANCA_CENTER.lat, CASABLANCA_CENTER.lng, 5),
+    isAvailable: true,
+    area: "Ain Diab",
+    city: "Casablanca",
+    country: "Morocco",
   },
 ];

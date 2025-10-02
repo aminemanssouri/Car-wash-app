@@ -6,10 +6,12 @@ import { ArrowLeft, MessageCircle, Phone, Mail, ChevronRight } from 'lucide-reac
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useThemeColors } from '../lib/theme';
 
 export default function HelpScreen() {
   const navigation = useNavigation();
   const { t } = useLanguage();
+  const theme = useThemeColors();
 
   const helpSections = [
     {
@@ -75,10 +77,31 @@ export default function HelpScreen() {
     <SafeAreaView style={styles.container} edges={['top','bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={20} color="#374151" />
-        </Pressable>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          style={[styles.backButton, {
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: theme.cardBorder,
+            borderRadius: 12,
+            width: 40,
+            height: 40,
+            marginTop: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 3,
+            elevation: 1,
+          }]}
+          onPress={() => navigation.goBack()}
+        >
+          <ArrowLeft size={20} color={theme.textPrimary} strokeWidth={2.5} />
+        </Button>
         <Text style={styles.headerTitle}>{t('help_center')}</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
