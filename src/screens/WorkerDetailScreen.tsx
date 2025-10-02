@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { Star, MapPin, Clock, Phone, MessageCircle, Calendar } from 'lucide-react-native';
+import { Star, MapPin, Clock, Phone, MessageCircle } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
@@ -12,6 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Mock worker data - matches original app structure
 const mockWorkerData = {
@@ -26,7 +27,7 @@ const mockWorkerData = {
     isAvailable: true,
     estimatedTime: "15 min",
     phone: "+212 6XX XXX XXX",
-    experience: "3 years",
+    experience: "3",
     completedJobs: 450,
     specialties: ["Exterior Wash", "Interior Cleaning", "Wax & Polish"],
     description: "Professional car washing service with attention to detail. I use eco-friendly products and ensure your car looks spotless.",
@@ -82,15 +83,16 @@ export default function WorkerDetailScreen() {
   const { workerId } = route.params as { workerId: string };
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
+  const { t, language } = useLanguage();
 
   const worker = mockWorkerData[workerId as keyof typeof mockWorkerData];
 
   if (!worker) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Worker not found</Text>
+        <Text style={styles.errorTitle}>{t('worker_not_found')}</Text>
         <Button onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>Go Back</Text>
+          <Text style={styles.buttonText}>{t('go_back')}</Text>
         </Button>
       </View>
     );
@@ -100,14 +102,11 @@ export default function WorkerDetailScreen() {
     navigation.navigate('Booking', { workerId });
   };
 
-  const handleScheduleLater = () => {
-    navigation.navigate('Booking', { workerId });
-  };
 
   const handleCall = () => {
-    Alert.alert('Call Worker', `Call ${worker.phone}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Call', onPress: () => console.log('Calling...') }
+    Alert.alert(t('call') + ' ' + t('service_provider'), `${t('call')} ${worker.phone}?`, [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('call'), onPress: () => console.log('Calling...') }
     ]);
   };
 
@@ -118,7 +117,7 @@ export default function WorkerDetailScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
       <Header 
-        title="Worker Profile" 
+        title={t('worker_profile')} 
         onBack={() => navigation.goBack()} 
       />
 
@@ -140,19 +139,19 @@ export default function WorkerDetailScreen() {
                     <View style={styles.ratingContainer}>
                       <Star size={16} color="#fbbf24" fill="#fbbf24" />
                       <Text style={[styles.rating, { color: theme.textPrimary }]}>{worker.rating}</Text>
-                      <Text style={[styles.reviewCount, { color: theme.textSecondary }]}>({worker.reviewCount} reviews)</Text>
+                      <Text style={[styles.reviewCount, { color: theme.textSecondary }]}>({worker.reviewCount} {language === 'fr' ? 'avis' : 'reviews'})</Text>
                     </View>
                   </View>
                 </View>
                 <Badge variant={worker.isAvailable ? "default" : "secondary"}>
-                  {worker.isAvailable ? "Available" : "Busy"}
+                  {worker.isAvailable ? (language === 'fr' ? 'Disponible' : 'Available') : (language === 'fr' ? 'Occupé' : 'Busy')}
                 </Badge>
               </View>
 
               <View style={styles.workerStats}>
                 <View style={styles.statItem}>
                   <MapPin size={16} color={theme.textSecondary} />
-                  <Text style={[styles.statText, { color: theme.textSecondary }]}>{worker.distance} away</Text>
+                  <Text style={[styles.statText, { color: theme.textSecondary }]}>{worker.distance} {language === 'fr' ? 'de distance' : 'away'}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Clock size={16} color={theme.textSecondary} />
@@ -166,29 +165,71 @@ export default function WorkerDetailScreen() {
 
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-              <Text style={[styles.statNumber, { color: theme.accent }]}>{worker.completedJobs}</Text>
-              <Text style={styles.statLabel}>Jobs Done</Text>
+              <Text 
+                style={[styles.statNumber, { color: theme.accent }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {worker.completedJobs}
+              </Text>
+              <Text 
+                style={[styles.statLabel, { color: theme.textSecondary }]} 
+                numberOfLines={2} 
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {t('jobs_done')}
+              </Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statNumber, { color: theme.accent }]}>{worker.experience}</Text>
-              <Text style={styles.statLabel}>Experience</Text>
+              <Text 
+                style={[styles.statNumber, { color: theme.accent }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {worker.experience}
+              </Text>
+              <Text 
+                style={[styles.statLabel, { color: theme.textSecondary }]} 
+                numberOfLines={2} 
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {t('experience')}
+              </Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statNumber, { color: theme.accent }]}>{worker.price} MAD</Text>
-              <Text style={styles.statLabel}>Starting Price</Text>
+              <Text 
+                style={[styles.statNumber, { color: theme.accent }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {worker.price}
+              </Text>
+              <Text 
+                style={[styles.statLabel, { color: theme.textSecondary }]} 
+                numberOfLines={2} 
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {t('starting_price')}
+              </Text>
             </View>
           </View>
         </Card>
 
         {/* Description */}
         <Card style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>About</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('about_worker').replace(' {name}', '')}</Text>
           <Text style={[styles.description, { color: theme.textSecondary }]}>{worker.description}</Text>
         </Card>
 
         {/* Specialties */}
         <Card style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Specialties</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('services_offered')}</Text>
           <View style={styles.specialtiesContainer}>
             {worker.specialties.map((specialty, index) => (
               <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
@@ -200,7 +241,7 @@ export default function WorkerDetailScreen() {
 
         {/* Reviews */}
         <Card style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Recent Reviews</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reviews_and_ratings')}</Text>
           <View style={styles.reviewsContainer}>
             {worker.reviews.map((review) => (
               <View key={review.id} style={[styles.reviewItem, { borderBottomColor: theme.cardBorder }]}>
@@ -234,24 +275,18 @@ export default function WorkerDetailScreen() {
             onPress={handleBookNow}
           >
             <Text style={styles.bookButtonText}>
-              Book Now - {worker.price} MAD
+              {t('book_now')} - {worker.price} MAD
             </Text>
           </Button>
 
-          <View style={styles.secondaryButtons}>
-            <Button variant="outline" style={styles.secondaryButton} onPress={handleScheduleLater}>
-              <Calendar size={16} color={theme.accent} />
-              <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>Schedule Later</Text>
-            </Button>
-            <Button variant="outline" style={styles.secondaryButton} onPress={handleChat}>
-              <MessageCircle size={16} color={theme.accent} />
-              <Text style={[styles.secondaryButtonText, { color: theme.accent }]}>Chat</Text>
-            </Button>
-          </View>
+          <Button variant="outline" style={styles.callButton} onPress={handleChat}>
+            <MessageCircle size={16} color={theme.accent} />
+            <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('chat')}</Text>
+          </Button>
 
           <Button variant="outline" style={styles.callButton} onPress={handleCall}>
             <Phone size={16} color={theme.accent} />
-            <Text style={[styles.callButtonText, { color: theme.accent }]}>Call {worker.phone}</Text>
+            <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('call')} {worker.phone}</Text>
           </Button>
         </View>
       </ScrollView>
@@ -322,6 +357,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flexWrap: 'wrap',
   },
   rating: {
     fontSize: 14,
@@ -331,6 +367,7 @@ const styles = StyleSheet.create({
   reviewCount: {
     fontSize: 12,
     color: '#6b7280',
+    flexShrink: 1,
   },
   workerStats: {
     flexDirection: 'row',
@@ -351,19 +388,33 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   statCard: {
     alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+    minHeight: 85,
+    justifyContent: 'center',
+    maxWidth: '33%',
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#3b82f6',
+    marginBottom: 6,
+    textAlign: 'center',
+    lineHeight: 32,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 12,
+    fontWeight: '500',
+    flexWrap: 'wrap',
+    width: '100%',
   },
   sectionCard: {
     padding: 24,
@@ -439,21 +490,6 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
-  secondaryButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  secondaryButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    height: 44,
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    color: '#3b82f6',
-  },
   callButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -464,6 +500,8 @@ const styles = StyleSheet.create({
   callButtonText: {
     fontSize: 14,
     color: '#3b82f6',
+    textAlign: 'center',
+    flexShrink: 1,
   },
   errorContainer: {
     flex: 1,

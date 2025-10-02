@@ -75,25 +75,36 @@ export default function CustomMapMarkers({ markers, selectedId, region, mapSize,
         const radius = size / 2;
         const innerSize = Math.max(1, size - 6);
         return (
-          <Pressable
+          <View
             key={m.id}
-            onPress={() => onPress?.(m.id)}
-            style={[styles.markerContainer, { transform: [{ translateX: pos.x - radius }, { translateY: pos.y - radius }] }]}
+            pointerEvents="auto"
+            style={[
+              styles.markerContainer,
+              { transform: [{ translateX: pos.x - radius }, { translateY: pos.y - radius }] }
+            ]}
           >
-            <View style={[styles.circle, { width: size, height: size, borderRadius: radius, borderWidth: isSelected ? 4 : 3, borderColor: isSelected ? '#3b82f6' : '#ef4444' }]}> 
-              {m.avatar ? (
-                <Image
-                  source={typeof m.avatar === 'string' ? { uri: m.avatar } : m.avatar}
-                  style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text style={[styles.initial, { color: isSelected ? '#3b82f6' : '#ef4444' }]}> 
-                  {m.title?.charAt(0) || 'W'}
-                </Text>
-              )}
-            </View>
-          </Pressable>
+            <Pressable
+              onPress={() => {
+                console.log('Pressable onPress called for marker:', m.id);
+                onPress?.(m.id);
+              }}
+              style={{ width: size, height: size }}
+            >
+              <View style={[styles.circle, { width: size, height: size, borderRadius: radius, borderWidth: isSelected ? 4 : 3, borderColor: isSelected ? '#3b82f6' : '#ef4444' }]}> 
+                {m.avatar ? (
+                  <Image
+                    source={typeof m.avatar === 'string' ? { uri: m.avatar } : m.avatar}
+                    style={{ width: innerSize, height: innerSize, borderRadius: innerSize / 2 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={[styles.initial, { color: isSelected ? '#3b82f6' : '#ef4444' }]}> 
+                    {m.title?.charAt(0) || 'W'}
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+          </View>
         );
       })}
     </View>
