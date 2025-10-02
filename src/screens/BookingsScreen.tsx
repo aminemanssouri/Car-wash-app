@@ -86,7 +86,7 @@ export const BookingsScreen: React.FC = () => {
   // Coming Soon modal for Call/Chat
   const [showContactComingSoon, setShowContactComingSoon] = useState<null | 'call' | 'chat'>(null);
 
-  const handleBookingAction = (action: string, bookingId: string) => {
+  const handleBookingAction = (action: string, bookingId: string, booking?: Booking) => {
     switch (action) {
       case 'cancel':
         Alert.alert('Cancel Booking', `Cancel booking ${bookingId}?`);
@@ -95,7 +95,15 @@ export const BookingsScreen: React.FC = () => {
         Alert.alert('Reschedule', `Reschedule booking ${bookingId}`);
         break;
       case 'rate':
-        setShowRateComingSoon(true);
+        if (booking) {
+          navigation.navigate('Review' as never, {
+            bookingId: booking.id,
+            workerId: booking.workerId,
+            workerName: booking.workerName,
+            workerAvatar: booking.workerAvatar,
+            workerRating: booking.workerRating,
+          } as never);
+        }
         break;
       case 'call':
         setShowContactComingSoon('call');
@@ -283,7 +291,7 @@ export const BookingsScreen: React.FC = () => {
                   {booking.canRate && (
                     <Button
                       style={styles.rateButton}
-                      onPress={() => handleBookingAction('rate', booking.id)}
+                      onPress={() => handleBookingAction('rate', booking.id, booking)}
                     >
                       <Star size={16} color="#ffffff" />
                       <Text style={styles.rateButtonText}>{t('rate_service')}</Text>

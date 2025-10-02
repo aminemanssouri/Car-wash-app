@@ -11,6 +11,7 @@ export type RootStackParamList = {
   BookingPayment: undefined;
   BookingReview: undefined;
   BookingConfirmation: { bookingId: string };
+  Review: { bookingId: string; workerId: string; workerName: string; workerAvatar?: string; workerRating?: number };
   ForgotPassword: undefined;
   Help: undefined;
   Addresses: undefined;
