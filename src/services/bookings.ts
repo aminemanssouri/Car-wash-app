@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/supabase';
+import { handleSupabaseError, retryOperation } from './utils';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type Booking = Database['public']['Tables']['bookings']['Row'];
 type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
@@ -357,7 +359,119 @@ class BookingsService {
       return data || [];
     } catch (error) {
       console.error('Get booking history error:', error);
-      throw error;
+      throw handleSupabaseError(error);
+    }
+  }
+
+  // Real-time subscription for booking updates
+  subscribeToBookingUpdates(
+    bookingId: string, 
+    callback: (booking: Booking) => void
+  ): RealtimeChannel {
+    return supabase
+      .channel(`booking:${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings',
+          filter: `id=eq.${bookingId}`
+        },
+        (payload) => callback(payload.new as Booking)
+      )
+      .subscribe();
+  }
+
+  // Real-time subscription for user's bookings
+  subscribeToUserBookings(
+    userId: string,
+    role: 'customer' | 'worker',
+    callback: (booking: Booking) => void
+  ): RealtimeChannel {
+    const column = role === 'customer' ? 'customer_id' : 'worker_id';
+    
+    return supabase
+      .channel(`user_bookings:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `${column}=eq.${userId}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            callback(payload.new as Booking);
+          }
+        }
+      )
+      .subscribe();
+  }
+
+
+
+  // Get booking statistics for dashboard
+  async getBookingStats(userId: string, role: 'customer' | 'worker'): Promise<{
+    total: number;
+    pending: number;
+    completed: number;
+    cancelled: number;
+    totalEarnings?: number;
+  }> {
+    try {
+      let query = supabase.from('bookings').select('status, total_price');
+      
+      if (role === 'customer') {
+        query = query.eq('customer_id', userId);
+      } else {
+        // For workers, need to get worker profile first
+        const { data: workerProfile } = await supabase
+          .from('worker_profiles')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+        
+        if (!workerProfile) {
+          return { total: 0, pending: 0, completed: 0, cancelled: 0 };
+        }
+        
+        query = query.eq('worker_id', workerProfile.id);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const stats = (data || []).reduce(
+        (acc, booking) => {
+          acc.total++;
+          
+          switch (booking.status) {
+            case 'pending':
+            case 'confirmed':
+              acc.pending++;
+              break;
+            case 'completed':
+              acc.completed++;
+              if (role === 'worker') {
+                acc.totalEarnings = (acc.totalEarnings || 0) + booking.total_price;
+              }
+              break;
+            case 'cancelled':
+              acc.cancelled++;
+              break;
+          }
+          
+          return acc;
+        },
+        { total: 0, pending: 0, completed: 0, cancelled: 0, totalEarnings: 0 }
+      );
+
+      return stats;
+    } catch (error) {
+      console.error('Get booking stats error:', error);
+      throw handleSupabaseError(error);
     }
   }
 }

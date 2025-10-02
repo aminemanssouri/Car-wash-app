@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { Wrench, ChevronRight, ChevronLeft, Check, Plus, Minus } from 'lucide-react-native';
+import { Wrench, ChevronRight, ChevronLeft, Check, Plus, Minus, Droplets, Sparkles, Brush, SprayCan } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
-import { SERVICES, iconFor } from '../data/services';
+import { servicesService } from '../services';
+import type { ServiceItem } from '../services/services';
 import type { RootStackParamList } from '../types/navigation';
 
 export default function BookingServicesScreen() {
@@ -21,9 +22,71 @@ export default function BookingServicesScreen() {
   const { bookingData, updateBookingData, setCurrentStep } = useBooking();
 
   const [selectedServices, setSelectedServices] = useState<string[]>(bookingData.selectedServices || []);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { width: screenWidth } = Dimensions.get('window');
   const isTablet = screenWidth >= 768;
+
+  // Load services from Supabase
+  useEffect(() => {
+    loadServices();
+  }, []);
+
+  const loadServices = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Get services with vehicle-specific pricing if available
+      let servicesData: ServiceItem[];
+      if (bookingData.carType) {
+        // Map carType to vehicleType for the service
+        const vehicleTypeMap: { [key: string]: 'sedan' | 'suv' | 'hatchback' | 'van' | 'truck' | 'motorcycle' } = {
+          'Sedan': 'sedan',
+          'SUV': 'suv', 
+          'Hatchback': 'hatchback',
+          'Van': 'van',
+          'Truck': 'truck',
+          'Motorcycle': 'motorcycle'
+        };
+        
+        const vehicleType = vehicleTypeMap[bookingData.carType] || 'sedan';
+        servicesData = await servicesService.getServicesWithVehiclePricing(vehicleType);
+      } else {
+        servicesData = await servicesService.getServices();
+      }
+      
+      setServices(servicesData);
+    } catch (err: any) {
+      console.error('Error loading services:', err);
+      setError(err.message || 'Failed to load services');
+      // Show alert and allow retry
+      Alert.alert(
+        'Error Loading Services',
+        err.message || 'Failed to load services. Please try again.',
+        [
+          { text: 'Retry', onPress: loadServices },
+          { text: 'Cancel', style: 'cancel' }
+        ]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper function to get icon component
+  const iconFor = (iconName: string) => {
+    switch (iconName?.toLowerCase()) {
+      case 'droplets': return Droplets;
+      case 'sparkles': return Sparkles;
+      case 'wrench': return Wrench;
+      case 'brush': return Brush;
+      case 'spraycan': return SprayCan;
+      default: return Wrench; // Default fallback
+    }
+  };
 
   const handleServiceToggle = (serviceKey: string) => {
     setSelectedServices(prev => {
@@ -37,7 +100,7 @@ export default function BookingServicesScreen() {
 
   const calculateTotal = () => {
     return selectedServices.reduce((total, serviceKey) => {
-      const service = SERVICES.find(s => s.key === serviceKey);
+      const service = services.find(s => s.key === serviceKey);
       return total + (service?.price || 0);
     }, 0);
   };
@@ -91,13 +154,33 @@ export default function BookingServicesScreen() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Available Services *</Text>
           </View>
           
-          <View style={styles.servicesGrid}>
-            {SERVICES.map((service) => {
-              const isSelected = selectedServices.includes(service.key);
-              const IconComponent = iconFor(service.icon);
-              
-              return (
-                <Pressable
+          {/* Loading State */}
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading services...</Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <View style={styles.errorContainer}>
+              <Text style={[styles.errorText, { color: '#FF5252' }]}>{error}</Text>
+              <Pressable onPress={loadServices} style={[styles.retryButton, { backgroundColor: colors.accent }]}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </Pressable>
+            </View>
+          )}
+
+          {/* Services Grid */}
+          {!isLoading && !error && (
+            <View style={styles.servicesGrid}>
+              {services.map((service) => {
+                const isSelected = selectedServices.includes(service.key);
+                const IconComponent = iconFor(service.icon);
+                
+                return (
+                  <Pressable
                   key={service.key}
                   onPress={() => handleServiceToggle(service.key)}
                   style={[
@@ -168,6 +251,7 @@ export default function BookingServicesScreen() {
               );
             })}
           </View>
+          )}
         </Card>
 
         {/* Selected Services Summary */}
@@ -177,7 +261,7 @@ export default function BookingServicesScreen() {
             
             <View style={styles.selectedServicesList}>
               {selectedServices.map((serviceKey) => {
-                const service = SERVICES.find(s => s.key === serviceKey);
+                const service = services.find(s => s.key === serviceKey);
                 if (!service) return null;
                 
                 const IconComponent = iconFor(service.icon);
@@ -499,5 +583,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  // Loading and error states
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+  },
+  errorText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
