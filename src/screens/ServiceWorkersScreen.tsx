@@ -39,7 +39,7 @@ export default function ServiceWorkersScreen() {
         data={filtered}
         keyExtractor={(w) => w.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}
-        ListEmptyComponent={<Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 24 }}>{t('no_workers_found')}</Text>}
+        ListEmptyComponent={<Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 24 }}>{t('no workers found')}</Text>}
         renderItem={({ item: w }) => (
           <View style={{ backgroundColor: theme.card, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, padding: 12, marginBottom: 12 }}>
             <View style={{ flexDirection: 'row' }}>

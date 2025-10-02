@@ -24,11 +24,11 @@ export default function ServiceDetailScreen() {
     return (
       <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
         <Header 
-          title={t('service_details')} 
+          title={t('service details')} 
           onBack={() => navigation.goBack()} 
         />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>{t('service_not_found')}</Text>
+          <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>{t('service not found')}</Text>
           <Button onPress={() => navigation.goBack()}>{t('go_back')}</Button>
         </View>
       </SafeAreaView>
@@ -38,7 +38,7 @@ export default function ServiceDetailScreen() {
   return (
     <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: theme.bg }}>
       <Header 
-        title={t('service_details')} 
+        title={t('service details')} 
         onBack={() => navigation.goBack()} 
       />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
@@ -77,7 +77,6 @@ export default function ServiceDetailScreen() {
         <View style={{ marginTop: 16 }}>
           <Button onPress={() => navigation.navigate('ServiceWorkers', { serviceKey })}>{t('view_providers_for_service')}</Button>
           <Button onPress={() => (navigation as any).navigate('MainTabs', { screen: 'Home' })}>{t('find_nearby_providers')}</Button>
-          <Button variant="outline" onPress={() => navigation.goBack()}>{t('back')}</Button>
         </View>
       </ScrollView>
     </SafeAreaView>

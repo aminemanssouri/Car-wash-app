@@ -396,12 +396,27 @@ export default function BookingReviewScreen() {
       <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
         <View style={styles.footerButtons}>
           <Button 
-            variant="outline"
-            style={styles.backButton}
+            variant="ghost"
+            size="icon"
+            style={[styles.backButton, { 
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.cardBorder,
+              borderRadius: 12,
+              width: 48,
+              height: 48,
+              marginTop: 4,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 4,
+              elevation: 2,
+            }]}
             onPress={handleBack}
           >
-            <ChevronLeft size={16} color={colors.accent} />
-            <Text style={[styles.backButtonText, { color: colors.accent }]}>Back</Text>
+            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
           </Button>
           
           <Button 

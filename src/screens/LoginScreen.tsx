@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginFormData {
   email: string;
@@ -36,6 +37,7 @@ export default function LoginScreen() {
 
   const { signIn } = useAuth();
   const modal = useModal();
+  const { t } = useLanguage();
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -50,10 +52,10 @@ export default function LoginScreen() {
         })
       );
     } catch (error: any) {
-      const message = (error?.message as string) || 'Please check your credentials and try again.';
+      const message = (error?.message as string) || t('check_credentials');
       modal.show({
         type: 'warning',
-        title: 'Login failed',
+        title: t('login_failed'),
         message,
       });
     } finally {
@@ -80,8 +82,8 @@ export default function LoginScreen() {
             <View style={styles.logoContainer}>
               <View style={styles.logo} />
             </View>
-            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Welcome Back</Text>
-            <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Sign in to book your car wash service</Text>
+            <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>{t('welcome_back')}</Text>
+            <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>{t('sign_in_to_book')}</Text>
           </View>
 
           {/* Login Form */}
@@ -91,8 +93,8 @@ export default function LoginScreen() {
                 <FormInput
                   name="email"
                   control={control}
-                  label="Email Address"
-                  placeholder="Enter your email"
+                  label={t('email')}
+                  placeholder={t('enter_your_email')}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   rules={loginValidation.email}
@@ -104,8 +106,8 @@ export default function LoginScreen() {
                 <FormInput
                   name="password"
                   control={control}
-                  label="Password"
-                  placeholder="Enter your password"
+                  label={t('password')}
+                  placeholder={t('enter_your_password')}
                   secureTextEntry={!showPassword}
                   style={styles.passwordInput}
                   rules={loginValidation.password}
@@ -128,12 +130,12 @@ export default function LoginScreen() {
                   onPress={() =>
                     modal.show({
                       type: 'info',
-                      title: 'Forgot password',
-                      message: 'Password reset is coming soon. Please check back later.',
+                      title: t('forgot_password'),
+                      message: t('reset_password_coming_soon') || 'Password reset is coming soon. Please check back later.',
                     })
                   }
                 >
-                  <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>Forgot password?</Text>
+                  <Text style={[styles.forgotPasswordText, { color: theme.accent }]}>{t('forgot_password')}</Text>
                 </Pressable>
               </View>
 
@@ -144,14 +146,14 @@ export default function LoginScreen() {
                 disabled={isLoading}
               >
                 <Text style={styles.submitButtonText}>
-                  {isLoading ? 'Signing in...' : 'Sign In'}
+                  {isLoading ? t('signing_in') : t('sign_in')}
                 </Text>
               </Button>
 
               {/* Divider */}
               <View style={styles.divider}>
                 <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
-                <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+                <Text style={[styles.dividerText, { color: theme.textSecondary }]}>{t('or')}</Text>
                 <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
               </View>
 
@@ -161,16 +163,16 @@ export default function LoginScreen() {
                 onPress={handleContinueAsGuest}
                 style={styles.guestButton}
               >
-                <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>Continue as Guest</Text>
+                <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>{t('continue_as_guest')}</Text>
               </Button>
 
               {/* Sign Up Link */}
               <View style={styles.signupRow}>
                 <Text style={[styles.signupText, { color: theme.textSecondary }]}>
-                  Don't have an account?
+                  {t('dont_have_account')}
                 </Text>
                 <Pressable onPress={() => navigation.navigate('Signup' as never)} style={styles.signupButtonLink}>
-                  <Text style={[styles.signupLink, { color: theme.accent }]}>Sign up</Text>
+                  <Text style={[styles.signupLink, { color: theme.accent }]}>{t('sign_up')}</Text>
                 </Pressable>
               </View>
             </View>

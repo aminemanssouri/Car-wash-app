@@ -38,17 +38,31 @@ export const Header: React.FC<HeaderProps> = ({
         justifyContent: 'space-between',
       }}>
         {showBackButton ? (
-          <Button variant="ghost" size="sm" style={{
-            width: 64,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-          }} onPress={onBack}>
-            <ArrowLeft size={18} color={theme.textSecondary} />
-            <Text style={{ fontSize: 14, color: theme.textSecondary }}>{t('back')}</Text>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            style={{
+              backgroundColor: theme.surface,
+              borderWidth: 1,
+              borderColor: theme.cardBorder,
+              borderRadius: 12,
+              width: 40,
+              height: 40,
+              marginTop: 4,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.05,
+              shadowRadius: 3,
+              elevation: 1,
+            }} 
+            onPress={onBack}
+          >
+            <ArrowLeft size={20} color={theme.textPrimary} strokeWidth={2.5} />
           </Button>
         ) : (
-          <View style={{ width: 64 }} />
+          <View style={{ width: 40 }} />
         )}
         
         <View style={{ alignItems: 'center' }}>
@@ -62,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </View>
         
-        <View style={{ width: 64 }} />
+        <View style={{ width: 40 }} />
       </View>
     </View>
   );

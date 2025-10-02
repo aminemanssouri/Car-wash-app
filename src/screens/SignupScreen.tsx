@@ -13,6 +13,7 @@ import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SignupFormData {
@@ -46,6 +47,7 @@ export default function SignupScreen() {
 
   const { signUp } = useAuth();
   const modal = useModal();
+  const { t } = useLanguage();
 
   const password = watch('password');
 
@@ -54,8 +56,8 @@ export default function SignupScreen() {
     if (data.password !== data.confirmPassword) {
       modal.show({
         type: 'warning',
-        title: "Passwords don't match",
-        message: 'Please make sure both passwords are identical.',
+        title: t('passwords_dont_match'),
+        message: t('passwords_must_match'),
       });
       return;
     }
@@ -63,8 +65,8 @@ export default function SignupScreen() {
     if (!data.agreeToTerms) {
       modal.show({
         type: 'warning',
-        title: 'Terms not accepted',
-        message: 'Please agree to the terms and conditions to continue.',
+        title: t('terms_not_accepted'),
+        message: t('agree_to_terms'),
       });
       return;
     }
@@ -77,9 +79,9 @@ export default function SignupScreen() {
       // Show modern modal prompting email verification
       modal.show({
         type: 'email',
-        title: 'Verify your email',
-        message: `We sent a verification link to ${email}.\nOpen your email, confirm your account, then log in.`,
-        primaryActionText: 'OK',
+        title: t('verify_your_email'),
+        message: t('verification_email_sent').replace('{email}', email),
+        primaryActionText: t('ok'),
         onPrimaryAction: () => {
           // Close modal first, then navigate after animations to avoid white screen
           modal.hide?.();
@@ -108,18 +110,18 @@ export default function SignupScreen() {
         status === 409;
 
       if (isDuplicateEmail) {
-        friendly = 'This email is already registered. Please sign in or use a different email.';
+        friendly = t('email_already_registered');
       } else if (lower.includes('invalid email')) {
-        friendly = 'Please enter a valid email address.';
+        friendly = t('invalid_email');
       } else if (lower.includes('weak password') || lower.includes('password')) {
-        friendly = 'Your password does not meet the requirements.';
+        friendly = t('weak_password');
       } else if (raw) {
         friendly = raw;
       }
 
       modal.show({
         type: 'warning',
-        title: 'Signup failed',
+        title: t('signup_failed'),
         message: friendly,
       });
     } finally {
@@ -137,7 +139,7 @@ export default function SignupScreen() {
   return (
     <SafeAreaView edges={[]} style={[styles.container, { backgroundColor: theme.bg }]}>
       <Header 
-        title="Sign Up" 
+        title={t('sign_up')} 
         onBack={() => navigation.goBack()}
       />
 
@@ -147,8 +149,8 @@ export default function SignupScreen() {
           <View style={styles.logoContainer}>
             <View style={styles.logo} />
           </View>
-          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>Create Account</Text>
-          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>Join us to book professional car wash services</Text>
+          <Text style={[styles.welcomeTitle, { color: theme.textPrimary }]}>{t('create_account')}</Text>
+          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>{t('join_us_to_book')}</Text>
         </View>
 
         {/* Signup Form */}
@@ -159,8 +161,8 @@ export default function SignupScreen() {
               <FormInput
                 name="name"
                 control={control}
-                label="Full Name"
-                placeholder="Enter your full name"
+                label={t('full_name')}
+                placeholder={t('enter_full_name')}
                 autoCapitalize="words"
                 rules={signupValidation.name}
                 error={errors.name}
@@ -174,8 +176,8 @@ export default function SignupScreen() {
             <FormInput
               name="email"
               control={control}
-              label="Email Address"
-              placeholder="Enter your email"
+              label={t('email')}
+              placeholder={t('enter_email')}
               keyboardType="email-address"
               autoCapitalize="none"
               rules={signupValidation.email}
@@ -189,8 +191,8 @@ export default function SignupScreen() {
               <FormInput
                 name="password"
                 control={control}
-                label="Password"
-                placeholder="Create a password"
+                label={t('password')}
+                placeholder={t('create_password')}
                 secureTextEntry={!showPassword}
                 style={styles.passwordInput}
                 rules={signupValidation.password}
@@ -212,13 +214,13 @@ export default function SignupScreen() {
               <FormInput
                 name="confirmPassword"
                 control={control}
-                label="Confirm Password"
-                placeholder="Confirm your password"
+                label={t('confirm_password')}
+                placeholder={t('confirm_your_password')}
                 secureTextEntry={!showConfirmPassword}
                 style={styles.passwordInput}
                 rules={{
-                  required: 'Please confirm your password',
-                  validate: (value: string) => value === password || 'Passwords do not match'
+                  required: t('please_confirm_password'),
+                  validate: (value: string) => value === password || t('passwords_do_not_match')
                 }}
                 error={errors.confirmPassword}
               />
@@ -247,13 +249,13 @@ export default function SignupScreen() {
                 )}
               />
               <View style={styles.termsRow}>
-                <Text style={[styles.termsText, { color: theme.textPrimary }]}>I agree to the</Text>
-                <Pressable onPress={() => Alert.alert('Terms', 'Terms of Service')} style={styles.termsLinkButton}>
-                  <Text style={[styles.termsLink, { color: theme.accent }]}>Terms of Service</Text>
+                <Text style={[styles.termsText, { color: theme.textPrimary }]}>{t('i_agree_to')}</Text>
+                <Pressable onPress={() => Alert.alert(t('terms_of_service'), t('terms_of_service'))} style={styles.termsLinkButton}>
+                  <Text style={[styles.termsLink, { color: theme.accent }]}>{t('terms_of_service')}</Text>
                 </Pressable>
-                <Text style={[styles.termsText, { color: theme.textPrimary }]}>and</Text>
-                <Pressable onPress={() => Alert.alert('Privacy', 'Privacy Policy')} style={styles.termsLinkButton}>
-                  <Text style={[styles.termsLink, { color: theme.accent }]}>Privacy Policy</Text>
+                <Text style={[styles.termsText, { color: theme.textPrimary }]}>{t('and')}</Text>
+                <Pressable onPress={() => Alert.alert(t('privacy_policy'), t('privacy_policy'))} style={styles.termsLinkButton}>
+                  <Text style={[styles.termsLink, { color: theme.accent }]}>{t('privacy_policy')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -265,14 +267,14 @@ export default function SignupScreen() {
               disabled={isLoading}
             >
               <Text style={styles.submitButtonText}>
-                {isLoading ? 'Creating account...' : 'Create Account'}
+                {isLoading ? t('creating_account') : t('create_account')}
               </Text>
             </Button>
 
             {/* Divider */}
             <View style={styles.divider}>
               <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
-              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>or</Text>
+              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>{t('or')}</Text>
               <Separator style={[styles.dividerLine, { backgroundColor: theme.cardBorder }]} />
             </View>
 
@@ -282,16 +284,16 @@ export default function SignupScreen() {
               onPress={handleContinueAsGuest}
               style={styles.guestButton}
             >
-              <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>Continue as Guest</Text>
+              <Text style={[styles.guestButtonText, { color: theme.textPrimary }]}>{t('continue_as_guest')}</Text>
             </Button>
 
             {/* Sign In Link */}
             <View style={styles.signinRow}>
               <Text style={[styles.signinText, { color: theme.textSecondary }] }>
-                Already have an account?
+                {t('already_have_account')}
               </Text>
               <Pressable onPress={() => navigation.navigate('Login' as never)} style={styles.signinButtonLink}>
-                <Text style={[styles.signinLink, { color: theme.accent }]}>Sign in</Text>
+                <Text style={[styles.signinLink, { color: theme.accent }]}>{t('sign_in')}</Text>
               </Pressable>
             </View>
           </View>
