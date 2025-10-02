@@ -275,6 +275,7 @@ export default function GoogleMap({
         mapSize={mapSize}
         insets={{ top: 120, right: 20, bottom: 110, left: 20 }}
         onPress={(id) => {
+          console.log('CustomMapMarkers onPress called with id:', id);
           onMarkerPress?.(id);
         }}
       />

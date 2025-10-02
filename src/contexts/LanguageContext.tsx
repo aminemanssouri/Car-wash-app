@@ -334,7 +334,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     rating_reviews: 'Rating and reviews',
     booking_history: 'Booking history',
     account_settings: 'Account & Settings',
-    creating_account: 'Creating an account',
+    help_creating_account: 'Creating an account',
     managing_profile: 'Managing your profile',
     notification_settings: 'Notification settings',
     privacy_security: 'Privacy and security',
@@ -355,6 +355,10 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     information_about: 'Information about: {item}',
     feature_available_soon: 'This feature will be available soon with detailed help content.',
     chat_feature_soon: 'Chat feature will be available soon',
+    // Worker Detail Screen
+    experience: 'Experience',
+    starting_price: 'Starting Price',
+    schedule_later: 'Schedule Later',
   },
   fr: {
     settings: 'Paramètres',
@@ -649,6 +653,10 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     services_offered: 'Services offerts',
     reviews_and_ratings: 'Avis et évaluations',
     contact_worker: 'Contacter le travailleur',
+    // Worker Detail Screen
+    experience: 'Expérience',
+    starting_price: 'Prix de départ',
+    schedule_later: 'Programmer plus tard',
   },
 };
 
