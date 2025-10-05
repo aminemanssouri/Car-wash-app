@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, ActivityIndicator, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, MapPin, Phone, MessageCircle, MoreVertical, Star, Sparkles } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
@@ -137,7 +137,7 @@ export const BookingsScreen: React.FC = () => {
   // Coming Soon modal for Call/Chat
   const [showContactComingSoon, setShowContactComingSoon] = useState<null | 'call' | 'chat'>(null);
 
-  const handleBookingAction = (action: string, bookingId: string, booking?: BookingWithDetails) => {
+  const handleBookingAction = async (action: string, bookingId: string, booking?: BookingWithDetails) => {
     switch (action) {
       case 'cancel':
         Alert.alert('Cancel Booking', `Cancel booking ${bookingId}?`);
@@ -158,7 +158,7 @@ export const BookingsScreen: React.FC = () => {
         break;
       case 'call':
         if (booking) {
-          const phoneNumber = workerPhones[booking.workerId];
+          const phoneNumber = workerPhones[booking.worker_id];
           if (phoneNumber) {
             const cleanPhoneNumber = phoneNumber.replace(/\s+/g, '');
             const phoneUrl = `tel:${cleanPhoneNumber}`;
@@ -231,10 +231,11 @@ export const BookingsScreen: React.FC = () => {
             {error}
           </Text>
           <Button
-            title={t('retry')}
             onPress={loadBookings}
             variant="secondary"
-          />
+          >
+            <Text>{t('retry')}</Text>
+          </Button>
         </View>
       )}
 

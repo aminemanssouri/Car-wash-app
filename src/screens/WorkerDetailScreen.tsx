@@ -25,6 +25,7 @@ import { BookingFooter } from '../components/ui/BookingFooter';
 
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
+import { workersService, Worker, Review } from '../services/workers';
 
 
 export default function WorkerDetailScreen() {
@@ -36,7 +37,9 @@ export default function WorkerDetailScreen() {
   const { t, language } = useLanguage();
 
   const [worker, setWorker] = useState<Worker | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
 
@@ -53,6 +56,17 @@ export default function WorkerDetailScreen() {
       const workerData = await workersService.getWorkerById(workerId);
       if (workerData) {
         setWorker(workerData);
+        
+        // Load reviews separately
+        setLoadingReviews(true);
+        try {
+          const reviewsData = await workersService.getWorkerReviews(workerId);
+          setReviews(reviewsData);
+        } catch (reviewError) {
+          console.warn('Error loading reviews:', reviewError);
+        } finally {
+          setLoadingReviews(false);
+        }
       } else {
         setError(t('worker_not_found'));
       }
@@ -110,6 +124,14 @@ export default function WorkerDetailScreen() {
 
 
   const handleCall = async () => {
+    if (!worker.phone) {
+      Alert.alert(
+        t('no_phone') || 'No Phone Number',
+        t('phone_not_available') || 'Phone number is not available for this worker.'
+      );
+      return;
+    }
+
     const phoneNumber = worker.phone.replace(/\s+/g, ''); // Remove spaces
     const phoneUrl = `tel:${phoneNumber}`;
     
@@ -160,7 +182,7 @@ export default function WorkerDetailScreen() {
               <View style={styles.distanceContainer}>
                 <MapPin size={14} color={theme.accent} />
                 <Text style={[styles.distanceText, { color: theme.textPrimary }]}>
-                  {worker.distance}
+                  {worker.distanceKm ? `${worker.distanceKm.toFixed(1)} km` : 'Nearby'}
                 </Text>
               </View>
             </View>
@@ -251,7 +273,7 @@ export default function WorkerDetailScreen() {
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
               >
-                {worker.price}
+                {worker.hourlyRate ? `${worker.hourlyRate} MAD/h` : `${worker.price} MAD`}
               </Text>
               <Text 
                 style={[styles.statLabel, { color: theme.textSecondary }]} 
@@ -291,7 +313,7 @@ export default function WorkerDetailScreen() {
         <Card style={styles.sectionCard}>
           <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('services_offered')}</Text>
           <View style={styles.specialtiesContainer}>
-            {worker.specialties.map((specialty, index) => (
+            {worker.specialties?.map((specialty, index) => (
               <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
                 {specialty}
               </Badge>
@@ -300,37 +322,60 @@ export default function WorkerDetailScreen() {
         </Card>
 
         {/* Reviews */}
-        <Card style={styles.sectionCard}>
+        <Card style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reviews_and_ratings')}</Text>
           <View style={styles.reviewsContainer}>
-            {worker.reviews.map((review) => (
-              <View key={review.id} style={[styles.reviewItem, { borderBottomColor: theme.cardBorder }]}>
-                <View style={styles.reviewHeader}>
-                  <View style={styles.reviewerInfo}>
-                    <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.name}</Text>
-                    <View style={styles.reviewRating}>
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} size={12} color="#fbbf24" fill="#fbbf24" />
-                      ))}
-                    </View>
-                  </View>
-                  <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>{review.date}</Text>
-                </View>
-                <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>{review.comment}</Text>
+            {loadingReviews ? (
+              <View style={styles.reviewsPlaceholder}>
+                <ActivityIndicator size="small" color={theme.accent} />
+                <Text style={[styles.reviewsPlaceholderText, { color: theme.textSecondary, marginTop: 8 }]}>
+                  {t('loading_reviews') || 'Loading reviews...'}
+                </Text>
               </View>
-            ))}
+            ) : reviews.length > 0 ? (
+              reviews.map((review) => (
+                <View key={review.id} style={[styles.reviewItem, { borderBottomColor: theme.cardBorder }]}>
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.reviewerInfo}>
+                      <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.customerName}</Text>
+                      <View style={styles.reviewRating}>
+                        {[...Array(review.rating)].map((_, i) => (
+                          <Star key={i} size={12} color="#fbbf24" fill="#fbbf24" />
+                        ))}
+                      </View>
+                      {review.isVerified && (
+                        <View style={styles.verifiedBadge}>
+                          <Check size={10} color="#10b981" />
+                          <Text style={[styles.verifiedText, { color: '#10b981' }]}>Verified</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>{review.date}</Text>
+                  </View>
+                  {review.comment && (
+                    <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>{review.comment}</Text>
+                  )}
+                </View>
+              ))
+            ) : (
+              <View style={styles.reviewsPlaceholder}>
+                <Text style={[styles.reviewsPlaceholderText, { color: theme.textSecondary }]}>
+                  {t('no_reviews_yet') || 'No reviews yet.'}
+                </Text>
+              </View>
+            )}
           </View>
         </Card>
 
-      {/* Action Buttons */}
-      <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44), backgroundColor: theme.bg, borderTopColor: theme.cardBorder }]}>
+        {/* Action Buttons */}
+        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44), backgroundColor: theme.bg, borderTopColor: theme.cardBorder }]}>
         <Button 
           style={[styles.bookButton, worker.status !== 'available' && styles.disabledButton]} 
           disabled={worker.status !== 'available'} 
           onPress={handleBookNow}
         >
           <Text style={styles.bookButtonText}>
-            {t('book_now')} - {worker.price} MAD
+            {t('book_now')} - {worker.hourlyRate ? `${worker.hourlyRate} MAD/h` : `${worker.price} MAD`}
           </Text>
         </Button>
 
@@ -345,12 +390,13 @@ export default function WorkerDetailScreen() {
             <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('call')}</Text>
           </Button>
         </View>
+        </View>
       </ScrollView>
 
       {/* Footer */}
       <BookingFooter
         onContinue={handleBookNow}
-        continueText={`${t('book_now')} - ${worker.price} MAD`}
+        continueText={`${t('book_now')} - ${worker.hourlyRate ? `${worker.hourlyRate} MAD/h` : `${worker.price} MAD`}`}
         continueDisabled={!worker.isAvailable}
         showBackButton={false}
       />
@@ -683,13 +729,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  sectionCard: {
-    padding: 16,
-    marginBottom: 16,
-  },
   reviewsContainer: {
     padding: 16,
   },
-
+  reviewsPlaceholder: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  reviewsPlaceholderText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginLeft: 8,
+  },
+  verifiedText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
 
 });

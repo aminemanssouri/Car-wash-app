@@ -7,6 +7,20 @@ type WorkerProfileInsert = Database['public']['Tables']['worker_profiles']['Inse
 type WorkerProfileUpdate = Database['public']['Tables']['worker_profiles']['Update'];
 type WorkerListing = Database['public']['Views']['worker_listings']['Row'];
 
+export interface Review {
+  id: string;
+  customerId: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+  date: string;
+  serviceQualityRating?: number;
+  punctualityRating?: number;
+  communicationRating?: number;
+  isVerified: boolean;
+  photos?: string[];
+}
+
 export interface Worker {
   id: string;
   userId: string;
@@ -33,6 +47,8 @@ export interface Worker {
   endTime: string;
   specialties?: string[];
   distanceKm?: number;
+  phone?: string;
+  reviews?: Review[];
 }
 
 export interface NearbyWorkerResult {
@@ -109,16 +125,24 @@ class WorkersService {
   // Get worker by ID
   async getWorkerById(workerId: string): Promise<Worker | null> {
     try {
+      // Get worker data with phone from profiles
       const { data, error } = await supabase
-        .from('worker_listings')
-        .select('*')
-        .eq('worker_id', workerId)
+        .from('worker_profiles')
+        .select(`
+          *,
+          profiles!user_id(phone, full_name, avatar_url)
+        `)
+        .eq('id', workerId)
         .single();
 
       if (error) throw error;
       if (!data) return null;
 
-      return this.transformWorkerData(data);
+      // Transform worker_profiles data to Worker format
+      const worker = this.transformWorkerProfileData(data);
+      worker.phone = (data as any).profiles?.phone || undefined;
+      
+      return worker;
     } catch (error) {
       console.error('Get worker by ID error:', error);
       throw error;
@@ -453,7 +477,84 @@ class WorkersService {
       startTime: '08:00', // Default value, not in worker_listings view
       endTime: '18:00', // Default value, not in worker_listings view
       specialties: worker.services || undefined,
+      phone: undefined, // Will be set separately when available
     };
+  }
+
+  private transformWorkerProfileData(worker: any): Worker {
+    // Extract coordinates from PostGIS point
+    const coordinates = this.extractCoordinatesFromPoint(worker.base_location);
+    
+    return {
+      id: worker.id,
+      userId: worker.user_id,
+      name: (worker as any).profiles?.full_name || 'Unknown Worker',
+      rating: worker.avg_rating || 0,
+      reviewCount: worker.review_count || 0,
+      avatar: (worker as any).profiles?.avatar_url || null,
+      location: coordinates,
+      services: worker.services || [],
+      price: worker.hourly_rate || 50, // Use hourly rate as base price
+      isAvailable: worker.status === 'available',
+      businessName: worker.business_name || undefined,
+      bio: worker.bio || undefined,
+      experienceYears: worker.experience_years || undefined,
+      // Enhanced fields from database
+      status: worker.status,
+      serviceRadiusKm: worker.service_radius_km || 10,
+      hourlyRate: worker.hourly_rate || undefined,
+      totalJobsCompleted: worker.total_jobs_completed || 0,
+      totalEarnings: worker.total_earnings || 0,
+      averageCompletionTime: worker.avg_completion_time || undefined,
+      worksWeekends: worker.works_weekends ?? true,
+      startTime: worker.available_from || '08:00',
+      endTime: worker.available_to || '18:00',
+      specialties: worker.services || undefined,
+      phone: undefined, // Will be set separately when available
+    };
+  }
+
+  // Get worker reviews
+  async getWorkerReviews(workerId: string): Promise<Review[]> {
+    try {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          overall_rating,
+          review_text,
+          service_quality_rating,
+          punctuality_rating,
+          communication_rating,
+          is_verified,
+          photos,
+          created_at,
+          profiles!customer_id(full_name)
+        `)
+        .eq('worker_id', workerId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(review => ({
+        id: review.id,
+        customerId: '', // Not needed for display
+        customerName: (review as any).profiles?.full_name || 'Anonymous',
+        rating: review.overall_rating,
+        comment: review.review_text || '',
+        date: new Date(review.created_at).toLocaleDateString(),
+        serviceQualityRating: review.service_quality_rating || undefined,
+        punctualityRating: review.punctuality_rating || undefined,
+        communicationRating: review.communication_rating || undefined,
+        isVerified: review.is_verified,
+        photos: review.photos || undefined,
+      }));
+    } catch (error) {
+      console.error('Get worker reviews error:', error);
+      return [];
+    }
   }
 
   // Extract coordinates from PostGIS point format
