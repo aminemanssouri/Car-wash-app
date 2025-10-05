@@ -1,7 +1,9 @@
+import 'dotenv/config';
 export default {
   expo: {
-    name: "CarWash Pro",
+    name: process.env.EXPO_PUBLIC_APP_NAME || "CarWash Pro",
     slug: "carwash-pro",
+    owner: process.env.EXPO_OWNER || "naqiago",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -9,6 +11,7 @@ export default {
     description: "Professional car wash booking app - Find and book trusted car wash services near you",
     primaryColor: "#3b82f6",
     newArchEnabled: true,
+    scheme: process.env.EXPO_PUBLIC_APP_SCHEME || 'carwashpro',
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
@@ -17,7 +20,7 @@ export default {
     ios: {
       supportsTablet: true,
       config: {
-        googleMapsApiKey: "YOUR_IOS_GOOGLE_MAPS_API_KEY"
+        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY_IOS
       },
       infoPlist: {
         NSLocationWhenInUseUsageDescription: "We use your location to show nearby car wash services and recenter the map."
@@ -31,9 +34,11 @@ export default {
       edgeToEdgeEnabled: true,
       config: {
         googleMaps: {
-          apiKey: "YOUR_ANDROID_GOOGLE_MAPS_API_KEY"
+          // Use only the raw key string from env (not a URL)
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY_ANDROID
         }
-      }
+      },
+      package: process.env.ANDROID_PACKAGE || "com.naqiago.carwashpro"
     },
     web: {
       favicon: "./assets/favicon.png"
@@ -43,8 +48,11 @@ export default {
       "expo-audio"
     ],
     extra: {
-      supabaseUrl: "https://prxsvouchiodqppqeamz.supabase.co",
-      supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByeHN2b3VjaGlvZHFwcHFlYW16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjI3MTUsImV4cCI6MjA3MjczODcxNX0.LPBGMPbEpY3yaljIHw4FKNTS7TDRq7_jhVw3u_cEUHU"
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      eas: {
+        projectId: process.env.EAS_PROJECT_ID || 'd92b61b1-c9f0-44db-bec3-dd2b018b2583'
+      }
     }
   }
 };

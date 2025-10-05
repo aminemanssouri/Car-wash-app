@@ -370,11 +370,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     gap: 12,
     paddingHorizontal: 0,
+    paddingVertical: 10,
+    minHeight: 48,
   },
   signOutText: {
     fontSize: 16,
     color: '#ef4444',
     fontWeight: '500',
+    lineHeight: 20,
+    textAlign: 'left',
+    includeFontPadding: false,
   },
   appVersion: {
     alignItems: 'center',

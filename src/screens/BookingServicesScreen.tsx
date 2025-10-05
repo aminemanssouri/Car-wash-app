@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Dimensions } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { Wrench, ChevronRight, ChevronLeft, Check, Plus, Minus } from 'lucide-react-native';
+import { Wrench, Check, Plus, Minus } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
@@ -15,7 +16,6 @@ import type { RootStackParamList } from '../types/navigation';
 
 export default function BookingServicesScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { t } = useLanguage();
   const { bookingData, updateBookingData, setCurrentStep } = useBooking();
@@ -66,7 +66,7 @@ export default function BookingServicesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={[]}>
       <Header 
         title="Select Services" 
         onBack={handleBack}
@@ -249,45 +249,13 @@ export default function BookingServicesScreen() {
         </Card>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={styles.footerButtons}>
-          <Button 
-            variant="ghost"
-            size="icon"
-            style={[styles.backButton, { 
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.cardBorder,
-              borderRadius: 12,
-              width: 48,
-              height: 48,
-              marginTop: 4,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }]}
-            onPress={handleBack}
-          >
-            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
-          </Button>
-          
-          <Button 
-            style={[styles.continueButton, { opacity: selectedServices.length > 0 ? 1 : 0.5 }]}
-            onPress={handleContinue}
-            disabled={selectedServices.length === 0}
-          >
-            <Text style={styles.continueButtonText}>
-              Continue ({selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''})
-            </Text>
-            <ChevronRight size={16} color="#ffffff" />
-          </Button>
-        </View>
-      </View>
+      {/* Footer */}
+      <BookingFooter
+        onBack={handleBack}
+        onContinue={handleContinue}
+        continueText="Start Booking Process"
+        continueDisabled={selectedServices.length === 0}
+      />
     </SafeAreaView>
   );
 }
@@ -485,10 +453,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-  },
-  footerButtons: {
-    flexDirection: 'row',
-    gap: 12,
+    // Make footer feel elevated and pinned visually
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 6,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
   },
   backButton: {
     flex: 1,
@@ -503,8 +475,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   continueButton: {
-    flex: 2,
-    height: 48,
+    flex: 1,
+    height: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

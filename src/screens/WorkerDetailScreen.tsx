@@ -1,16 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Platform, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { Star, MapPin, Clock, Phone, MessageCircle } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, Star, Phone, MessageCircle, ChevronLeft, Check } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
+import { Separator } from '../components/ui/Separator';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
-import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -26,7 +27,7 @@ const mockWorkerData = {
     avatar: require('../../assets/images/professional-car-washer-ahmed.png'),
     isAvailable: true,
     estimatedTime: "15 min",
-    phone: "+212 6XX XXX XXX",
+    phone: "+212662093333",
     experience: "3",
     completedJobs: 450,
     specialties: ["Exterior Wash", "Interior Cleaning", "Wax & Polish"],
@@ -103,11 +104,30 @@ export default function WorkerDetailScreen() {
   };
 
 
-  const handleCall = () => {
-    Alert.alert(t('call') + ' ' + t('service_provider'), `${t('call')} ${worker.phone}?`, [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('call'), onPress: () => console.log('Calling...') }
-    ]);
+  const handleCall = async () => {
+    const phoneNumber = worker.phone.replace(/\s+/g, ''); // Remove spaces
+    const phoneUrl = `tel:${phoneNumber}`;
+    
+    try {
+      // Try to open the phone dialer directly
+      await Linking.openURL(phoneUrl);
+    } catch (error) {
+      console.error('Error making phone call:', error);
+      // If tel: doesn't work, try alternative approaches
+      try {
+        // Try with different phone URL formats
+        const alternativeUrl = Platform.OS === 'ios' 
+          ? `telprompt:${phoneNumber}` 
+          : `tel:${phoneNumber}`;
+        await Linking.openURL(alternativeUrl);
+      } catch (secondError) {
+        console.error('Alternative phone call failed:', secondError);
+        Alert.alert(
+          t('error') || 'Error', 
+          `${t('call_failed') || 'Failed to make phone call'}. ${t('copy_number') || 'Please copy the number manually'}: ${worker.phone}`
+        );
+      }
+    }
   };
 
   const handleChat = () => {
@@ -268,17 +288,7 @@ export default function WorkerDetailScreen() {
         </Card>
 
         {/* Action Buttons */}
-        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44) }]}>
-          <Button 
-            style={[styles.bookButton, !worker.isAvailable && styles.disabledButton]} 
-            disabled={!worker.isAvailable} 
-            onPress={handleBookNow}
-          >
-            <Text style={styles.bookButtonText}>
-              {t('book_now')} - {worker.price} MAD
-            </Text>
-          </Button>
-
+        <View style={styles.actionButtons}>
           <Button variant="outline" style={styles.callButton} onPress={handleChat}>
             <MessageCircle size={16} color={theme.accent} />
             <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('chat')}</Text>
@@ -290,6 +300,14 @@ export default function WorkerDetailScreen() {
           </Button>
         </View>
       </ScrollView>
+
+      {/* Footer */}
+      <BookingFooter
+        onContinue={handleBookNow}
+        continueText={`${t('book_now')} - ${worker.price} MAD`}
+        continueDisabled={!worker.isAvailable}
+        showBackButton={false}
+      />
     </SafeAreaView>
   );
 }

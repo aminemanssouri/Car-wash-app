@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Dimensions, TextI
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { Car, ChevronRight, ChevronLeft, Search, Check } from 'lucide-react-native';
+import { Car, Search, Check } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
 import { ComboBox, ComboBoxOption } from '../components/ui/ComboBox';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
@@ -472,48 +473,14 @@ export default function BookingVehicleScreen() {
 
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={styles.footerButtons}>
-          <Button 
-            variant="ghost"
-            size="icon"
-            style={[styles.backButton, { 
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.cardBorder,
-              borderRadius: 12,
-              width: 48,
-              height: 48,
-              marginTop: 4,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }]}
-            onPress={handleBack}
-          >
-            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
-          </Button>
-          
-          <Button 
-            style={[styles.continueButton, { 
-              opacity: (selectedVehicleType === 'car' && selectedBrand) || 
-                       (selectedVehicleType === 'motor' && selectedMotorType) ? 1 : 0.5 
-            }]}
-            onPress={handleContinue}
-            disabled={!selectedVehicleType || 
-                     (selectedVehicleType === 'car' && !selectedBrand) ||
-                     (selectedVehicleType === 'motor' && !selectedMotorType)}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <ChevronRight size={16} color="#ffffff" />
-          </Button>
-        </View>
-      </View>
+      {/* Footer */}
+      <BookingFooter
+        onBack={handleBack}
+        onContinue={handleContinue}
+        continueDisabled={!selectedVehicleType || 
+                         (selectedVehicleType === 'car' && !selectedBrand) ||
+                         (selectedVehicleType === 'motor' && !selectedMotorType)}
+      />
     </SafeAreaView>
   );
 }
@@ -856,10 +823,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-  },
-  footerButtons: {
-    flexDirection: 'row',
-    gap: 12,
   },
   backButton: {
     alignItems: 'center',

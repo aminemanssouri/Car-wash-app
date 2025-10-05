@@ -160,13 +160,18 @@ export const WorkerBookingsScreen: React.FC = () => {
         ]}
         onPress={() => setActiveTab(value)}
       >
-        <Text style={[
-          styles.simpleTabText,
-          { 
-            color: isActive ? '#ffffff' : theme.textSecondary,
-            fontWeight: isActive ? '600' : '500',
-          }
-        ]}>
+        <Text 
+          style={[
+            styles.simpleTabText,
+            { 
+              color: isActive ? '#ffffff' : theme.textSecondary,
+              fontWeight: isActive ? '600' : '500',
+            }
+          ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit={true}
+          minimumFontScale={0.8}
+        >
           {label}
         </Text>
         {count > 0 && (
@@ -471,13 +476,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     borderRadius: 8,
-    gap: 6,
+    gap: 4,
+    minHeight: 40,
   },
   simpleTabText: {
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
+    fontWeight: '500',
+    flexShrink: 1,
+    includeFontPadding: false,
   },
   simpleBadge: {
     minWidth: 20,

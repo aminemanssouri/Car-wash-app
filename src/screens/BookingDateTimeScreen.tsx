@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'rea
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { Calendar, Clock, ChevronRight, ChevronLeft, ChevronDown } from 'lucide-react-native';
+import { Calendar, Clock, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
@@ -325,16 +326,12 @@ export default function BookingDateTimeScreen() {
         )}
       </ScrollView>
 
-      {/* Continue Button */}
-      <View style={[styles.continueContainer, { paddingBottom: insets.bottom }]}>
-        <Button
-          onPress={handleContinue}
-          style={[styles.continueButton, { backgroundColor: colors.accent }]}
-          disabled={!selectedDate || !selectedTime}
-        >
-          <Text style={[styles.continueButtonText, { color: '#ffffff' }]}>Continue</Text>
-        </Button>
-      </View>
+      {/* Footer */}
+      <BookingFooter
+        onBack={() => navigation.goBack()}
+        onContinue={handleContinue}
+        continueDisabled={!selectedDate || !selectedTime}
+      />
 
       {/* Calendar Modal */}
       <Modal
@@ -552,24 +549,6 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: 14,
-  },
-  continueContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  continueButton: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  continueButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
   },
   // Modal styles
   modalContainer: {
