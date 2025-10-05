@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
   },
   cardActions: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-end'
   },
   cardPrice: {
     fontSize: 12,

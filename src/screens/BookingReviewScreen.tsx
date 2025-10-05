@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { Calendar, Clock, MapPin, Car, CreditCard, User, ChevronLeft, Check, Wrench } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, Car, CreditCard, User, Check, Wrench } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/ui/Header';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
@@ -392,42 +393,13 @@ export default function BookingReviewScreen() {
         </Card>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={styles.footerButtons}>
-          <Button 
-            variant="ghost"
-            size="icon"
-            style={[styles.backButton, { 
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.cardBorder,
-              borderRadius: 12,
-              width: 48,
-              height: 48,
-              marginTop: 4,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }]}
-            onPress={handleBack}
-          >
-            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
-          </Button>
-          
-          <Button 
-            style={styles.confirmButton}
-            onPress={handleConfirmBooking}
-          >
-            <Check size={16} color="#ffffff" />
-            <Text style={styles.confirmButtonText}>Confirm Booking</Text>
-          </Button>
-        </View>
-      </View>
+      {/* Footer */}
+      <BookingFooter
+        onBack={handleBack}
+        onContinue={handleConfirmBooking}
+        continueText="Confirm Booking"
+        continueIcon={<Check size={16} color="#ffffff" />}
+      />
     </SafeAreaView>
   );
 }
@@ -595,10 +567,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-  },
-  footerButtons: {
-    flexDirection: 'row',
-    gap: 12,
   },
   backButton: {
     flex: 1,

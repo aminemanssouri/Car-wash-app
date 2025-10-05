@@ -13,6 +13,7 @@ export type RootStackParamList = {
   BookingConfirmation: { bookingId: string };
   Review: { bookingId: string; workerId: string; workerName: string; workerAvatar?: string; workerRating?: number };
   ForgotPassword: undefined;
+  ResetPassword: undefined;
   Help: undefined;
   Addresses: undefined;
   ServiceDetail: { serviceKey: string };

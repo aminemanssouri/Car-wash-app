@@ -178,13 +178,24 @@ class AuthService {
   // Reset password
   async resetPassword(email: string) {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'carwashpro://reset-password',
-      });
+      const redirectTo = (process.env as any)?.EXPO_PUBLIC_SUPABASE_REDIRECT || 'carwashpro://reset-password';
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
       if (error) throw error;
     } catch (error) {
       console.error('Reset password error:', error);
+      throw error;
+    }
+  }
+
+  // Update password after user opens the recovery magic link (session is established)
+  async updatePassword(newPassword: string) {
+    try {
+      const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Update password error:', error);
       throw error;
     }
   }

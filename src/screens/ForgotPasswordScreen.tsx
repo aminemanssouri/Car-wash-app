@@ -10,6 +10,7 @@ import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useModal } from '../contexts/ModalContext';
 import { useForm } from 'react-hook-form';
+import { authService } from '../services/auth';
 
 interface ForgotPasswordFormData {
   email: string;
@@ -35,26 +36,35 @@ export default function ForgotPasswordScreen() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true);
-    const value = resetType === 'email' ? data.email : data.phone;
-    setSubmittedValue(value);
-
     try {
-      // TODO: Integrate with Supabase auth reset password
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      
+      setIsLoading(true);
+      const value = (data.email || '').trim();
+      setSubmittedValue(value);
+
+      // Basic validation
+      if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        show({
+          type: 'warning',
+          title: t('validation_error') || 'Validation Error',
+          message: t('invalid_email') || 'Please enter a valid email address.',
+        });
+        return;
+      }
+
+      await authService.resetPassword(value);
+
       show({
         type: 'success',
-        title: t('reset sent') || 'Reset Instructions Sent',
-        message: `${t('reset instructions sent') || 'Password reset instructions have been sent to'} ${value}`,
+        title: t('reset_sent') || 'Reset Instructions Sent',
+        message: `${t('reset_instructions_sent') || 'Password reset instructions have been sent to'} ${value}`,
       });
-      
-      setTimeout(() => navigation.goBack(), 2000);
-    } catch (error) {
+
+      setTimeout(() => navigation.goBack(), 1500);
+    } catch (error: any) {
       show({
         type: 'warning',
         title: t('error') || 'Error',
-        message: t('reset failed') || 'Failed to send reset instructions. Please try again.',
+        message: error?.message || (t('reset_failed') || 'Failed to send reset instructions. Please try again.'),
       });
     } finally {
       setIsLoading(false);
