@@ -247,9 +247,6 @@ export default function ServiceDetailScreen() {
     <Text style={styles.actionButtonText}>{t('back') || 'Back'}</Text>
   </Button>
 </View>
-
-          </Button>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -10,7 +10,6 @@ import {
   Linking, 
   ActivityIndicator 
 } from 'react-native';
-
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp, RouteProp } from '@react-navigation/native';
@@ -23,7 +22,6 @@ import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Header } from '../components/ui/Header';
 import { BookingFooter } from '../components/ui/BookingFooter';
-import { Separator } from '../components/ui/Separator';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -32,6 +30,7 @@ const mockWorkerData = {
   "1": {
     id: "1",
     name: "Ahmed Benali",
+    businessName: "Ahmed's Car Care",
     rating: 4.8,
     reviewCount: 127,
     distance: "0.5 km",
@@ -39,6 +38,8 @@ const mockWorkerData = {
     avatar: require('../../assets/images/professional-car-washer-ahmed.png'),
     isAvailable: true,
     estimatedTime: "15 min",
+    startTime: "08:00",
+    endTime: "18:00",
     phone: "+212662093333",
     experience: "3",
     completedJobs: 450,
@@ -71,6 +72,7 @@ const mockWorkerData = {
   "2": {
     id: "2",
     name: "Omar Hassan",
+    businessName: "Omar's Premium Wash",
     rating: 4.9,
     reviewCount: 203,
     distance: "0.8 km",
@@ -78,6 +80,8 @@ const mockWorkerData = {
     avatar: require('../../assets/images/professional-car-washer-omar.png'),
     isAvailable: true,
     estimatedTime: "20 min",
+    startTime: "09:00",
+    endTime: "19:00",
     phone: "+212 6XX XXX XXX",
     experience: "5 years",
     completedJobs: 680,
@@ -157,12 +161,22 @@ export default function WorkerDetailScreen() {
         {/* Worker Info Card */}
         <Card style={[styles.workerCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.workerHeader}>
-            <Avatar 
-              source={worker.avatar} 
-              name={worker.name} 
-              size={80} 
-            />
+            {/* Avatar with Distance */}
+            <View style={styles.avatarSection}>
+              <Avatar 
+                source={worker.avatar} 
+                name={worker.name} 
+                size={80} 
+              />
+              <View style={styles.distanceContainer}>
+                <MapPin size={14} color={theme.accent} />
+                <Text style={[styles.distanceText, { color: theme.textPrimary }]}>
+                  {worker.distance}
+                </Text>
+              </View>
+            </View>
             
+            {/* Worker Info with Time */}
             <View style={styles.workerInfo}>
               <View style={styles.workerNameRow}>
                 <View style={styles.workerNameContainer}>
@@ -183,17 +197,21 @@ export default function WorkerDetailScreen() {
                 </Badge>
               </View>
 
-              <View style={styles.workerStats}>
-                <View style={styles.statItem}>
-                  <MapPin size={16} color={theme.textSecondary} />
-                  <Text style={[styles.statText, { color: theme.textSecondary }]}>{worker.distance} {language === 'fr' ? 'de distance' : 'away'}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Clock size={16} color={theme.textSecondary} />
-                  <Text style={[styles.statText, { color: theme.textSecondary }]}>
-                    {`${worker.startTime} - ${worker.endTime}`}
+              {/* Modern Time Display */}
+              <View style={styles.modernTimeContainer}>
+                <View style={styles.timeChip}>
+                  <Clock size={14} color={theme.accent} />
+                  <Text style={[styles.timeChipText, { color: theme.textPrimary }]}>
+                    {worker.startTime}
+                  </Text>
+                  <View style={[styles.timeChipSeparator, { backgroundColor: theme.accent }]} />
+                  <Text style={[styles.timeChipText, { color: theme.textPrimary }]}>
+                    {worker.endTime}
                   </Text>
                 </View>
+                <Text style={[styles.modernTimeLabel, { color: theme.textSecondary }]}>
+                  Available Today
+                </Text>
               </View>
             </View>
           </View>
@@ -298,7 +316,6 @@ export default function WorkerDetailScreen() {
             ))}
           </View>
         </Card>
-      </ScrollView>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
@@ -366,6 +383,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
+  avatarSection: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderRadius: 8,
+    gap: 4,
+  },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   workerInfo: {
     flex: 1,
     marginLeft: 16,
@@ -418,6 +453,76 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 14,
     marginLeft: 6,
+  },
+  timeContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    flex: 1,
+    marginLeft: 16,
+  },
+  timeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  timeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  timeSeparator: {
+    width: 12,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.6,
+  },
+  timeLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginLeft: 4,
+  },
+  modernTimeContainer: {
+    marginTop: 12,
+    alignItems: 'flex-start',
+  },
+  timeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    gap: 6,
+  },
+  timeChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  timeChipSeparator: {
+    width: 8,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.7,
+  },
+  modernTimeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 4,
+    marginLeft: 2,
   },
   separator: {
     marginVertical: 20,
@@ -544,20 +649,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flexShrink: 1,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-  },
   buttonText: {
     color: '#ffffff',
     fontWeight: '500',
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+  },
+  sectionCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  reviewsContainer: {
+    padding: 16,
   },
 });

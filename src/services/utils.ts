@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storage } from '../lib/storage';
 import { supabase } from '../lib/supabase';
 
 // Connection and error handling utilities
@@ -58,7 +58,7 @@ export async function setCachedData<T>(key: string, data: T, expiryHours: number
       data,
       expiry: expiryTime
     };
-    await AsyncStorage.setItem(key, JSON.stringify(cachedData));
+    await storage.setItem(key, JSON.stringify(cachedData));
   } catch (error) {
     console.error('Error caching data:', error);
   }
@@ -66,14 +66,14 @@ export async function setCachedData<T>(key: string, data: T, expiryHours: number
 
 export async function getCachedData<T>(key: string): Promise<T | null> {
   try {
-    const cachedItem = await AsyncStorage.getItem(key);
+    const cachedItem = await storage.getItem(key);
     if (!cachedItem) return null;
     
     const parsed = JSON.parse(cachedItem);
     
     // Check if data has expired
     if (Date.now() > parsed.expiry) {
-      await AsyncStorage.removeItem(key);
+      await storage.removeItem(key);
       return null;
     }
     
@@ -87,11 +87,13 @@ export async function getCachedData<T>(key: string): Promise<T | null> {
 export async function clearCache(key?: string): Promise<void> {
   try {
     if (key) {
-      await AsyncStorage.removeItem(key);
+      await storage.removeItem(key);
     } else {
       // Clear all cache keys
       const keys = Object.values(CACHE_KEYS);
-      await AsyncStorage.multiRemove(keys);
+      for (const cacheKey of keys) {
+        await storage.removeItem(cacheKey);
+      }
     }
   } catch (error) {
     console.error('Error clearing cache:', error);
