@@ -6,6 +6,11 @@ export interface BookingData {
   workerName: string;
   basePrice: number;
   
+  // Service info (required for database)
+  serviceId: string;
+  serviceName?: string;
+  estimatedDuration: number;
+  
   // Location
   address: string;
   coordinates?: {
@@ -17,13 +22,19 @@ export interface BookingData {
   date: string;
   time: string;
   
-  // Vehicle info
+  // Vehicle info (mapped to database fields)
+  vehicleType: 'sedan' | 'suv' | 'hatchback' | 'van' | 'truck' | 'motorcycle';
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleYear?: number;
+  vehicleColor?: string;
+  licensePlate?: string;
+  
+  // Legacy fields for backward compatibility
   carType: string;
   carBrand: string;
   carModel?: string;
   carYear?: string;
-  carBrandId?: number;
-  carModelId?: number;
   
   // Services
   selectedServices: string[];
@@ -52,9 +63,19 @@ const defaultBookingData: BookingData = {
   workerId: '',
   workerName: '',
   basePrice: 0,
+  serviceId: '',
+  serviceName: '',
+  estimatedDuration: 60, // Default 60 minutes
   address: '',
   date: '',
   time: '',
+  vehicleType: 'sedan',
+  vehicleMake: '',
+  vehicleModel: '',
+  vehicleYear: undefined,
+  vehicleColor: '',
+  licensePlate: '',
+  // Legacy fields for backward compatibility
   carType: '',
   carBrand: '',
   carModel: '',
@@ -74,7 +95,18 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const totalSteps = 5; // DateTime, Vehicle, Services, Location, Payment
 
   const updateBookingData = (data: Partial<BookingData>) => {
-    setBookingData(prev => ({ ...prev, ...data }));
+    console.log('🔍 BookingContext - Updating booking data:', data);
+    setBookingData(prev => {
+      const updated = { ...prev, ...data };
+      console.log('🔍 BookingContext - Updated booking data:', {
+        serviceId: updated.serviceId,
+        workerId: updated.workerId,
+        date: updated.date,
+        time: updated.time,
+        address: updated.address
+      });
+      return updated;
+    });
   };
 
   const resetBookingData = () => {

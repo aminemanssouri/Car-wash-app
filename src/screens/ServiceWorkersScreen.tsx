@@ -38,6 +38,8 @@ export default function ServiceWorkersScreen() {
       
       // Load service details
       const serviceData = await servicesService.getServiceByKey(serviceKey);
+      console.log('🔍 ServiceWorkersScreen - Loaded service:', serviceData);
+      console.log('🔍 ServiceWorkersScreen - Service ID:', serviceData?.id);
       setService(serviceData);
       
       if (!serviceData) {
@@ -219,7 +221,25 @@ export default function ServiceWorkersScreen() {
                 size="sm" 
                 variant="outline" 
                 style={{ flex: 1 }}
-                onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
+                onPress={() => {
+                  console.log('🔍 Navigating to Booking with:', { 
+                    workerId: worker.id, 
+                    serviceId: service?.id,
+                    serviceKey: serviceKey,
+                    serviceName: service?.title
+                  });
+                  
+                  if (!service?.id) {
+                    Alert.alert('Error', 'Service not loaded properly. Please try again.');
+                    return;
+                  }
+                  
+                  navigation.navigate('Booking', { 
+                    workerId: worker.id, 
+                    serviceId: service.id,
+                    serviceKey: serviceKey 
+                  } as any);
+                }}
                 disabled={!worker.isAvailable}
               >
                 Book Now

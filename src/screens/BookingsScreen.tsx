@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, MapPin, Phone, MessageCircle, MoreVertical, Star, Sparkles } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
@@ -8,7 +8,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
-import { mockBookings, Booking } from '../data/bookings';
+import { bookingsService, BookingWithDetails } from '../services/bookings';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,13 +23,43 @@ export const BookingsScreen: React.FC = () => {
   const { user } = useAuth();
   const { navigateWithAuth } = useAuthNavigation();
 
-  const getStatusColor = (status: Booking['status']) => {
+  // State for bookings data
+  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load user's bookings
+  useEffect(() => {
+    loadBookings();
+  }, [user]);
+
+  const loadBookings = async () => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const userBookings = await bookingsService.getUserBookings(user.id, 'customer');
+      setBookings(userBookings);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+      setError('Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: BookingWithDetails['status']) => {
     switch (status) {
       case 'pending':
         return { backgroundColor: theme.isDark ? 'rgba(251, 191, 36, 0.15)' : '#fef3c7', color: theme.isDark ? '#fde68a' : '#92400e', borderColor: theme.isDark ? 'rgba(251, 191, 36, 0.25)' : '#fde68a' };
       case 'confirmed':
         return { backgroundColor: theme.isDark ? 'rgba(59, 130, 246, 0.15)' : '#dbeafe', color: theme.isDark ? '#93c5fd' : '#1e40af', borderColor: theme.isDark ? 'rgba(59,130,246,0.35)' : '#93c5fd' };
-      case 'in-progress':
+      case 'in_progress':
         return { backgroundColor: theme.isDark ? 'rgba(16, 185, 129, 0.18)' : '#d1fae5', color: theme.isDark ? '#6ee7b7' : '#065f46', borderColor: theme.isDark ? 'rgba(16,185,129,0.3)' : '#a7f3d0' };
       case 'completed':
         return { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6', color: theme.textPrimary, borderColor: theme.isDark ? 'rgba(148,163,184,0.25)' : '#d1d5db' };
@@ -40,13 +70,13 @@ export const BookingsScreen: React.FC = () => {
     }
   };
 
-  const getStatusText = (status: Booking['status']) => {
+  const getStatusText = (status: BookingWithDetails['status']) => {
     switch (status) {
       case 'pending':
         return t('status_pending');
       case 'confirmed':
         return t('status_confirmed');
-      case 'in-progress':
+      case 'in_progress':
         return t('status_in_progress');
       case 'completed':
         return t('status_completed');
@@ -58,6 +88,7 @@ export const BookingsScreen: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
@@ -66,12 +97,24 @@ export const BookingsScreen: React.FC = () => {
     });
   };
 
-  const filterBookings = (bookings: Booking[], filter: string) => {
+  const formatTime = (time: string) => {
+    if (!time) return '';
+    const [hours, minutes] = time.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const filterBookings = (bookings: BookingWithDetails[], filter: string) => {
     switch (filter) {
       case 'upcoming':
         return bookings.filter((b) => b.status === 'confirmed' || b.status === 'pending');
       case 'active':
-        return bookings.filter((b) => b.status === 'in-progress');
+        return bookings.filter((b) => b.status === 'in_progress');
       case 'completed':
         return bookings.filter((b) => b.status === 'completed');
       default:
@@ -79,14 +122,14 @@ export const BookingsScreen: React.FC = () => {
     }
   };
 
-  const filteredBookings = filterBookings(mockBookings, activeTab);
+  const filteredBookings = filterBookings(bookings, activeTab);
 
   // Coming Soon modal for Rate Service (fixed light theme, no dark mode)
   const [showRateComingSoon, setShowRateComingSoon] = useState(false);
   // Coming Soon modal for Call/Chat
   const [showContactComingSoon, setShowContactComingSoon] = useState<null | 'call' | 'chat'>(null);
 
-  const handleBookingAction = (action: string, bookingId: string, booking?: Booking) => {
+  const handleBookingAction = (action: string, bookingId: string, booking?: BookingWithDetails) => {
     switch (action) {
       case 'cancel':
         Alert.alert('Cancel Booking', `Cancel booking ${bookingId}?`);
@@ -96,13 +139,13 @@ export const BookingsScreen: React.FC = () => {
         break;
       case 'rate':
         if (booking) {
-          navigation.navigate('Review' as never, {
+          (navigation as any).navigate('Review', {
             bookingId: booking.id,
-            workerId: booking.workerId,
+            workerId: booking.worker_id,
             workerName: booking.workerName,
             workerAvatar: booking.workerAvatar,
             workerRating: booking.workerRating,
-          } as never);
+          });
         }
         break;
       case 'call':
@@ -137,15 +180,42 @@ export const BookingsScreen: React.FC = () => {
         onBack={() => navigation.goBack()} 
       />
 
-      {/* Tabs */}
-      <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
-        <View style={[styles.tabsList, { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6' }]}>
-          <TabButton label={t('tab_all')} value="all" isActive={activeTab === 'all'} />
-          <TabButton label={t('tab_upcoming')} value="upcoming" isActive={activeTab === 'upcoming'} />
-          <TabButton label={t('tab_active')} value="active" isActive={activeTab === 'active'} />
-          <TabButton label={t('tab_completed')} value="completed" isActive={activeTab === 'completed'} />
+      {/* Loading State */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            {t('loading_bookings')}
+          </Text>
         </View>
-      </View>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <View style={styles.errorContainer}>
+          <Text style={[styles.errorText, { color: theme.textPrimary }]}>
+            {error}
+          </Text>
+          <Button
+            title={t('retry')}
+            onPress={loadBookings}
+            variant="secondary"
+          />
+        </View>
+      )}
+
+      {/* Content */}
+      {!loading && !error && (
+        <>
+          {/* Tabs */}
+          <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.cardBorder }]}>
+            <View style={[styles.tabsList, { backgroundColor: theme.isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6' }]}>
+              <TabButton label={t('tab_all')} value="all" isActive={activeTab === 'all'} />
+              <TabButton label={t('tab_upcoming')} value="upcoming" isActive={activeTab === 'upcoming'} />
+              <TabButton label={t('tab_active')} value="active" isActive={activeTab === 'active'} />
+              <TabButton label={t('tab_completed')} value="completed" isActive={activeTab === 'completed'} />
+            </View>
+          </View>
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -164,7 +234,7 @@ export const BookingsScreen: React.FC = () => {
           <View style={styles.emptyState}>
             <Calendar size={48} color={theme.textSecondary} style={styles.emptyIcon} />
             <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>{t('no_bookings_found')}</Text>
-            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }] }>
+            <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
               {activeTab === 'all' ? t('no_bookings_yet') : t('no_status_bookings').replace('{status}', t(`tab_${activeTab}` as any))}
             </Text>
             <Button onPress={() => navigation.navigate('Home' as never)} style={styles.bookButton}>
@@ -181,14 +251,14 @@ export const BookingsScreen: React.FC = () => {
                   <View style={styles.bookingHeader}>
                     <View style={styles.bookingInfo}>
                       <View style={styles.bookingIdRow}>
-                        <Text style={[styles.bookingId, { color: theme.textPrimary }]}>#{booking.id}</Text>
+                        <Text style={[styles.bookingId, { color: theme.textPrimary }]}>#{booking.booking_number}</Text>
                         <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor, borderColor: statusStyle.borderColor }]}>
                           <Text style={[styles.statusText, { color: statusStyle.color }]}>
                             {getStatusText(booking.status)}
                           </Text>
                         </View>
                       </View>
-                      <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>{t('booked_on')} {formatDate(booking.bookingDate)}</Text>
+                      <Text style={[styles.bookingDate, { color: theme.textSecondary }]}>{t('booked_on')} {formatDate(booking.created_at || '')}</Text>
                     </View>
                     <Pressable style={styles.moreButton} onPress={() => Alert.alert('More Options', 'Booking options')}>
                       <MoreVertical size={16} color={theme.textSecondary} />
@@ -200,7 +270,7 @@ export const BookingsScreen: React.FC = () => {
                     <Avatar
                       src={booking.workerAvatar}
                       size={48}
-                      fallback={booking.workerName.split(' ').map(n => n[0]).join('')}
+                      fallback={booking.workerName.split(' ').map((n: string) => n[0]).join('')}
                     />
                     <View style={styles.workerDetails}>
                       <Text style={[styles.workerName, { color: theme.textPrimary }]}>{booking.workerName}</Text>
@@ -210,8 +280,8 @@ export const BookingsScreen: React.FC = () => {
                       </View>
                     </View>
                     <View style={styles.priceInfo}>
-                      <Text style={[styles.price, { color: theme.accent }]}>{booking.price} MAD</Text>
-                      <Text style={[styles.carType, { color: theme.textSecondary }]}>{booking.carType}</Text>
+                      <Text style={[styles.price, { color: theme.accent }]}>{booking.total_price} MAD</Text>
+                      <Text style={[styles.carType, { color: theme.textSecondary }]}>{booking.vehicle_type}</Text>
                     </View>
                   </View>
 
@@ -222,16 +292,16 @@ export const BookingsScreen: React.FC = () => {
                     <View style={styles.detailRow}>
                       <Calendar size={16} color={theme.textSecondary} />
                       <Text style={[styles.detailText, { color: theme.textPrimary }]}>
-                        {formatDate(booking.date)} at {booking.time}
+                        {formatDate(booking.scheduled_date)} at {formatTime(booking.scheduled_time)}
                       </Text>
                     </View>
 
                     <View style={styles.detailRow}>
                       <MapPin size={16} color={theme.textSecondary} />
-                      <Text style={[styles.detailText, { color: theme.textPrimary }]}>{booking.location}</Text>
+                      <Text style={[styles.detailText, { color: theme.textPrimary }]}>{booking.service_address_text}</Text>
                     </View>
 
-                    {booking.notes && (
+                    {booking.special_instructions && (
                       <View
                         style={[
                           styles.notesContainer,
@@ -244,14 +314,14 @@ export const BookingsScreen: React.FC = () => {
                       >
                         <Text style={[styles.notesText, { color: theme.textPrimary }]}>
                           <Text style={[styles.notesLabel, { color: theme.textSecondary }]}>{t('notes')}: </Text>
-                          {booking.notes}
+                          {booking.special_instructions}
                         </Text>
                       </View>
                     )}
                   </View>
 
                   {/* Action Buttons */}
-                  {(booking.status === 'confirmed' || booking.status === 'in-progress') && (
+                  {(booking.status === 'confirmed' || booking.status === 'in_progress') && (
                     <View style={styles.actionButtons}>
                       <Button
                         variant="outline"
@@ -288,7 +358,7 @@ export const BookingsScreen: React.FC = () => {
                     </View>
                   )}
 
-                  {booking.canRate && (
+                  {booking.can_rate && (
                     <Button
                       style={styles.rateButton}
                       onPress={() => handleBookingAction('rate', booking.id, booking)}
@@ -337,6 +407,8 @@ export const BookingsScreen: React.FC = () => {
           </Pressable>
         </Pressable>
       </Modal>
+        </>
+      )}
     </SafeAreaView>
   );
 };
@@ -345,6 +417,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   header: {
     backgroundColor: '#ffffff',

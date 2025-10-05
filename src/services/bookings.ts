@@ -75,15 +75,26 @@ class BookingsService {
     }
   }
 
-  // Get user's bookings
-  async getUserBookings(userId: string, role: 'customer' | 'worker' = 'customer'): Promise<BookingDetails[]> {
+  // Get user's bookings with detailed information
+  async getUserBookings(userId: string, role: 'customer' | 'worker' = 'customer'): Promise<BookingWithDetails[]> {
     try {
-      let query = supabase.from('booking_details').select('*');
+      let query = supabase
+        .from('bookings')
+        .select(`
+          *,
+          customer:profiles!customer_id(full_name, phone, avatar_url),
+          worker:worker_profiles!worker_id(
+            id,
+            business_name,
+            user:profiles!worker_profiles_user_id_fkey(full_name, avatar_url)
+          ),
+          service:services!service_id(title, key, price)
+        `);
 
       if (role === 'customer') {
         query = query.eq('customer_id', userId);
       } else {
-        // For workers, match against worker's user_id
+        // For workers, get bookings for their worker profile
         const { data: workerProfile } = await supabase
           .from('worker_profiles')
           .select('id')
@@ -100,24 +111,66 @@ class BookingsService {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match BookingWithDetails interface
+      console.log('🔍 Raw booking data from database:', JSON.stringify(data?.[0], null, 2));
+      
+      const transformedData = (data || []).map(booking => {
+        const workerName = booking.worker?.business_name || booking.worker?.user?.full_name || 'Unknown Worker';
+        console.log('🔍 Transforming booking:', {
+          bookingId: booking.id,
+          rawWorker: booking.worker,
+          calculatedWorkerName: workerName
+        });
+        
+        return {
+          ...booking,
+          customerName: booking.customer?.full_name || 'Unknown Customer',
+          workerName: workerName,
+          serviceName: booking.service?.title || 'Unknown Service',
+          workerRating: 4.5, // Default rating - you might want to calculate this from reviews
+          workerAvatar: booking.worker?.user?.avatar_url || undefined,
+        };
+      });
+      
+      console.log('🔍 Final transformed booking data:', JSON.stringify(transformedData?.[0], null, 2));
+      return transformedData;
     } catch (error) {
       console.error('Get user bookings error:', error);
       throw error;
     }
   }
 
-  // Get booking by ID
-  async getBookingById(bookingId: string): Promise<BookingDetails | null> {
+  // Get booking by ID with detailed information
+  async getBookingById(bookingId: string): Promise<BookingWithDetails | null> {
     try {
       const { data, error } = await supabase
-        .from('booking_details')
-        .select('*')
+        .from('bookings')
+        .select(`
+          *,
+          customer:profiles!customer_id(full_name, phone, avatar_url),
+          worker:worker_profiles!worker_id(
+            id,
+            business_name,
+            user:profiles!worker_profiles_user_id_fkey(full_name, avatar_url)
+          ),
+          service:services!service_id(title, key, price)
+        `)
         .eq('id', bookingId)
         .single();
 
       if (error) throw error;
-      return data;
+      if (!data) return null;
+
+      // Transform the data to match BookingWithDetails interface
+      return {
+        ...data,
+        customerName: data.customer?.full_name || 'Unknown Customer',
+        workerName: data.worker?.business_name || data.worker?.user?.full_name || 'Unknown Worker',
+        serviceName: data.service?.title || 'Unknown Service',
+        workerRating: 4.5, // Default rating - you might want to calculate this from reviews
+        workerAvatar: data.worker?.user?.avatar_url || undefined,
+      };
     } catch (error) {
       console.error('Get booking by ID error:', error);
       throw error;

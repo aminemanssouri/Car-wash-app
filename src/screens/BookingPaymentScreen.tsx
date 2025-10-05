@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -10,6 +10,8 @@ import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useBooking } from '../contexts/BookingContext';
+import { useAuth } from '../contexts/AuthContext';
+import { bookingsService } from '../services/bookings';
 import type { RootStackParamList } from '../types/navigation';
 
 const paymentMethods = [
@@ -52,26 +54,96 @@ export default function BookingPaymentScreen() {
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { bookingData, updateBookingData, setCurrentStep, resetBookingData } = useBooking();
 
   const [selectedPayment, setSelectedPayment] = useState(bookingData.paymentMethod || 'cash');
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedPayment) {
       Alert.alert('Missing Fields', 'Please select payment method');
       return;
     }
 
-    updateBookingData({
-      paymentMethod: selectedPayment,
-    });
+    if (!user) {
+      Alert.alert('Authentication Required', 'Please sign in to create a booking');
+      return;
+    }
 
-    // Generate booking ID and navigate directly to confirmation
-    const bookingId = `CW${Date.now().toString().slice(-6)}`;
-    
-    // Reset booking data and navigate to confirmation
-    resetBookingData();
-    navigation.navigate('BookingConfirmation', { bookingId } as any);
+    // Validate required booking data with detailed logging
+    const missingFields = [];
+    if (!bookingData.workerId) missingFields.push('workerId');
+    if (!bookingData.serviceId) missingFields.push('serviceId');
+    if (!bookingData.date) missingFields.push('date');
+    if (!bookingData.time) missingFields.push('time');
+    if (!bookingData.address) missingFields.push('address');
+
+    if (missingFields.length > 0) {
+      console.log('❌ Missing booking fields:', missingFields);
+      console.log('📋 Current booking data:', {
+        workerId: bookingData.workerId,
+        serviceId: bookingData.serviceId,
+        date: bookingData.date,
+        time: bookingData.time,
+        address: bookingData.address,
+        workerName: bookingData.workerName,
+        serviceName: bookingData.serviceName
+      });
+      Alert.alert('Missing Information', `Please complete all booking steps. Missing: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    try {
+      setIsCreatingBooking(true);
+      
+      // Update booking data with selected payment
+      updateBookingData({
+        paymentMethod: selectedPayment,
+      });
+
+      // Prepare booking data for database
+      const createBookingData = {
+        workerId: bookingData.workerId,
+        serviceId: bookingData.serviceId,
+        scheduledDate: bookingData.date,
+        scheduledTime: bookingData.time,
+        serviceAddressText: bookingData.address,
+        vehicleType: bookingData.vehicleType || 'sedan',
+        vehicleMake: bookingData.vehicleMake || bookingData.carBrand,
+        vehicleModel: bookingData.vehicleModel || bookingData.carModel,
+        vehicleYear: bookingData.vehicleYear || (bookingData.carYear ? parseInt(bookingData.carYear) : undefined),
+        vehicleColor: bookingData.vehicleColor,
+        licensePlate: bookingData.licensePlate,
+        basePrice: bookingData.basePrice,
+        totalPrice: bookingData.finalPrice,
+        specialInstructions: bookingData.notes,
+        estimatedDuration: bookingData.estimatedDuration || 60,
+        serviceLocation: bookingData.coordinates,
+      };
+
+      // Create booking in database
+      const newBooking = await bookingsService.createBooking(user.id, createBookingData);
+      
+      // Reset booking data and navigate to confirmation
+      resetBookingData();
+      navigation.navigate('BookingConfirmation', { 
+        bookingId: newBooking.booking_number || newBooking.id,
+        booking: newBooking 
+      } as any);
+      
+    } catch (error: any) {
+      console.error('Error creating booking:', error);
+      Alert.alert(
+        'Booking Failed', 
+        error.message || 'Failed to create booking. Please try again.',
+        [
+          { text: 'OK', style: 'default' }
+        ]
+      );
+    } finally {
+      setIsCreatingBooking(false);
+    }
   };
 
   const handleBack = () => {
@@ -339,12 +411,21 @@ export default function BookingPaymentScreen() {
           </Button>
           
           <Button 
-            style={[styles.continueButton, { opacity: selectedPayment ? 1 : 0.5 }]}
+            style={[styles.continueButton, { opacity: (selectedPayment && !isCreatingBooking) ? 1 : 0.5 }]}
             onPress={handleContinue}
-            disabled={!selectedPayment}
+            disabled={!selectedPayment || isCreatingBooking}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <ChevronRight size={16} color="#ffffff" />
+            {isCreatingBooking ? (
+              <>
+                <ActivityIndicator size="small" color="#ffffff" />
+                <Text style={styles.continueButtonText}>Creating Booking...</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.continueButtonText}>Continue</Text>
+                <ChevronRight size={16} color="#ffffff" />
+              </>
+            )}
           </Button>
         </View>
       </View>

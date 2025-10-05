@@ -57,8 +57,7 @@ class WorkersService {
       const workers = await retryOperation(async () => {
         const { data, error } = await supabase
           .from('worker_listings')
-          .select('*')
-          .eq('status', 'available');
+          .select('*'); // Get all workers regardless of status
 
         if (error) throw error;
         return (data || []).map(worker => this.transformWorkerData(worker));
@@ -77,7 +76,10 @@ class WorkersService {
         return fallbackData;
       }
       
-      throw handleSupabaseError(error);
+      // If database connection fails, return empty array for now
+      // In production, you might want to return a curated set of default workers
+      console.warn('Database connection failed, returning empty workers array');
+      return [];
     }
   }
 

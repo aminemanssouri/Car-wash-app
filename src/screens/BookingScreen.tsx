@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -18,31 +18,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAuthNavigation } from '../hooks/useAuthNavigation';
 import { useBooking } from '../contexts/BookingContext';
 import { safeGoBack } from '../lib/navigation';
+import { workersService, type Worker } from '../services/workers';
+import { servicesService } from '../services/services';
+import { bookingsService } from '../services/bookings';
 import type { RootStackParamList } from '../types/navigation';
-
-// Mock worker data
-const mockWorkers = {
-  "1": { 
-    name: "Ahmed Benali", 
-    price: 80, 
-    avatar: require('../../assets/images/professional-car-washer-ahmed.png') 
-  },
-  "2": { 
-    name: "Omar Hassan", 
-    price: 120, 
-    avatar: require('../../assets/images/professional-car-washer-omar.png') 
-  },
-  "3": { 
-    name: "Hassan Berrada", 
-    price: 150, 
-    avatar: require('../../assets/images/professional-car-washer-hassan.png') 
-  },
-  "4": { 
-    name: "Youssef Alami", 
-    price: 60, 
-    avatar: require('../../assets/images/professional-car-washer-youssef.png') 
-  },
-};
 
 const carTypes = [
   { id: "sedan", name: "Sedan", multiplier: 1 },
@@ -78,11 +57,23 @@ export default function BookingScreen() {
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const theme = useThemeColors();
+  
+  const [worker, setWorker] = useState<Worker | null>(null);
+  const [service, setService] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
   const { user } = useAuth();
   const { navigateWithAuth } = useAuthNavigation();
   const { updateBookingData, setCurrentStep } = useBooking();
-  const { workerId = "1" } = (route.params as { workerId?: string }) || {};
+  const { workerId = "1", serviceId, serviceKey } = (route.params as { 
+    workerId?: string; 
+    serviceId?: string; 
+    serviceKey?: string; 
+  }) || {};
+
+  console.log('🔍 BookingScreen - Route params:', route.params);
+  console.log('🔍 BookingScreen - Extracted serviceId:', serviceId);
 
   // Get today's date for min date input
   const today = new Date().toISOString().split("T")[0];
@@ -102,7 +93,62 @@ export default function BookingScreen() {
     return next || timeSlots[0].value;
   };
 
-  const worker = mockWorkers[workerId as keyof typeof mockWorkers];
+  // Load worker and service data on mount
+  useEffect(() => {
+    if (workerId) {
+      loadData();
+    }
+  }, [workerId, serviceId, serviceKey]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load worker data
+      const workerData = await workersService.getWorkerById(workerId);
+      if (!workerData) {
+        setError('Worker not found');
+        return;
+      }
+      setWorker(workerData);
+      
+      // Load service data
+      let serviceData = null;
+      if (serviceId) {
+        serviceData = await servicesService.getServiceById(serviceId);
+      } else if (serviceKey) {
+        serviceData = await servicesService.getServiceByKey(serviceKey);
+      }
+      
+      if (serviceData) {
+        console.log('🔍 BookingScreen - Setting service data in context:', {
+          serviceId: serviceData.id,
+          serviceName: serviceData.title,
+          estimatedDuration: serviceData.durationMinutes || 60
+        });
+        
+        setService(serviceData);
+        // Initialize booking context with service data
+        updateBookingData({
+          serviceId: serviceData.id,
+          serviceName: serviceData.title,
+          estimatedDuration: serviceData.durationMinutes || 60,
+        });
+        
+        console.log('🔍 BookingScreen - Service data set in context');
+      } else {
+        console.log('❌ BookingScreen - No service data received');
+      }
+      
+    } catch (err: any) {
+      console.error('Error loading data:', err);
+      setError(err.message || 'Failed to load booking data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const basePrice = worker?.price || 80;
 
   const handleStartBooking = () => {
@@ -114,7 +160,7 @@ export default function BookingScreen() {
 
     // Initialize booking data with worker info
     updateBookingData({
-      workerId,
+      workerId: worker.id,
       workerName: worker.name,
       basePrice,
       finalPrice: basePrice,
@@ -124,6 +170,43 @@ export default function BookingScreen() {
     setCurrentStep(1);
     navigation.navigate('BookingDateTime');
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+        <Header 
+          title="Book Service" 
+          onBack={() => safeGoBack(navigation)} 
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={{ fontSize: 16, color: theme.textSecondary, marginTop: 16 }}>Loading worker details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error || !worker) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={['bottom']}>
+        <Header 
+          title="Book Service" 
+          onBack={() => safeGoBack(navigation)} 
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: theme.textPrimary, marginBottom: 8 }}>Worker Not Available</Text>
+          <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: 'center', marginBottom: 16 }}>
+            {error || 'This worker is no longer available. Please select another worker.'}
+          </Text>
+          <Button onPress={() => navigation.goBack()}>
+            <Text style={{ color: '#fff', fontWeight: '600' }}>Go Back</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!user) {
     return (
@@ -157,7 +240,7 @@ export default function BookingScreen() {
         <Card style={[styles.workerCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.workerInfo}>
             <Avatar 
-              source={worker?.avatar} 
+              src={worker?.avatar || undefined} 
               name={worker?.name || ''} 
               size={64}
             />

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Modal, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Modal, Dimensions, ActivityIndicator } from 'react-native';
 import { Calendar, Clock, MapPin, Phone, CheckCircle, XCircle, AlertCircle, Filter } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/ui/Button';
@@ -9,13 +9,48 @@ import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../lib/theme';
+import { useAuth } from '../contexts/AuthContext';
+import { bookingsService, BookingWithDetails } from '../services/bookings';
 
 export const WorkerBookingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const theme = useThemeColors();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'pending' | 'active' | 'completed'>('pending');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalAction, setModalAction] = useState<{ type: 'accept' | 'reject' | 'complete'; bookingId: string; customerName: string } | null>(null);
+  
+  // Real data state
+  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load worker's bookings
+  useEffect(() => {
+    loadWorkerBookings();
+  }, [user]);
+
+  const loadWorkerBookings = async () => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('Loading worker bookings for user:', user.id);
+      const workerBookings = await bookingsService.getUserBookings(user.id, 'worker');
+      console.log('Loaded worker bookings:', workerBookings);
+      
+      setBookings(workerBookings);
+    } catch (err) {
+      console.error('Failed to load worker bookings:', err);
+      setError('Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const mockBookings = {
     pending: [
@@ -100,37 +135,66 @@ export const WorkerBookingsScreen: React.FC = () => {
     ],
   };
 
-  const handleAcceptBooking = (bookingId: string, customerName: string) => {
-    setModalAction({ type: 'accept', bookingId, customerName });
-    setModalVisible(true);
+  const handleAcceptBooking = async (bookingId: string) => {
+    try {
+      await bookingsService.updateBookingStatus(bookingId, 'confirmed');
+      Alert.alert('Success', 'Booking accepted successfully!');
+      loadWorkerBookings(); // Reload bookings
+    } catch (error) {
+      console.error('Failed to accept booking:', error);
+      Alert.alert('Error', 'Failed to accept booking');
+    }
   };
 
-  const handleRejectBooking = (bookingId: string, customerName: string) => {
-    setModalAction({ type: 'reject', bookingId, customerName });
-    setModalVisible(true);
+  const handleRejectBooking = async (bookingId: string) => {
+    try {
+      await bookingsService.updateBookingStatus(bookingId, 'cancelled');
+      Alert.alert('Notice', 'Booking rejected.');
+      loadWorkerBookings(); // Reload bookings
+    } catch (error) {
+      console.error('Failed to reject booking:', error);
+      Alert.alert('Error', 'Failed to reject booking');
+    }
   };
 
-  const handleCompleteBooking = (bookingId: string, customerName: string) => {
-    setModalAction({ type: 'complete', bookingId, customerName });
-    setModalVisible(true);
+  const handleCompleteBooking = async (bookingId: string) => {
+    try {
+      await bookingsService.updateBookingStatus(bookingId, 'completed');
+      Alert.alert('Success', 'Booking marked as completed!');
+      loadWorkerBookings(); // Reload bookings
+    } catch (error) {
+      console.error('Failed to complete booking:', error);
+      Alert.alert('Error', 'Failed to complete booking');
+    }
   };
 
-  const confirmAction = () => {
-    if (!modalAction) return;
-    
-    setModalVisible(false);
-    
-    // Simulate action completion
-    setTimeout(() => {
-      const messages = {
-        accept: 'Booking accepted successfully!',
-        reject: 'Booking rejected.',
-        complete: 'Booking marked as completed!'
-      };
-      Alert.alert('Success', messages[modalAction.type]);
-    }, 300);
-    
-    setModalAction(null);
+  const handleStartBooking = async (bookingId: string) => {
+    try {
+      await bookingsService.updateBookingStatus(bookingId, 'in_progress');
+      Alert.alert('Success', 'Booking started!');
+      loadWorkerBookings(); // Reload bookings
+    } catch (error) {
+      console.error('Failed to start booking:', error);
+      Alert.alert('Error', 'Failed to start booking');
+    }
+  };
+
+  // Filter bookings by status
+  const getFilteredBookings = () => {
+    const pendingBookings = bookings.filter(booking => booking.status === 'pending');
+    const activeBookings = bookings.filter(booking => booking.status === 'in_progress' || booking.status === 'confirmed');
+    const completedBookings = bookings.filter(booking => booking.status === 'completed');
+
+    switch (activeTab) {
+      case 'pending':
+        return pendingBookings;
+      case 'active':
+        return activeBookings;
+      case 'completed':
+        return completedBookings;
+      default:
+        return [];
+    }
   };
 
   const formatTime = (dateString: string) => {
@@ -185,7 +249,7 @@ export const WorkerBookingsScreen: React.FC = () => {
     );
   };
 
-  const BookingCard = ({ booking, type }: { booking: any; type: typeof activeTab }) => (
+  const BookingCard = ({ booking, type }: { booking: BookingWithDetails; type: typeof activeTab }) => (
     <Card style={[styles.bookingCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <View style={styles.bookingHeader}>
         <View style={styles.customerInfo}>
@@ -195,11 +259,11 @@ export const WorkerBookingsScreen: React.FC = () => {
           />
           <View style={styles.customerDetails}>
             <Text style={[styles.customerName, { color: theme.textPrimary }]}>{booking.customerName}</Text>
-            <Text style={[styles.serviceType, { color: theme.textSecondary }]}>{booking.service}</Text>
+            <Text style={[styles.serviceType, { color: theme.textSecondary }]}>{booking.serviceName}</Text>
           </View>
         </View>
         <View style={styles.priceContainer}>
-          <Text style={[styles.price, { color: theme.accent }]}>{booking.price} MAD</Text>
+          <Text style={[styles.price, { color: theme.accent }]}>{booking.total_price} MAD</Text>
           {type === 'pending' && (
             <View style={[styles.statusBadge, styles.pendingBadge]}>
               <Text style={styles.statusText}>Pending</Text>
@@ -218,33 +282,33 @@ export const WorkerBookingsScreen: React.FC = () => {
       <View style={styles.bookingDetails}>
         <View style={styles.detailRow}>
           <MapPin size={16} color={theme.textSecondary} />
-          <Text style={[styles.detailText, { color: theme.textSecondary }]}>{booking.location}</Text>
+          <Text style={[styles.detailText, { color: theme.textSecondary }]}>{booking.service_address_text}</Text>
         </View>
         
         <View style={styles.detailRow}>
           <Clock size={16} color={theme.textSecondary} />
           <Text style={[styles.detailText, { color: theme.textSecondary }]}>
             {type === 'completed' 
-              ? `Completed ${formatDate(booking.completedTime)} at ${formatTime(booking.completedTime)}`
-              : `${formatDate(booking.scheduledTime)} at ${formatTime(booking.scheduledTime)}`
+              ? `Completed ${formatDate(booking.completed_at || '')} at ${formatTime(booking.completed_at || '')}`
+              : `${formatDate(booking.scheduled_date)} at ${formatTime(booking.scheduled_time)}`
             }
           </Text>
         </View>
 
         <View style={styles.detailRow}>
           <Phone size={16} color={theme.textSecondary} />
-          <Text style={[styles.detailText, { color: theme.textSecondary }]}>{booking.customerPhone}</Text>
+          <Text style={[styles.detailText, { color: theme.textSecondary }]}>Contact Customer</Text>
         </View>
 
-        {type === 'completed' && booking.rating && (
+        {type === 'completed' && booking.workerRating && (
           <View style={styles.detailRow}>
             <View style={styles.ratingContainer}>
               {[...Array(5)].map((_, i) => (
-                <Text key={i} style={[styles.star, { color: i < booking.rating ? '#fbbf24' : '#e5e7eb' }]}>★</Text>
+                <Text key={i} style={[styles.star, { color: i < booking.workerRating ? '#fbbf24' : '#e5e7eb' }]}>★</Text>
               ))}
             </View>
             <Text style={[styles.detailText, { color: theme.textSecondary }]}>
-              Customer rating: {booking.rating}/5
+              Customer rating: {booking.workerRating}/5
             </Text>
           </View>
         )}
@@ -254,14 +318,14 @@ export const WorkerBookingsScreen: React.FC = () => {
         <View style={styles.bookingActions}>
           <Button
             variant="outline"
-            onPress={() => handleRejectBooking(booking.id, booking.customerName)}
+            onPress={() => handleRejectBooking(booking.id)}
             style={[styles.actionButton, styles.rejectButton]}
           >
             <XCircle size={16} color="#ef4444" />
             <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Reject</Text>
           </Button>
           <Button
-            onPress={() => handleAcceptBooking(booking.id, booking.customerName)}
+            onPress={() => handleAcceptBooking(booking.id)}
             style={[styles.actionButton, styles.acceptButton]}
           >
             <CheckCircle size={16} color="#ffffff" />
@@ -273,7 +337,7 @@ export const WorkerBookingsScreen: React.FC = () => {
       {type === 'active' && (
         <View style={styles.bookingActions}>
           <Button
-            onPress={() => handleCompleteBooking(booking.id, booking.customerName)}
+            onPress={() => handleCompleteBooking(booking.id)}
             style={[styles.actionButton, styles.completeButton]}
           >
             <CheckCircle size={16} color="#ffffff" />
@@ -284,89 +348,7 @@ export const WorkerBookingsScreen: React.FC = () => {
     </Card>
   );
 
-  const ActionModal = () => {
-    if (!modalAction) return null;
 
-    const getModalConfig = () => {
-      switch (modalAction.type) {
-        case 'accept':
-          return {
-            icon: CheckCircle,
-            iconColor: '#10b981',
-            title: 'Accept Booking',
-            message: `Accept booking from ${modalAction.customerName}?`,
-            confirmText: 'Accept',
-            confirmColor: '#10b981',
-          };
-        case 'reject':
-          return {
-            icon: XCircle,
-            iconColor: '#ef4444',
-            title: 'Reject Booking',
-            message: `Reject booking from ${modalAction.customerName}?`,
-            confirmText: 'Reject',
-            confirmColor: '#ef4444',
-          };
-        case 'complete':
-          return {
-            icon: CheckCircle,
-            iconColor: '#3b82f6',
-            title: 'Complete Booking',
-            message: `Mark ${modalAction.customerName}'s booking as completed?`,
-            confirmText: 'Complete',
-            confirmColor: '#3b82f6',
-          };
-      }
-    };
-
-    const config = getModalConfig();
-    const IconComponent = config.icon;
-
-    return (
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-            <View style={styles.modalHeader}>
-              <View style={[styles.modalIconContainer, { backgroundColor: `${config.iconColor}15` }]}>
-                <IconComponent size={32} color={config.iconColor} />
-              </View>
-              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
-                {config.title}
-              </Text>
-              <Text style={[styles.modalMessage, { color: theme.textSecondary }]}>
-                {config.message}
-              </Text>
-            </View>
-
-            <View style={styles.modalActions}>
-              <Button
-                variant="outline"
-                onPress={() => setModalVisible(false)}
-                style={[styles.modalButton, { borderColor: theme.cardBorder }]}
-              >
-                <Text style={[styles.modalButtonText, { color: theme.textSecondary }]}>
-                  Cancel
-                </Text>
-              </Button>
-              <Button
-                onPress={confirmAction}
-                style={[styles.modalButton, { backgroundColor: config.confirmColor }]}
-              >
-                <Text style={[styles.modalButtonText, { color: '#ffffff' }]}>
-                  {config.confirmText}
-                </Text>
-              </Button>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]} edges={[]}>
@@ -379,30 +361,68 @@ export const WorkerBookingsScreen: React.FC = () => {
         {/* Stats Summary */}
         <View style={[styles.statsContainer, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: theme.accent }]}>{mockBookings.pending.length}</Text>
+            <Text style={[styles.statNumber, { color: theme.accent }]}>
+              {bookings.filter(b => b.status === 'pending').length}
+            </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: '#10b981' }]}>{mockBookings.active.length}</Text>
+            <Text style={[styles.statNumber, { color: '#10b981' }]}>
+              {bookings.filter(b => b.status === 'in_progress' || b.status === 'confirmed').length}
+            </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Active</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[styles.statNumber, { color: theme.textPrimary }]}>{mockBookings.completed.length}</Text>
+            <Text style={[styles.statNumber, { color: theme.textPrimary }]}>
+              {bookings.filter(b => b.status === 'completed').length}
+            </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Completed</Text>
           </View>
         </View>
 
         {/* Simple Tabs */}
         <View style={styles.simpleTabsContainer}>
-          <TabButton label="Pending" value="pending" count={mockBookings.pending.length} />
-          <TabButton label="Active" value="active" count={mockBookings.active.length} />
-          <TabButton label="Completed" value="completed" count={mockBookings.completed.length} />
+          <TabButton 
+            label="Pending" 
+            value="pending" 
+            count={bookings.filter(b => b.status === 'pending').length} 
+          />
+          <TabButton 
+            label="Active" 
+            value="active" 
+            count={bookings.filter(b => b.status === 'in_progress' || b.status === 'confirmed').length} 
+          />
+          <TabButton 
+            label="Completed" 
+            value="completed" 
+            count={bookings.filter(b => b.status === 'completed').length} 
+          />
         </View>
 
         {/* Booking List */}
         <ScrollView style={styles.bookingsList} showsVerticalScrollIndicator={false}>
-          {mockBookings[activeTab].length > 0 ? (
-            mockBookings[activeTab].map((booking) => (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.accent} />
+              <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+                Loading bookings...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <AlertCircle size={48} color="#ef4444" />
+              <Text style={[styles.errorText, { color: theme.textPrimary }]}>
+                {error}
+              </Text>
+              <Button
+                onPress={loadWorkerBookings}
+                style={styles.retryButton}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </Button>
+            </View>
+          ) : getFilteredBookings().length > 0 ? (
+            getFilteredBookings().map((booking) => (
               <BookingCard key={booking.id} booking={booking} type={activeTab} />
             ))
           ) : (
@@ -421,7 +441,7 @@ export const WorkerBookingsScreen: React.FC = () => {
         </ScrollView>
       </View>
       
-      <ActionModal />
+
     </SafeAreaView>
   );
 };
@@ -683,6 +703,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    backgroundColor: '#3b82f6',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

@@ -6,7 +6,7 @@ import {
   ScrollView, 
   Pressable, 
   Alert, 
-  ActivityIndicator 
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -18,71 +18,10 @@ import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Separator } from '../components/ui/Separator';
+import { Header } from '../components/ui/Header';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
-
-// Mock worker data - matches original app structure
-const mockWorkerData = {
-  "1": {
-    id: "1",
-    name: "Ahmed Benali",
-    rating: 4.8,
-    reviewCount: 127,
-    distance: "0.5 km",
-    price: 80,
-    avatar: require('../../assets/images/professional-car-washer-ahmed.png'),
-    isAvailable: true,
-    estimatedTime: "15 min",
-    phone: "+212 6XX XXX XXX",
-    experience: "3",
-    completedJobs: 450,
-    specialties: ["Exterior Wash", "Interior Cleaning", "Wax & Polish"],
-    description: "Professional car washing service with attention to detail. I use eco-friendly products and ensure your car looks spotless.",
-    reviews: [
-      {
-        id: 1,
-        name: "Fatima K.",
-        rating: 5,
-        comment: "Excellent service! My car looks brand new.",
-        date: "2 days ago",
-      },
-      {
-        id: 2,
-        name: "Mohammed A.",
-        rating: 5,
-        comment: "Very professional and punctual. Highly recommended!",
-        date: "1 week ago",
-      },
-      { 
-        id: 3, 
-        name: "Aicha M.", 
-        rating: 4, 
-        comment: "Good work, fair price. Will book again.", 
-        date: "2 weeks ago" 
-      },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Omar Hassan",
-    rating: 4.9,
-    reviewCount: 203,
-    distance: "0.8 km",
-    price: 120,
-    avatar: require('../../assets/images/professional-car-washer-omar.png'),
-    isAvailable: true,
-    estimatedTime: "20 min",
-    phone: "+212 6XX XXX XXX",
-    experience: "5 years",
-    completedJobs: 680,
-    specialties: ["Premium Wash", "Engine Cleaning", "Tire Shine"],
-    description: "Specialized in premium car care services. I take pride in delivering exceptional results for every vehicle.",
-    reviews: [
-      { id: 1, name: "Hassan B.", rating: 5, comment: "Outstanding attention to detail!", date: "3 days ago" },
-      { id: 2, name: "Laila S.", rating: 5, comment: "Best car wash service in Marrakech!", date: "1 week ago" },
-    ],
-  },
-};
+import { workersService, type Worker } from '../services/workers';
 
 export default function WorkerDetailScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -92,28 +31,83 @@ export default function WorkerDetailScreen() {
   const theme = useThemeColors();
   const { t, language } = useLanguage();
 
-  const worker = mockWorkerData[workerId as keyof typeof mockWorkerData];
+  const [worker, setWorker] = useState<Worker | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
 
-  if (!worker) {
+
+  useEffect(() => {
+    loadWorkerData();
+  }, [workerId]);
+
+  const loadWorkerData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const workerData = await workersService.getWorkerById(workerId);
+      if (workerData) {
+        setWorker(workerData);
+      } else {
+        setError(t('worker_not_found'));
+      }
+    } catch (err) {
+      console.error('Error loading worker:', err);
+      setError(t('error_loading_worker') || 'Failed to load worker details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>{t('worker_not_found')}</Text>
-        <Button onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>{t('go_back')}</Text>
-        </Button>
-      </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+        <Header 
+          title={t('worker_profile')} 
+          onBack={() => navigation.goBack()} 
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            {t('loading')}...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !worker) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
+        <Header 
+          title={t('worker_profile')} 
+          onBack={() => navigation.goBack()} 
+        />
+        <View style={styles.errorContainer}>
+          <Text style={[styles.errorTitle, { color: theme.textPrimary }]}>
+            {error || t('worker_not_found')}
+          </Text>
+          <Button onPress={() => navigation.goBack()}>
+            <Text style={styles.buttonText}>{t('go_back')}</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
     );
   }
 
   const handleBookNow = () => {
-    navigation.navigate('Booking', { workerId });
+    // Navigate directly to booking - user will select service in the booking flow
+    navigation.navigate('Booking', {
+      workerId: workerId,
+      serviceKey: 'basic' // Default service, user can change in booking flow
+    } as any);
   };
 
-
   const handleCall = () => {
-    Alert.alert(t('call') + ' ' + t('service_provider'), `${t('call')} ${worker.phone}?`, [
+    Alert.alert(t('call') + ' ' + t('service_provider'), t('confirm_call'), [
       { text: t('cancel'), style: 'cancel' },
-      { text: t('call'), onPress: () => console.log('Calling...') }
+      { text: t('call'), onPress: () => console.log('Calling worker...') }
     ]);
   };
 
@@ -133,7 +127,7 @@ export default function WorkerDetailScreen() {
         <Card style={[styles.workerCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.workerHeader}>
             <Avatar 
-              source={worker.avatar} 
+              src={worker.avatar || undefined} 
               name={worker.name} 
               size={80} 
             />
@@ -153,15 +147,17 @@ export default function WorkerDetailScreen() {
                     </View>
                   </View>
                 </View>
-                <Badge variant={worker.isAvailable ? "default" : "secondary"}>
-                  {worker.isAvailable ? (language === 'fr' ? 'Disponible' : 'Available') : (language === 'fr' ? 'Occupé' : 'Busy')}
+                <Badge variant={worker.status === 'available' ? "default" : "secondary"}>
+                  {worker.status === 'available' ? (language === 'fr' ? 'Disponible' : 'Available') : (language === 'fr' ? 'Occupé' : 'Busy')}
                 </Badge>
               </View>
 
               <View style={styles.workerStats}>
                 <View style={styles.statItem}>
                   <MapPin size={16} color={theme.textSecondary} />
-                  <Text style={[styles.statText, { color: theme.textSecondary }]}>{worker.distance} {language === 'fr' ? 'de distance' : 'away'}</Text>
+                  <Text style={[styles.statText, { color: theme.textSecondary }]}>
+                    {worker.distanceKm ? `${worker.distanceKm.toFixed(1)} km` : ''} {language === 'fr' ? 'de distance' : 'away'}
+                  </Text>
                 </View>
                 <View style={styles.statItem}>
                   <Clock size={16} color={theme.textSecondary} />
@@ -176,14 +172,14 @@ export default function WorkerDetailScreen() {
           <Separator style={styles.separator} />
 
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
+            <View style={styles.statColumn}>
               <Text 
                 style={[styles.statNumber, { color: theme.accent }]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
               >
-                {worker.completedJobs}
+                {worker.totalJobsCompleted}
               </Text>
               <Text 
                 style={[styles.statLabel, { color: theme.textSecondary }]} 
@@ -194,14 +190,14 @@ export default function WorkerDetailScreen() {
                 {t('jobs_done')}
               </Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={styles.statColumn}>
               <Text 
                 style={[styles.statNumber, { color: theme.accent }]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
               >
-                {worker.experience}
+                {worker.experienceYears || 0}
               </Text>
               <Text 
                 style={[styles.statLabel, { color: theme.textSecondary }]} 
@@ -212,7 +208,7 @@ export default function WorkerDetailScreen() {
                 {t('experience')}
               </Text>
             </View>
-            <View style={styles.statCard}>
+            <View style={styles.statColumn}>
               <Text 
                 style={[styles.statNumber, { color: theme.accent }]}
                 numberOfLines={1}
@@ -234,59 +230,55 @@ export default function WorkerDetailScreen() {
         </Card>
 
         {/* Description */}
-        <Card style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('about_worker').replace(' {name}', '')}</Text>
-          <Text style={[styles.description, { color: theme.textSecondary }]}>{worker.description}</Text>
-        </Card>
+        {worker.bio && (
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('about_worker').replace(' {name}', '')}</Text>
+            <Text style={[styles.description, { color: theme.textSecondary }]}>{worker.bio}</Text>
+          </Card>
+        )}
+
+        {/* Services */}
+        {worker.services && worker.services.length > 0 && (
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('services_offered')}</Text>
+            <View style={styles.specialtiesContainer}>
+              {worker.services.map((service, index) => (
+                <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
+                  {service}
+                </Badge>
+              ))}
+            </View>
+          </Card>
+        )}
 
         {/* Specialties */}
-        <Card style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('services_offered')}</Text>
-          <View style={styles.specialtiesContainer}>
-            {worker.specialties.map((specialty, index) => (
-              <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
-                {specialty}
-              </Badge>
-            ))}
-          </View>
-        </Card>
-
-        {/* Reviews */}
-        <Card style={styles.sectionCard}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reviews_and_ratings')}</Text>
-          <View style={styles.reviewsContainer}>
-            {worker.reviews.map((review) => (
-              <View key={review.id} style={[styles.reviewItem, { borderBottomColor: theme.cardBorder }]}>
-                <View style={styles.reviewHeader}>
-                  <View style={styles.reviewerInfo}>
-                    <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.name}</Text>
-                    <View style={styles.reviewRating}>
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} size={12} color="#fbbf24" fill="#fbbf24" />
-                      ))}
-                    </View>
-                  </View>
-                  <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>{review.date}</Text>
-                </View>
-                <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>{review.comment}</Text>
-              </View>
-            ))}
-          </View>
-        </Card>
+        {worker.specialties && worker.specialties.length > 0 && (
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('specialties')}</Text>
+            <View style={styles.specialtiesContainer}>
+              {worker.specialties.map((specialty, index) => (
+                <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
+                  {specialty}
+                </Badge>
+              ))}
+            </View>
+          </Card>
+        )}
       </ScrollView>
 
-        {/* Action Buttons */}
-        <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44) }]}>
-          <Button 
-            style={[styles.bookButton, !worker.isAvailable && styles.disabledButton]} 
-            disabled={!worker.isAvailable} 
-            onPress={handleBookNow}
-          >
-            <Text style={styles.bookButtonText}>
-              {t('book_now')} - {worker.price} MAD
-            </Text>
-          </Button>
+      {/* Action Buttons */}
+      <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44), backgroundColor: theme.bg, borderTopColor: theme.cardBorder }]}>
+        <Button 
+          style={[styles.bookButton, worker.status !== 'available' && styles.disabledButton]} 
+          disabled={worker.status !== 'available'} 
+          onPress={handleBookNow}
+        >
+          <Text style={styles.bookButtonText}>
+            {t('book_now')} - {worker.price} MAD
+          </Text>
+        </Button>
 
+        <View style={styles.contactButtons}>
           <Button variant="outline" style={styles.callButton} onPress={handleChat}>
             <MessageCircle size={16} color={theme.accent} />
             <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('chat')}</Text>
@@ -294,10 +286,12 @@ export default function WorkerDetailScreen() {
 
           <Button variant="outline" style={styles.callButton} onPress={handleCall}>
             <Phone size={16} color={theme.accent} />
-            <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('call')} {worker.phone}</Text>
+            <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('call')}</Text>
           </Button>
         </View>
       </View>
+
+
     </SafeAreaView>
   );
 }
@@ -413,6 +407,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     maxWidth: '33%',
   },
+  sectionCard: {
+    padding: 20,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  contactButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   statNumber: {
     fontSize: 28,
     fontWeight: '700',
@@ -516,24 +520,14 @@ const styles = StyleSheet.create({
   },
   callButtonText: {
     fontSize: 14,
-    color: '#3b82f6',
     textAlign: 'center',
     flexShrink: 1,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
+    fontWeight: '500',
   },
   buttonText: {
     color: '#ffffff',
     fontWeight: '500',
   },
+
+
 });

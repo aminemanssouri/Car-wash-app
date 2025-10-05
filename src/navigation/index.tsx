@@ -186,7 +186,7 @@ export default function Navigation() {
 
   return (
     <NavigationContainer theme={theme.isDark ? NavigationDarkTheme : NavigationLightTheme}>
-      <AppStack />
+      {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

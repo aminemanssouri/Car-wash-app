@@ -9,7 +9,8 @@ import type { RootStackParamList } from '../types/navigation';
 import { User, Bell, Search, Navigation as NavIcon, Menu, Home as HomeIcon, Wrench, Calendar, MessageCircle, Store, Settings, LogOut, AlertTriangle, X } from 'lucide-react-native';
 import GoogleMap from '../components/GoogleMap';
 import { Button } from '../components/ui/Button';
-import { mockWorkers, Worker } from '../data/workers';
+import { workersService, type Worker } from '../services/workers';
+
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import SideMenu from '../components/ui/SideMenu';
@@ -40,22 +41,49 @@ export default function HomeScreen() {
   const isHidingCardRef = useRef(false);
   const [locating, setLocating] = useState(false);
   const searchWidth = width * 0.4;
+  
+  // Workers state
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [loadingWorkers, setLoadingWorkers] = useState(true);
+  
+
+
+  // Load workers on mount
+  useEffect(() => {
+    loadWorkers();
+  }, []);
+
+  const loadWorkers = async () => {
+    try {
+      setLoadingWorkers(true);
+      const workersData = await workersService.getWorkers(false); // Force fresh fetch, bypass cache
+      setWorkers(workersData);
+    } catch (error) {
+      console.error('Error loading workers:', error);
+      // Keep empty array on error
+      setWorkers([]);
+    } finally {
+      setLoadingWorkers(false);
+    }
+  };
 
   const filteredWorkers = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return mockWorkers;
-    return mockWorkers.filter((w) => {
+    if (!q) return workers;
+    return workers.filter((w: Worker) => {
       const nameMatch = w.name.toLowerCase().includes(q);
-      const serviceMatch = (w.services || []).some((s) => s.toLowerCase().includes(q));
-      const areaMatch = w.area?.toLowerCase().includes(q);
-      const cityMatch = w.city?.toLowerCase().includes(q);
-      const countryMatch = w.country?.toLowerCase().includes(q);
-      return nameMatch || serviceMatch || areaMatch || cityMatch || countryMatch;
+      const serviceMatch = (w.services || []).some((s: string) => s.toLowerCase().includes(q));
+      const businessMatch = w.businessName?.toLowerCase().includes(q);
+      return nameMatch || serviceMatch || businessMatch;
     });
-  }, [query]);
+  }, [query, workers]);
 
   const goToBooking = (id: string) => {
-    navigateWithAuth('Booking', { workerId: id });
+    // Navigate directly to booking - user will select service in the booking flow
+    navigation.navigate('Booking', {
+      workerId: id,
+      serviceKey: 'basic' // Default service, user can change in booking flow
+    } as any);
   };
 
   // Auto-center map when search results change
@@ -103,7 +131,7 @@ export default function HomeScreen() {
   // Handle marker press to show sliding card
   const handleMarkerPress = (id: string) => {
     console.log('Marker pressed:', id);
-    console.log('Available worker IDs:', mockWorkers.map(w => w.id));
+    console.log('Available worker IDs:', workers.map(w => w.id));
 
     if (selectedWorker === id) {
       // If same worker is clicked, hide the card
@@ -112,7 +140,7 @@ export default function HomeScreen() {
       return;
     }
 
-    const worker = mockWorkers.find(w => w.id === id);
+    const worker = workers.find(w => w.id === id);
     console.log('Found worker:', worker);
 
     if (worker) {
@@ -338,7 +366,7 @@ export default function HomeScreen() {
                   </View>
                   
                   <View style={styles.cardInfo}>
-                    <Text style={[styles.cardName, { color: theme.textPrimary }]} numberOfLines={1}>{worker.name}</Text>
+                    <Text style={[styles.slideCardName, { color: theme.textPrimary }]} numberOfLines={1}>{worker.name}</Text>
                     <Text style={[styles.workerSpecialty, { color: theme.textSecondary }]}>{worker.services[0]}</Text>
                     
                     <View style={styles.cardDetails}>
@@ -631,6 +659,8 @@ export default function HomeScreen() {
         </Animated.View>
       </>
     )}
+
+
     </>
   );
 }
@@ -1012,12 +1042,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  workerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
   cardSpecialty: {
     fontSize: 12,
     color: '#6b7280',
@@ -1315,5 +1339,70 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: '#000000',
     zIndex: 999,
+  },
+
+  // Service Selection Modal Styles
+  serviceModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  serviceModalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    minHeight: '50%',
+  },
+  serviceModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  serviceModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  closeButton: {
+    padding: 8,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  serviceDesc: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  servicePrice: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  serviceArrow: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

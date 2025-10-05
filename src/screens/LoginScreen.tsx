@@ -44,20 +44,18 @@ export default function LoginScreen() {
     
     try {
       await signIn(data.email, data.password);
-      // Reset navigation to MainTabs on successful login
-      (navigation as any).dispatch?.(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' as never }],
-        })
-      );
+      // Navigation will happen automatically when auth state changes
+      console.log('Login successful, auth state will handle navigation');
     } catch (error: any) {
+      console.error('Login failed:', error);
       const message = (error?.message as string) || t('check_credentials');
       modal.show({
         type: 'warning',
         title: t('login_failed'),
         message,
       });
+      // Ensure we stay on login screen
+      return;
     } finally {
       setIsLoading(false);
     }
