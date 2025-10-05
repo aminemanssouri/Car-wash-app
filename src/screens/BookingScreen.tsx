@@ -12,6 +12,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
 import { Header } from '../components/ui/Header';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -324,12 +325,12 @@ export default function BookingScreen() {
         </Card>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <Button style={styles.startButton} onPress={handleStartBooking}>
-          <Text style={styles.startButtonText}>Start Booking Process</Text>
-        </Button>
-      </View>
+      {/* Footer */}
+      <BookingFooter
+        onContinue={handleStartBooking}
+        continueText="Start Booking Process"
+        showBackButton={false}
+      />
     </SafeAreaView>
   );
 }
@@ -362,13 +363,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 24,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 0,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
   },
   workerCard: {
     padding: 16,
@@ -472,15 +466,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
     lineHeight: 20,
-  },
-  startButton: {
-    height: 48,
-    marginBottom: 0,
-  },
-  startButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
   },
   priceBadge: {
     marginLeft: 'auto',

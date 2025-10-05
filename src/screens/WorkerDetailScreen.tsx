@@ -6,22 +6,26 @@ import {
   ScrollView, 
   Pressable, 
   Alert, 
-  ActivityIndicator
+  Platform, 
+  Linking, 
+  ActivityIndicator 
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp, RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { Star, MapPin, Clock, Phone, MessageCircle } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, Star, Phone, MessageCircle, ChevronLeft, Check } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
+import { Separator } from '../components/ui/Separator';
 import { Card } from '../components/ui/Card';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
-import { Separator } from '../components/ui/Separator';
 import { Header } from '../components/ui/Header';
+import { BookingFooter } from '../components/ui/BookingFooter';
+
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
-import { workersService, type Worker } from '../services/workers';
+
 
 export default function WorkerDetailScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -104,11 +108,31 @@ export default function WorkerDetailScreen() {
     } as any);
   };
 
-  const handleCall = () => {
-    Alert.alert(t('call') + ' ' + t('service_provider'), t('confirm_call'), [
-      { text: t('cancel'), style: 'cancel' },
-      { text: t('call'), onPress: () => console.log('Calling worker...') }
-    ]);
+
+  const handleCall = async () => {
+    const phoneNumber = worker.phone.replace(/\s+/g, ''); // Remove spaces
+    const phoneUrl = `tel:${phoneNumber}`;
+    
+    try {
+      // Try to open the phone dialer directly
+      await Linking.openURL(phoneUrl);
+    } catch (error) {
+      console.error('Error making phone call:', error);
+      // If tel: doesn't work, try alternative approaches
+      try {
+        // Try with different phone URL formats
+        const alternativeUrl = Platform.OS === 'ios' 
+          ? `telprompt:${phoneNumber}` 
+          : `tel:${phoneNumber}`;
+        await Linking.openURL(alternativeUrl);
+      } catch (secondError) {
+        console.error('Alternative phone call failed:', secondError);
+        Alert.alert(
+          t('error') || 'Error', 
+          `${t('call_failed') || 'Failed to make phone call'}. ${t('copy_number') || 'Please copy the number manually'}: ${worker.phone}`
+        );
+      }
+    }
   };
 
   const handleChat = () => {
@@ -126,12 +150,22 @@ export default function WorkerDetailScreen() {
         {/* Worker Info Card */}
         <Card style={[styles.workerCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
           <View style={styles.workerHeader}>
-            <Avatar 
-              src={worker.avatar || undefined} 
-              name={worker.name} 
-              size={80} 
-            />
+            {/* Avatar with Distance */}
+            <View style={styles.avatarSection}>
+              <Avatar 
+                source={worker.avatar} 
+                name={worker.name} 
+                size={80} 
+              />
+              <View style={styles.distanceContainer}>
+                <MapPin size={14} color={theme.accent} />
+                <Text style={[styles.distanceText, { color: theme.textPrimary }]}>
+                  {worker.distance}
+                </Text>
+              </View>
+            </View>
             
+            {/* Worker Info with Time */}
             <View style={styles.workerInfo}>
               <View style={styles.workerNameRow}>
                 <View style={styles.workerNameContainer}>
@@ -152,19 +186,21 @@ export default function WorkerDetailScreen() {
                 </Badge>
               </View>
 
-              <View style={styles.workerStats}>
-                <View style={styles.statItem}>
-                  <MapPin size={16} color={theme.textSecondary} />
-                  <Text style={[styles.statText, { color: theme.textSecondary }]}>
-                    {worker.distanceKm ? `${worker.distanceKm.toFixed(1)} km` : ''} {language === 'fr' ? 'de distance' : 'away'}
+              {/* Modern Time Display */}
+              <View style={styles.modernTimeContainer}>
+                <View style={styles.timeChip}>
+                  <Clock size={14} color={theme.accent} />
+                  <Text style={[styles.timeChipText, { color: theme.textPrimary }]}>
+                    {worker.startTime}
+                  </Text>
+                  <View style={[styles.timeChipSeparator, { backgroundColor: theme.accent }]} />
+                  <Text style={[styles.timeChipText, { color: theme.textPrimary }]}>
+                    {worker.endTime}
                   </Text>
                 </View>
-                <View style={styles.statItem}>
-                  <Clock size={16} color={theme.textSecondary} />
-                  <Text style={[styles.statText, { color: theme.textSecondary }]}>
-                    {`${worker.startTime} - ${worker.endTime}`}
-                  </Text>
-                </View>
+                <Text style={[styles.modernTimeLabel, { color: theme.textSecondary }]}>
+                  Available Today
+                </Text>
               </View>
             </View>
           </View>
@@ -252,19 +288,39 @@ export default function WorkerDetailScreen() {
         )}
 
         {/* Specialties */}
-        {worker.specialties && worker.specialties.length > 0 && (
-          <Card style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('specialties')}</Text>
-            <View style={styles.specialtiesContainer}>
-              {worker.specialties.map((specialty, index) => (
-                <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
-                  {specialty}
-                </Badge>
-              ))}
-            </View>
-          </Card>
-        )}
-      </ScrollView>
+        <Card style={styles.sectionCard}>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('services_offered')}</Text>
+          <View style={styles.specialtiesContainer}>
+            {worker.specialties.map((specialty, index) => (
+              <Badge key={index} variant="secondary" style={styles.specialtyBadge}>
+                {specialty}
+              </Badge>
+            ))}
+          </View>
+        </Card>
+
+        {/* Reviews */}
+        <Card style={styles.sectionCard}>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>{t('reviews_and_ratings')}</Text>
+          <View style={styles.reviewsContainer}>
+            {worker.reviews.map((review) => (
+              <View key={review.id} style={[styles.reviewItem, { borderBottomColor: theme.cardBorder }]}>
+                <View style={styles.reviewHeader}>
+                  <View style={styles.reviewerInfo}>
+                    <Text style={[styles.reviewerName, { color: theme.textPrimary }]}>{review.name}</Text>
+                    <View style={styles.reviewRating}>
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} size={12} color="#fbbf24" fill="#fbbf24" />
+                      ))}
+                    </View>
+                  </View>
+                  <Text style={[styles.reviewDate, { color: theme.textSecondary }]}>{review.date}</Text>
+                </View>
+                <Text style={[styles.reviewComment, { color: theme.textSecondary }]}>{review.comment}</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
 
       {/* Action Buttons */}
       <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom + 20, 44), backgroundColor: theme.bg, borderTopColor: theme.cardBorder }]}>
@@ -289,8 +345,15 @@ export default function WorkerDetailScreen() {
             <Text style={[styles.callButtonText, { color: theme.accent }]}>{t('call')}</Text>
           </Button>
         </View>
-      </View>
+      </ScrollView>
 
+      {/* Footer */}
+      <BookingFooter
+        onContinue={handleBookNow}
+        continueText={`${t('book_now')} - ${worker.price} MAD`}
+        continueDisabled={!worker.isAvailable}
+        showBackButton={false}
+      />
 
     </SafeAreaView>
   );
@@ -335,6 +398,24 @@ const styles = StyleSheet.create({
   workerHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderRadius: 8,
+    gap: 4,
+  },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   workerInfo: {
     flex: 1,
@@ -388,6 +469,76 @@ const styles = StyleSheet.create({
   statText: {
     fontSize: 14,
     marginLeft: 6,
+  },
+  timeContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+    flex: 1,
+    marginLeft: 16,
+  },
+  timeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  timeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+  timeSeparator: {
+    width: 12,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.6,
+  },
+  timeLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginLeft: 4,
+  },
+  modernTimeContainer: {
+    marginTop: 12,
+    alignItems: 'flex-start',
+  },
+  timeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    gap: 6,
+  },
+  timeChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  timeChipSeparator: {
+    width: 8,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.7,
+  },
+  modernTimeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 4,
+    marginLeft: 2,
   },
   separator: {
     marginVertical: 20,
@@ -522,11 +673,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     flexShrink: 1,
-    fontWeight: '500',
   },
   buttonText: {
     color: '#ffffff',
     fontWeight: '500',
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+  },
+  sectionCard: {
+    padding: 16,
+    marginBottom: 16,
+  },
+  reviewsContainer: {
+    padding: 16,
   },
 
 

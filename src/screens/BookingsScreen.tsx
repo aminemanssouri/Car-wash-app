@@ -15,6 +15,14 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthNavigation } from '../hooks/useAuthNavigation';
 
+// Worker phone numbers mapping
+const workerPhones: { [key: string]: string } = {
+  "1": "+212662093333",
+  "2": "+212661234567", 
+  "3": "+212665678901",
+  "4": "+212667890123",
+};
+
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('all');
@@ -149,7 +157,33 @@ export const BookingsScreen: React.FC = () => {
         }
         break;
       case 'call':
-        setShowContactComingSoon('call');
+        if (booking) {
+          const phoneNumber = workerPhones[booking.workerId];
+          if (phoneNumber) {
+            const cleanPhoneNumber = phoneNumber.replace(/\s+/g, '');
+            const phoneUrl = `tel:${cleanPhoneNumber}`;
+            
+            try {
+              await Linking.openURL(phoneUrl);
+            } catch (error) {
+              console.error('Error making phone call:', error);
+              try {
+                const alternativeUrl = Platform.OS === 'ios' 
+                  ? `telprompt:${cleanPhoneNumber}` 
+                  : `tel:${cleanPhoneNumber}`;
+                await Linking.openURL(alternativeUrl);
+              } catch (secondError) {
+                console.error('Alternative phone call failed:', secondError);
+                Alert.alert(
+                  t('error') || 'Error', 
+                  `${t('call_failed') || 'Failed to make phone call'}. ${t('copy_number') || 'Please copy the number manually'}: ${phoneNumber}`
+                );
+              }
+            }
+          } else {
+            Alert.alert(t('error') || 'Error', t('phone_not_available') || 'Phone number not available');
+          }
+        }
         break;
       case 'chat':
         setShowContactComingSoon('chat');
@@ -334,7 +368,7 @@ export const BookingsScreen: React.FC = () => {
                             borderWidth: 1.2,
                           },
                         ]}
-                        onPress={() => handleBookingAction('call', booking.id)}
+                        onPress={() => handleBookingAction('call', booking.id, booking)}
                       >
                         <Phone size={16} color={theme.textPrimary} />
                         <Text style={[styles.actionButtonText, { color: theme.textPrimary }]}>{t('call')}</Text>
@@ -524,10 +558,18 @@ const styles = StyleSheet.create({
   },
   bookButton: {
     paddingHorizontal: 24,
+    paddingVertical: 12,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bookButtonText: {
     color: '#ffffff',
     fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 20,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   bookingsList: {
     padding: 16,
@@ -650,21 +692,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingVertical: 10,
+    minHeight: 44,
   },
   actionButtonText: {
     fontSize: 14,
     color: '#374151',
+    lineHeight: 18,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   rateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingVertical: 12,
+    minHeight: 48,
   },
   rateButtonText: {
     fontSize: 14,
     color: '#ffffff',
     fontWeight: '600',
+    lineHeight: 18,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   csBackdrop: {
     flex: 1,

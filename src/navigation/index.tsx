@@ -39,6 +39,7 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import AddAddressScreen from '../screens/AddAddressScreen';
 import EditAddressScreen from '../screens/EditAddressScreen';
 import ReviewScreen from '../screens/ReviewScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -135,6 +136,7 @@ function AuthStack() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </Stack.Navigator>
   );
 }
@@ -146,6 +148,7 @@ function AppStack() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="Language" component={LanguageScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="WorkerDetail" component={WorkerDetailScreen} />
@@ -185,8 +188,15 @@ export default function Navigation() {
   }
 
   return (
-    <NavigationContainer theme={theme.isDark ? NavigationDarkTheme : NavigationLightTheme}>
-      {user ? <AppStack /> : <AuthStack />}
+    <NavigationContainer theme={theme.isDark ? NavigationDarkTheme : NavigationLightTheme} linking={{
+      prefixes: ['carwashpro://'],
+      config: {
+        screens: {
+          ResetPassword: 'reset-password',
+        },
+      },
+    }}>
+      <AppStack />
     </NavigationContainer>
   );
 }

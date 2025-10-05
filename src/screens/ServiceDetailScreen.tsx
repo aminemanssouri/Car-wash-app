@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
 import { useThemeColors } from '../lib/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -225,18 +225,51 @@ export default function ServiceDetailScreen() {
         )}
 
         {/* Actions */}
-        <View style={{ marginTop: 16, gap: 12 }}>
-          <Button onPress={() => navigation.navigate('ServiceWorkers', { serviceKey: service.key })}>
-            View Providers for This Service
-          </Button>
-          <Button onPress={() => (navigation as any).navigate('MainTabs', { screen: 'Home' })}>
-            Find Nearby Providers
-          </Button>
-          <Button variant="outline" onPress={() => navigation.goBack()}>
-            {t('back') || 'Back'}
-          </Button>
-        </View>
+<View style={[styles.actionsContainer, { marginTop: 16, gap: 12 }]}>
+  <Button 
+    style={styles.actionButton} 
+    onPress={() => navigation.navigate('ServiceWorkers', { serviceKey })}
+  >
+    <Text style={styles.actionButtonText}>{t('view_providers_for_service')}</Text>
+  </Button>
+
+  <Button 
+    style={styles.actionButton} 
+    onPress={() => (navigation as any).navigate('MainTabs', { screen: 'Home' })}
+  >
+    <Text style={styles.actionButtonText}>{t('find_nearby_providers')}</Text>
+  </Button>
+
+  <Button 
+    variant="outline" 
+    onPress={() => navigation.goBack()}
+  >
+    <Text style={styles.actionButtonText}>{t('back') || 'Back'}</Text>
+  </Button>
+</View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  actionsContainer: {
+    marginTop: 16,
+    gap: 12,
+  },
+  actionButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 20,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+});

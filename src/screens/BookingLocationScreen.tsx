@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-nati
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { MapPin, ChevronRight, ChevronLeft, Home, Building, Navigation } from 'lucide-react-native';
+import { MapPin, Navigation, Plus, X, Home, Building } from 'lucide-react-native';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Header } from '../components/ui/Header';
 import { Input } from '../components/ui/Input';
+import { Header } from '../components/ui/Header';
+import { BookingFooter } from '../components/ui/BookingFooter';
 import { Textarea } from '../components/ui/Textarea';
 import { useThemeColors } from '../lib/theme';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -189,43 +190,12 @@ export default function BookingLocationScreen() {
         </Card>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.cardBorder, paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={styles.footerButtons}>
-          <Button 
-            variant="ghost"
-            size="icon"
-            style={[styles.backButton, { 
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.cardBorder,
-              borderRadius: 12,
-              width: 48,
-              height: 48,
-              marginTop: 4,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 4,
-              elevation: 2,
-            }]}
-            onPress={handleBack}
-          >
-            <ChevronLeft size={22} color={colors.textPrimary} strokeWidth={2.5} />
-          </Button>
-          
-          <Button 
-            style={[styles.continueButton, { opacity: address.trim() ? 1 : 0.5 }]}
-            onPress={handleContinue}
-            disabled={!address.trim()}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-            <ChevronRight size={16} color="#ffffff" />
-          </Button>
-        </View>
-      </View>
+      {/* Footer */}
+      <BookingFooter
+        onBack={handleBack}
+        onContinue={handleContinue}
+        continueDisabled={!address.trim()}
+      />
     </SafeAreaView>
   );
 }
@@ -301,26 +271,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  popularAreasGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 16,
-  },
-  popularAreaChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  popularAreaText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  textarea: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
   infoCard: {
     padding: 16,
     marginBottom: 24,
@@ -348,39 +298,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     flex: 1,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-  },
-  footerButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  backButton: {
-    flex: 1,
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  continueButton: {
-    flex: 2,
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  continueButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
   },
 });
