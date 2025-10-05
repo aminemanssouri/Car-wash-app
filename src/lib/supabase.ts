@@ -169,7 +169,10 @@ export type Database = {
           base_price: number;
           duration_minutes: number;
           icon_name: string | null;
+          image_url: string | null;
           is_active: boolean;
+          notes: string | null;
+          inclusions: any | null; // JSONB type
           created_at: string;
           updated_at: string;
           sedan_multiplier: number;
@@ -185,7 +188,10 @@ export type Database = {
           base_price: number;
           duration_minutes: number;
           icon_name?: string | null;
+          image_url?: string | null;
           is_active?: boolean;
+          notes?: string | null;
+          inclusions?: any | null; // JSONB type
           sedan_multiplier?: number;
           suv_multiplier?: number;
           van_multiplier?: number;
@@ -199,12 +205,15 @@ export type Database = {
           base_price?: number;
           duration_minutes?: number;
           icon_name?: string | null;
+          image_url?: string | null;
+          notes?: string | null;
+          inclusions?: any | null; // JSONB type
           is_active?: boolean;
-          updated_at?: string;
           sedan_multiplier?: number;
           suv_multiplier?: number;
           van_multiplier?: number;
           truck_multiplier?: number;
+          updated_at?: string;
         };
       };
       bookings: {

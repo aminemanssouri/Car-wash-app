@@ -1,15 +1,18 @@
-import React, { useMemo } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../lib/theme';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import type { RouteProp, NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
-import { getServiceByKey, iconFor } from '../data/services';
-import { mockWorkers, Worker } from '../data/workers';
+import { servicesService } from '../services';
+import { workersService } from '../services';
+import type { Worker } from '../services/workers';
+import type { ServiceItem } from '../services/services';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/ui/Header';
 import { useLanguage } from '../contexts/LanguageContext';
+import { MapPin, Star, Clock } from 'lucide-react-native';
 
 export default function ServiceWorkersScreen() {
   const theme = useThemeColors();
@@ -18,46 +21,209 @@ export default function ServiceWorkersScreen() {
   const { serviceKey } = route.params || ({} as any);
   const { t } = useLanguage();
 
-  const service = useMemo(() => getServiceByKey(serviceKey), [serviceKey]);
-  const Icon = service ? iconFor(service.icon) : undefined;
+  const [service, setService] = useState<ServiceItem | null>(null);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = useMemo<Worker[]>(() => {
-    if (!service) return [];
-    const title = service.title.toLowerCase();
-    // Basic heuristic: include workers whose service label contains the selected service title keyword
-    return mockWorkers.filter(w => (w.services || []).some(s => s.toLowerCase().includes(title.split(' ')[0])));
-  }, [service]);
+  // Load service and workers data
+  useEffect(() => {
+    loadData();
+  }, [serviceKey]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load service details
+      const serviceData = await servicesService.getServiceByKey(serviceKey);
+      setService(serviceData);
+      
+      if (!serviceData) {
+        setError('Service not found');
+        return;
+      }
+      
+      // Load workers for this service
+      const workersData = await workersService.getWorkersByService(serviceKey);
+      setWorkers(workersData);
+      
+    } catch (err: any) {
+      console.error('Error loading service workers:', err);
+      setError(err.message || 'Failed to load workers');
+      Alert.alert(
+        'Error Loading Workers',
+        err.message || 'Failed to load workers. Please try again.',
+        [
+          { text: 'Retry', onPress: loadData },
+          { text: 'Go Back', onPress: () => navigation.goBack() }
+        ]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.bg }}>
+        <Header 
+          title={t('providers')} 
+          onBack={() => navigation.goBack()} 
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={{ fontSize: 16, color: theme.textSecondary, marginTop: 16 }}>Loading workers...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error || !service) {
+    return (
+      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.bg }}>
+        <Header 
+          title={t('providers')} 
+          onBack={() => navigation.goBack()} 
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <Text style={{ fontSize: 16, color: theme.textPrimary, marginBottom: 12 }}>
+            {error || 'Service not found'}
+          </Text>
+          <Button onPress={loadData} style={{ marginBottom: 8 }}>Retry</Button>
+          <Button variant="outline" onPress={() => navigation.goBack()}>{t('go_back')}</Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.bg }}>
       <Header 
-        title={service ? `${t('providers')} - ${service.title}` : t('providers')} 
+        title={`${t('providers')} - ${service.title}`} 
         onBack={() => navigation.goBack()} 
       />
 
       <FlatList
-        data={filtered}
+        data={workers}
         keyExtractor={(w) => w.id}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}
-        ListEmptyComponent={<Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 24 }}>{t('no workers found')}</Text>}
-        renderItem={({ item: w }) => (
-          <View style={{ backgroundColor: theme.card, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, padding: 12, marginBottom: 12 }}>
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', marginTop: 32 }}>
+            <Text style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 16 }}>
+              No providers found for this service
+            </Text>
+            <Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 8 }}>
+              Try checking back later or select a different service
+            </Text>
+            <Button onPress={loadData} style={{ marginTop: 16 }}>Refresh</Button>
+          </View>
+        }
+        renderItem={({ item: worker }) => (
+          <View style={{ backgroundColor: theme.card, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 12, padding: 16, marginBottom: 12 }}>
             <View style={{ flexDirection: 'row' }}>
-              <View style={{ width: 56, height: 56, borderRadius: 28, overflow: 'hidden', backgroundColor: theme.overlay, marginRight: 12 }}>
-                <Image source={w.avatar} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+              {/* Worker Avatar */}
+              <View style={{ width: 60, height: 60, borderRadius: 30, overflow: 'hidden', backgroundColor: theme.overlay, marginRight: 12 }}>
+                {worker.avatar ? (
+                  <Image source={{ uri: worker.avatar }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                ) : (
+                  <View style={{ width: '100%', height: '100%', backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 20, fontWeight: '600' }}>
+                      {worker.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
               </View>
+              
               <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.textPrimary, fontWeight: '700' }}>{w.name}</Text>
-                <Text style={{ color: theme.textSecondary, marginTop: 2 }}>{w.services?.join(' • ')}</Text>
-                <View style={{ flexDirection: 'row', marginTop: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ color: theme.textSecondary }}>⭐ {w.rating} ({w.reviewCount})</Text>
-                  <Text style={{ color: theme.accent, fontWeight: '700' }}>{w.price} MAD</Text>
+                {/* Worker Name and Business */}
+                <Text style={{ color: theme.textPrimary, fontWeight: '700', fontSize: 16 }}>{worker.name}</Text>
+                {worker.businessName && (
+                  <Text style={{ color: theme.textSecondary, marginTop: 2, fontSize: 14 }}>{worker.businessName}</Text>
+                )}
+                
+                {/* Rating and Reviews */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <Star size={14} color={theme.accent} fill={theme.accent} />
+                  <Text style={{ color: theme.textSecondary, marginLeft: 4, fontSize: 14 }}>
+                    {worker.rating.toFixed(1)} ({worker.reviewCount} reviews)
+                  </Text>
                 </View>
+                
+                {/* Experience and Status */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  {worker.experienceYears && (
+                    <>
+                      <Clock size={14} color={theme.textSecondary} />
+                      <Text style={{ color: theme.textSecondary, marginLeft: 4, fontSize: 12 }}>
+                        {worker.experienceYears} years exp
+                      </Text>
+                    </>
+                  )}
+                  {worker.distanceKm !== undefined && (
+                    <>
+                      <Text style={{ color: theme.textSecondary, marginHorizontal: 8 }}>•</Text>
+                      <MapPin size={14} color={theme.textSecondary} />
+                      <Text style={{ color: theme.textSecondary, marginLeft: 4, fontSize: 12 }}>
+                        {worker.distanceKm.toFixed(1)} km
+                      </Text>
+                    </>
+                  )}
+                </View>
+                
+                {/* Price */}
+                <Text style={{ color: theme.accent, fontWeight: '700', fontSize: 18, marginTop: 8 }}>
+                  {worker.price} MAD
+                </Text>
+              </View>
+              
+              {/* Status Badge */}
+              <View style={{ 
+                backgroundColor: worker.isAvailable ? '#22C55E20' : '#EF444420', 
+                paddingHorizontal: 8, 
+                paddingVertical: 4, 
+                borderRadius: 12,
+                alignSelf: 'flex-start'
+              }}>
+                <Text style={{ 
+                  color: worker.isAvailable ? '#22C55E' : '#EF4444', 
+                  fontSize: 12, 
+                  fontWeight: '600' 
+                }}>
+                  {worker.isAvailable ? 'Available' : 'Busy'}
+                </Text>
               </View>
             </View>
-            <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
-              <Button size="sm" onPress={() => navigation.navigate('WorkerDetail', { workerId: w.id })}>View details</Button>
-              <Button size="sm" variant="outline" onPress={() => navigation.navigate('Booking', { workerId: w.id })}>Book</Button>
+            
+            {/* Services */}
+            {worker.services.length > 0 && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>Services:</Text>
+                <Text style={{ color: theme.textPrimary, fontSize: 14 }}>{worker.services.join(' • ')}</Text>
+              </View>
+            )}
+            
+            {/* Action Buttons */}
+            <View style={{ flexDirection: 'row', marginTop: 16, gap: 8 }}>
+              <Button 
+                size="sm" 
+                style={{ flex: 1 }}
+                onPress={() => navigation.navigate('WorkerDetail', { workerId: worker.id })}
+              >
+                View Details
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                style={{ flex: 1 }}
+                onPress={() => navigation.navigate('Booking', { workerId: worker.id })}
+                disabled={!worker.isAvailable}
+              >
+                Book Now
+              </Button>
             </View>
           </View>
         )}
